@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PTRM - パーソナル・トレーニング・ロードマップ</title>
+    <link rel="stylesheet" href="./src/styles/main.css">
+    <link rel="stylesheet" href="./src/styles/dashboard.css">
+</head>
+
+<body>
+    <!-- ヘッダー -->
+    <header class="app-header">
+        <button class="menu-btn" aria-label="メニュー">
+            <span class="hamburger"></span>
+        </button>
+        <h1 class="app-title">エス・エコシステム</h1>
+        <button class="help-btn" aria-label="ヘルプ">?</button>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="main-content">
+        <!-- ダッシュボード画面 -->
+        <div id="dashboard-view" class="view active">
+            <h2 class="section-title">現在の進捗状況</h2>
+
+            <!-- 4つの山のビジュアライゼーション -->
+            <div class="mountains-container">
+                <!-- Top Row: Blue Pilates & Red Weight -->
+                <div class="mountain-row top-row">
+                    <div class="mountain blue-mountain">
+                        <div class="mountain-icon">
+                            <img src="./assets/mountain-blue.svg" alt="Blue Pilates" class="mountain-img">
+                            <div class="mountain-label">
+                                <img src="./assets/avatar-blue.png" alt="" class="avatar">
+                                <span class="level-badge">Lv.9</span>
+                                <span class="category-name">Blue Pilates</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mountain red-mountain">
+                        <div class="mountain-icon">
+                            <img src="./assets/mountain-red.svg" alt="Red Weight" class="mountain-img">
+                            <div class="mountain-label">
+                                <img src="./assets/avatar-red.png" alt="" class="avatar">
+                                <span class="level-badge">Lv.7</span>
+                                <span class="category-name">Red Weight</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Center: Lock Icon -->
+                <div class="gate-lock">
+                    <div class="lock-icon">🔒</div>
+                    <p class="lock-message">2合目次級まで<br>あともじ</p>
+                </div>
+
+                <!-- Bottom Row: Green Sports & Yellow Movement -->
+                <div class="mountain-row bottom-row">
+                    <div class="mountain green-mountain">
+                        <div class="mountain-icon">
+                            <img src="./assets/mountain-green.svg" alt="Sports" class="mountain-img">
+                            <div class="mountain-label">
+                                <img src="./assets/avatar-green.png" alt="" class="avatar">
+                                <span class="level-badge">Lv.6</span>
+                                <span class="category-name">Sports</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mountain yellow-mountain">
+                        <div class="mountain-icon">
+                            <img src="./assets/mountain-yellow.svg" alt="Movement" class="mountain-img">
+                            <div class="mountain-label">
+                                <img src="./assets/avatar-yellow.png" alt="" class="avatar">
+                                <span class="level-badge">Lv.7</span>
+                                <span class="category-name">Movement</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ゴールメッセージ -->
+            <div class="goal-message">
+                <p class="goal-text">全項目1合目クリアで<br>2合目ゲートを開放せよ！</p>
+            </div>
+
+            <!-- 次のチャレンジ項目 -->
+            <div class="next-challenge">
+                <h3 class="challenge-title">次のチャレンジ項目</h3>
+                <div class="challenge-box">
+                    <p class="challenge-text">全項目1合目クリアで<br>2合目ゲートを開放せよ！</p>
+                </div>
+            </div>
+
+            <!-- アクションリストプレビュー -->
+            <div class="action-preview">
+                <h3 class="action-title">現在のあなたの身体の課題一覧</h3>
+                <div class="action-box">
+                    <ul class="action-list-preview">
+                        <li class="action-item">
+                            <input type="checkbox" id="task1">
+                            <label for="task1">骨盤ニュートラル維持</label>
+                        </li>
+                        <li class="action-item completed">
+                            <input type="checkbox" id="task2" checked>
+                            <label for="task2">スクワット+5kg (完了)</label>
+                        </li>
+                        <li class="action-item">
+                            <input type="checkbox" id="task3">
+                            <label for="task3">15分ジョグ</label>
+                        </li>
+                        <li class="action-item">
+                            <input type="checkbox" id="task4">
+                            <label for="task4">肩甲骨ストレッチ</label>
+                        </li>
+                    </ul>
+                </div>
+                <button class="view-detail-btn">現在の予約状況はこちら »</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- ナビゲーションバー -->
+    <nav class="bottom-nav">
+        <button class="nav-btn active">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-label">ホーム</span>
+        </button>
+        <button class="nav-btn">
+            <span class="nav-icon">🎯</span>
+            <span class="nav-label">アクション</span>
+        </button>
+        <button class="nav-btn">
+            <span class="nav-icon">⛰️</span>
+            <span class="nav-label">ステージ</span>
+        </button>
+        <button class="nav-btn">
+            <span class="nav-icon">👤</span>
+            <span class="nav-label">プロフィール</span>
+        </button>
+        <button class="nav-btn">
+            <span class="nav-icon">📅</span>
+            <span class="nav-label">予約</span>
+        </button>
+    </nav>
+
+    <script type="module" src="./src/main.ts"></script>
+</body>
+
+</html>

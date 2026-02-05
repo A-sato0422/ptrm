@@ -1,0 +1,332 @@
+/* ========================================
+   6ステージ解説画面
+   ======================================== */
+
+#stage-view {
+    padding-bottom: var(--spacing-xl);
+}
+
+.stage-intro {
+    background-color: var(--color-white);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: var(--spacing-xl);
+    text-align: center;
+}
+
+.stage-intro-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--color-text-dark);
+    margin-bottom: var(--spacing-sm);
+}
+
+.stage-intro-text {
+    font-size: 14px;
+    color: var(--color-text-light);
+    line-height: 1.6;
+}
+
+/* ========================================
+   ステージリスト
+   ======================================== */
+
+.stage-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.stage-card {
+    background-color: var(--color-white);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-md);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.stage-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* ステージごとの色設定 */
+.stage-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 6px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--stage-color-start) 0%, var(--stage-color-end) 100%);
+}
+
+.stage-card.stage-1 {
+    --stage-color-start: #A8D8EA;
+    --stage-color-end: #7CB9D1;
+}
+
+.stage-card.stage-2 {
+    --stage-color-start: #98D8C8;
+    --stage-color-end: #6FC4B0;
+}
+
+.stage-card.stage-3 {
+    --stage-color-start: #87CEEB;
+    --stage-color-end: #5FA8D3;
+}
+
+.stage-card.stage-4 {
+    --stage-color-start: #F7DC6F;
+    --stage-color-end: #F4D03F;
+}
+
+.stage-card.stage-5 {
+    --stage-color-start: #FFB6B9;
+    --stage-color-end: #FF8B8F;
+}
+
+.stage-card.stage-6 {
+    --stage-color-start: #DDA0DD;
+    --stage-color-end: #BA55D3;
+}
+
+.stage-card.completed::after {
+    content: '✓';
+    position: absolute;
+    top: var(--spacing-md);
+    right: var(--spacing-md);
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    border-radius: 50%;
+    color: var(--color-white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    box-shadow: var(--shadow-md);
+}
+
+/* ========================================
+   ステージヘッダー
+   ======================================== */
+
+.stage-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.stage-number {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--stage-color-start) 0%, var(--stage-color-end) 100%);
+    color: var(--color-white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: bold;
+    flex-shrink: 0;
+    box-shadow: var(--shadow-sm);
+}
+
+.stage-title-group {
+    flex: 1;
+}
+
+.stage-name {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--color-text-dark);
+    margin-bottom: var(--spacing-xs);
+}
+
+.stage-level-range {
+    font-size: 13px;
+    color: var(--color-text-light);
+    font-weight: 500;
+}
+
+/* ========================================
+   ステージコンテンツ
+   ======================================== */
+
+.stage-content {
+    padding-left: calc(60px + var(--spacing-md));
+}
+
+.stage-description {
+    font-size: 14px;
+    color: var(--color-text-dark);
+    line-height: 1.6;
+    margin-bottom: var(--spacing-md);
+}
+
+.stage-categories {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-sm);
+}
+
+.stage-category-item {
+    background-color: var(--color-bg);
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    text-align: center;
+}
+
+.category-icon {
+    font-size: 20px;
+    margin-bottom: var(--spacing-xs);
+}
+
+.category-level {
+    font-weight: bold;
+    color: var(--color-text-dark);
+}
+
+/* ========================================
+   プログレスインジケーター
+   ======================================== */
+
+.stage-progress-section {
+    background-color: var(--color-white);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: var(--spacing-xl);
+}
+
+.progress-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--color-text-dark);
+    text-align: center;
+    margin-bottom: var(--spacing-md);
+}
+
+.progress-timeline {
+    position: relative;
+    padding: var(--spacing-md) 0;
+}
+
+.progress-line {
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    right: 30px;
+    height: 4px;
+    background-color: var(--color-bg);
+    z-index: 1;
+}
+
+.progress-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-primary) 0%, #7CB9D1 100%);
+    transition: width 0.5s ease;
+    border-radius: 2px;
+}
+
+.progress-dots {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    z-index: 2;
+}
+
+.progress-dot {
+    width: 60px;
+    text-align: center;
+}
+
+.dot {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: var(--color-border);
+    margin: 0 auto var(--spacing-xs);
+    transition: all 0.3s ease;
+}
+
+.progress-dot.completed .dot {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.2);
+}
+
+.progress-dot.current .dot {
+    background: linear-gradient(135deg, var(--color-primary) 0%, #7CB9D1 100%);
+    box-shadow: 0 0 0 4px rgba(168, 216, 234, 0.3);
+    animation: pulse 2s infinite;
+}
+
+.dot-label {
+    font-size: 11px;
+    color: var(--color-text-light);
+    font-weight: 500;
+}
+
+.progress-dot.completed .dot-label,
+.progress-dot.current .dot-label {
+    color: var(--color-text-dark);
+    font-weight: bold;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 4px rgba(168, 216, 234, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 0 0 8px rgba(168, 216, 234, 0.1);
+    }
+}
+
+/* ========================================
+   レスポンシブ調整
+   ======================================== */
+
+@media (max-width: 375px) {
+    .stage-content {
+        padding-left: 0;
+        margin-top: var(--spacing-md);
+    }
+
+    .stage-header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .progress-dots {
+        flex-wrap: wrap;
+        gap: var(--spacing-md);
+    }
+
+    .progress-dot {
+        flex: 0 0 calc(33.333% - var(--spacing-md));
+    }
+}
+
+@media (min-width: 768px) {
+    .stage-list {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .stage-categories {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}

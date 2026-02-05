@@ -1,0 +1,269 @@
+/* ========================================
+   アクションリスト画面
+   ======================================== */
+
+#action-view {
+    padding-bottom: var(--spacing-xl);
+}
+
+/* ========================================
+   カテゴリーカード
+   ======================================== */
+
+.category-cards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.category-card {
+    background-color: var(--color-white);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-md);
+    transition: transform 0.3s ease;
+}
+
+.category-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* カテゴリーごとの色設定 */
+.category-card.blue {
+    border-left: 6px solid var(--color-blue);
+}
+
+.category-card.red {
+    border-left: 6px solid var(--color-red);
+}
+
+.category-card.green {
+    border-left: 6px solid var(--color-green);
+}
+
+.category-card.yellow {
+    border-left: 6px solid var(--color-yellow);
+}
+
+/* ========================================
+   カテゴリーヘッダー
+   ======================================== */
+
+.category-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 2px solid var(--color-bg);
+}
+
+.category-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.category-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--color-text-dark);
+}
+
+.category-subtitle {
+    font-size: 12px;
+    color: var(--color-text-light);
+}
+
+.video-link {
+    background: linear-gradient(135deg, var(--color-primary) 0%, #7CB9D1 100%);
+    color: var(--color-white);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-sm);
+}
+
+.video-link:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.video-icon {
+    font-size: 16px;
+}
+
+/* ========================================
+   タスクリスト
+   ======================================== */
+
+.task-list {
+    list-style: none;
+    margin-bottom: var(--spacing-md);
+}
+
+.task-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md) 0;
+    border-bottom: 1px solid var(--color-bg);
+}
+
+.task-item:last-child {
+    border-bottom: none;
+}
+
+.task-checkbox {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    accent-color: var(--color-primary);
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.task-content {
+    flex: 1;
+}
+
+.task-label {
+    font-size: 15px;
+    color: var(--color-text-dark);
+    cursor: pointer;
+    display: block;
+    margin-bottom: var(--spacing-xs);
+}
+
+.task-item.completed .task-label {
+    text-decoration: line-through;
+    opacity: 0.5;
+}
+
+.task-description {
+    font-size: 13px;
+    color: var(--color-text-light);
+    line-height: 1.5;
+}
+
+/* ========================================
+   好み評価
+   ======================================== */
+
+.preference-section {
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: 2px solid var(--color-bg);
+}
+
+.preference-label {
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--color-text-dark);
+    margin-bottom: var(--spacing-sm);
+}
+
+.preference-buttons {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.preference-btn {
+    flex: 1;
+    padding: var(--spacing-sm);
+    border: 2px solid var(--color-border);
+    background-color: var(--color-white);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+}
+
+.preference-btn:hover {
+    background-color: var(--color-bg);
+}
+
+.preference-btn.active.like {
+    background-color: #FFE5E5;
+    border-color: #FF6B6B;
+    color: #FF6B6B;
+}
+
+.preference-btn.active.dislike {
+    background-color: #E5F3FF;
+    border-color: #4A90E2;
+    color: #4A90E2;
+}
+
+.preference-btn.active.neutral {
+    background-color: #F0F0F0;
+    border-color: var(--color-text-light);
+    color: var(--color-text-light);
+}
+
+.preference-icon {
+    font-size: 16px;
+}
+
+/* ========================================
+   予約ボタン
+   ======================================== */
+
+.reservation-section {
+    margin-top: var(--spacing-xl);
+    text-align: center;
+}
+
+.reservation-btn {
+    width: 100%;
+    background-color: var(--color-text-dark);
+    color: var(--color-white);
+    border: none;
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-md);
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-md);
+}
+
+.reservation-btn:hover {
+    background-color: #1a252f;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.reservation-btn:active {
+    transform: translateY(0);
+}
+
+.reservation-icon {
+    font-size: 20px;
+}
+
+/* ========================================
+   レスポンシブ調整
+   ======================================== */
+
+@media (min-width: 768px) {
+    .category-cards {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+}

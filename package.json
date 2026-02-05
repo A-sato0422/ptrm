@@ -1,0 +1,21 @@
+{
+  "name": "ptrm-app",
+  "version": "1.0.0",
+  "description": "パーソナル・トレーニング・ロードマップ - クライアント向けモチベーション管理システム",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@line/liff": "^2.24.0",
+    "@supabase/supabase-js": "^2.94.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.11"
+  }
+}

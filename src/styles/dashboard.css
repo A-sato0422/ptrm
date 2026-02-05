@@ -1,0 +1,289 @@
+/* ========================================
+   ダッシュボード画面
+   ======================================== */
+
+#dashboard-view {
+    padding-bottom: var(--spacing-xl);
+}
+
+/* ========================================
+   山のビジュアライゼーション
+   ======================================== */
+
+.mountains-container {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto var(--spacing-xl);
+    padding: var(--spacing-md);
+}
+
+.mountain-row {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.mountain {
+    flex: 1;
+    max-width: 150px;
+    text-align: center;
+}
+
+.mountain-icon {
+    position: relative;
+    display: inline-block;
+}
+
+.mountain-img {
+    width: 120px;
+    height: 120px;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+}
+
+.mountain-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid var(--color-white);
+    box-shadow: var(--shadow-sm);
+}
+
+.level-badge {
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--color-white);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.category-name {
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--color-white);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    white-space: nowrap;
+}
+
+/* 山ごとの色設定 */
+.blue-mountain .mountain-img {
+    background: linear-gradient(135deg, #87CEEB 0%, #5FA8D3 100%);
+    border-radius: 50% 50% 0 0;
+}
+
+.red-mountain .mountain-img {
+    background: linear-gradient(135deg, #FFB6B9 0%, #FF8B8F 100%);
+    border-radius: 50% 50% 0 0;
+}
+
+.green-mountain .mountain-img {
+    background: linear-gradient(135deg, #98D8C8 0%, #6FC4B0 100%);
+    border-radius: 50% 50% 0 0;
+}
+
+.yellow-mountain .mountain-img {
+    background: linear-gradient(135deg, #F7DC6F 0%, #F4D03F 100%);
+    border-radius: 50% 50% 0 0;
+}
+
+/* ========================================
+   ゲートロック
+   ======================================== */
+
+.gate-lock {
+    position: relative;
+    text-align: center;
+    margin: var(--spacing-xl) auto;
+    z-index: 10;
+}
+
+.lock-icon {
+    font-size: 48px;
+    margin-bottom: var(--spacing-sm);
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+.lock-message {
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--color-text-dark);
+    line-height: 1.4;
+}
+
+/* ========================================
+   ゴールメッセージ
+   ======================================== */
+
+.goal-message {
+    background-color: var(--color-text-dark);
+    color: var(--color-white);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    text-align: center;
+    margin-bottom: var(--spacing-lg);
+    box-shadow: var(--shadow-md);
+}
+
+.goal-text {
+    font-size: 15px;
+    font-weight: bold;
+    line-height: 1.6;
+}
+
+/* ========================================
+   次のチャレンジ項目
+   ======================================== */
+
+.next-challenge {
+    margin-bottom: var(--spacing-xl);
+}
+
+.challenge-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--color-text-dark);
+    text-align: center;
+    background: linear-gradient(135deg, var(--color-yellow) 0%, #F4D03F 100%);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.challenge-box {
+    background-color: var(--color-text-dark);
+    color: var(--color-white);
+    padding: var(--spacing-lg);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    box-shadow: var(--shadow-md);
+}
+
+.challenge-text {
+    font-size: 15px;
+    font-weight: bold;
+    text-align: center;
+    line-height: 1.6;
+}
+
+/* ========================================
+   アクションリストプレビュー
+   ======================================== */
+
+.action-preview {
+    margin-bottom: var(--spacing-xl);
+}
+
+.action-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--color-text-dark);
+    text-align: center;
+    margin-bottom: var(--spacing-md);
+}
+
+.action-box {
+    background: linear-gradient(135deg, var(--color-yellow) 0%, #F9E79F 100%);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+}
+
+.action-list-preview {
+    list-style: none;
+}
+
+.action-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.action-item:last-child {
+    border-bottom: none;
+}
+
+.action-item input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--color-primary);
+}
+
+.action-item label {
+    flex: 1;
+    font-size: 14px;
+    color: var(--color-text-dark);
+    cursor: pointer;
+}
+
+.action-item.completed label {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+.view-detail-btn {
+    width: 100%;
+    margin-top: var(--spacing-md);
+    background-color: var(--color-text-dark);
+    color: var(--color-white);
+    border: none;
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.view-detail-btn:hover {
+    background-color: #1a252f;
+    transform: translateY(-2px);
+}
+
+.view-detail-btn:active {
+    transform: translateY(0);
+}
+
+/* ========================================
+   レスポンシブ調整
+   ======================================== */
+
+@media (max-width: 375px) {
+    .mountain-img {
+        width: 100px;
+        height: 100px;
+    }
+
+    .avatar {
+        width: 28px;
+        height: 28px;
+    }
+
+    .level-badge,
+    .category-name {
+        font-size: 11px;
+    }
+}
+
+@media (min-width: 768px) {
+    .mountains-container {
+        max-width: 500px;
+    }
+
+    .mountain-img {
+        width: 140px;
+        height: 140px;
+    }
+}

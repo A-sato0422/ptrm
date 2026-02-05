@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>プロフィール - PTRM</title>
+    <link rel="stylesheet" href="./src/styles/main.css">
+    <link rel="stylesheet" href="./src/styles/profile.css">
+</head>
+
+<body>
+    <!-- ヘッダー -->
+    <header class="app-header">
+        <button class="menu-btn" aria-label="メニュー">
+            <span class="hamburger"></span>
+        </button>
+        <h1 class="app-title">エス・エコシステム</h1>
+        <button class="help-btn" aria-label="ヘルプ">?</button>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="main-content">
+        <div id="profile-view" class="view active">
+            <!-- プロフィールヘッダー -->
+            <div class="profile-header">
+                <div class="profile-avatar-container">
+                    <img src="./assets/avatar-default.png" alt="プロフィール画像" class="profile-avatar">
+                </div>
+                <h2 class="profile-name">山田 花子</h2>
+                <p class="profile-member-since">会員登録日: 2025年10月15日</p>
+            </div>
+
+            <!-- 統計情報 -->
+            <div class="profile-stats">
+                <div class="stat-card">
+                    <div class="stat-value">28</div>
+                    <div class="stat-label">平均レベル</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">120</div>
+                    <div class="stat-label">総セッション数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">3</div>
+                    <div class="stat-label">達成バッジ</div>
+                </div>
+            </div>
+
+            <!-- レベル進捗 -->
+            <div class="level-progress-section">
+                <h3 class="level-progress-title">カテゴリー別レベル</h3>
+                <div class="level-progress-items">
+                    <div class="level-progress-item blue">
+                        <div class="level-category-icon blue">💙</div>
+                        <div class="level-progress-content">
+                            <div class="level-category-name">Blue Pilates</div>
+                            <div class="level-progress-bar">
+                                <div class="level-progress-fill" style="width: 90%;"></div>
+                            </div>
+                            <p class="level-progress-text">Lv.27 / 30</p>
+                        </div>
+                    </div>
+
+                    <div class="level-progress-item red">
+                        <div class="level-category-icon red">❤️</div>
+                        <div class="level-progress-content">
+                            <div class="level-category-name">Red Weight</div>
+                            <div class="level-progress-bar">
+                                <div class="level-progress-fill" style="width: 86.7%;"></div>
+                            </div>
+                            <p class="level-progress-text">Lv.26 / 30</p>
+                        </div>
+                    </div>
+
+                    <div class="level-progress-item green">
+                        <div class="level-category-icon green">💚</div>
+                        <div class="level-progress-content">
+                            <div class="level-category-name">Green Sports</div>
+                            <div class="level-progress-bar">
+                                <div class="level-progress-fill" style="width: 96.7%;"></div>
+                            </div>
+                            <p class="level-progress-text">Lv.29 / 30</p>
+                        </div>
+                    </div>
+
+                    <div class="level-progress-item yellow">
+                        <div class="level-category-icon yellow">💛</div>
+                        <div class="level-progress-content">
+                            <div class="level-category-name">Yellow Movement</div>
+                            <div class="level-progress-bar">
+                                <div class="level-progress-fill" style="width: 93.3%;"></div>
+                            </div>
+                            <p class="level-progress-text">Lv.28 / 30</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 達成バッジ -->
+            <div class="badge-section">
+                <h3 class="badge-section-title">達成バッジ</h3>
+                <div class="badge-grid">
+                    <div class="badge-item earned">
+                        <div class="badge-icon">🏅</div>
+                        <div class="badge-name">1合目達成</div>
+                        <div class="badge-date">2025-11-20</div>
+                    </div>
+                    <div class="badge-item earned">
+                        <div class="badge-icon">🎖️</div>
+                        <div class="badge-name">2合目達成</div>
+                        <div class="badge-date">2026-01-15</div>
+                    </div>
+                    <div class="badge-item earned">
+                        <div class="badge-icon">🏆</div>
+                        <div class="badge-name">3合目達成</div>
+                        <div class="badge-date">2026-03-10</div>
+                    </div>
+                    <div class="badge-item">
+                        <div class="badge-icon">⭐</div>
+                        <div class="badge-name">4合目達成</div>
+                    </div>
+                    <div class="badge-item">
+                        <div class="badge-icon">💎</div>
+                        <div class="badge-name">5合目達成</div>
+                    </div>
+                    <div class="badge-item">
+                        <div class="badge-icon">👑</div>
+                        <div class="badge-name">レジェンド</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 基本情報 -->
+            <div class="info-section">
+                <h3 class="info-section-title">基本情報</h3>
+                <div class="info-list">
+                    <div class="info-item">
+                        <span class="info-label">会員番号</span>
+                        <span class="info-value">#00123</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">入会日</span>
+                        <span class="info-value">2025年10月15日</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">継続日数</span>
+                        <span class="info-value">109日</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">現在のステージ</span>
+                        <span class="info-value">Stage 5（洗練・専門期）</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- アクションボタン -->
+            <div class="profile-actions">
+                <button class="profile-action-btn">
+                    <span class="action-icon">📊</span>
+                    <span>詳細統計を見る</span>
+                </button>
+                <button class="profile-action-btn">
+                    <span class="action-icon">📅</span>
+                    <span>セッション履歴</span>
+                </button>
+                <button class="profile-action-btn">
+                    <span class="action-icon">⚙️</span>
+                    <span>設定</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- ナビゲーションバー -->
+    <nav class="bottom-nav">
+        <button class="nav-btn">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-label">ホーム</span>
+        </button>
+        <button class="nav-btn">
+            <span class="nav-icon">🎯</span>
+            <span class="nav-label">アクション</span>
+        </button>
+        <button class="nav-btn">
+            <span class="nav-icon">⛰️</span>
+            <span class="nav-label">ステージ</span>
+        </button>
+        <button class="nav-btn active">
+            <span class="nav-icon">👤</span>
+            <span class="nav-label">プロフィール</span>
+        </button>
+        <button class="nav-btn">
+            <span class="nav-icon">📅</span>
+            <span class="nav-label">予約</span>
+        </button>
+    </nav>
+
+    <script type="module" src="./src/main.ts"></script>
+</body>
+
+</html>

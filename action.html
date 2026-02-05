@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>アクションリスト - PTRM</title>
+    <link rel="stylesheet" href="./src/styles/main.css">
+    <link rel="stylesheet" href="./src/styles/action.css">
+</head>
+
+<body>
+    <!-- ヘッダー -->
+    <header class="app-header">
+        <button class="menu-btn" aria-label="メニュー">
+            <span class="hamburger"></span>
+        </button>
+        <h1 class="app-title">エス・エコシステム</h1>
+        <button class="help-btn" aria-label="ヘルプ">?</button>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="main-content">
+        <div id="action-view" class="view active">
+            <h2 class="section-title">現在の課題 (Action List)</h2>
+
+            <!-- カテゴリーカード -->
+            <div class="category-cards">
+                <!-- Blue Pilates -->
+                <div class="category-card blue">
+                    <div class="category-header">
+                        <div class="category-info">
+                            <div>
+                                <h3 class="category-title">Blue Pilates</h3>
+                                <p class="category-subtitle">(動画ページへ)</p>
+                            </div>
+                        </div>
+                        <a href="#" class="video-link">
+                            <span class="video-icon">▶</span>
+                        </a>
+                    </div>
+
+                    <ul class="task-list">
+                        <li class="task-item">
+                            <input type="checkbox" id="blue-task1" class="task-checkbox">
+                            <div class="task-content">
+                                <label for="blue-task1" class="task-label">骨盤ニュートラル維持</label>
+                            </div>
+                        </li>
+                    </ul>
+
+                    <div class="preference-section">
+                        <p class="preference-label">好み評価:</p>
+                        <div class="preference-buttons">
+                            <button class="preference-btn active like">
+                                <span class="preference-icon">❤️</span>
+                                <span>好き</span>
+                            </button>
+                            <button class="preference-btn dislike">
+                                <span class="preference-icon">✗</span>
+                                <span>嫌い</span>
+                            </button>
+                            <button class="preference-btn neutral">
+                                <span class="preference-icon">—</span>
+                                <span>どちらでもない</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Red Weight -->
+                <div class="category-card red">
+                    <div class="category-header">
+                        <div class="category-info">
+                            <div>
+                                <h3 class="category-title">Red Weight</h3>
+                                <p class="category-subtitle">(動画ページへ)</p>
+                            </div>
+                        </div>
+                        <a href="#" class="video-link">
+                            <span class="video-icon">▶</span>
+                        </a>
+                    </div>
+
+                    <ul class="task-list">
+                        <li class="task-item completed">
+                            <input type="checkbox" id="red-task1" class="task-checkbox" checked>
+                            <div class="task-content">
+                                <label for="red-task1" class="task-label">骨盤ニュートラル維持</label>
+                            </div>
+                        </li>
+                    </ul>
+
+                    <div class="preference-section">
+                        <p class="preference-label">好み評価:</p>
+                        <div class="preference-buttons">
+                            <button class="preference-btn active like">
+                                <span class="preference-icon">❤️</span>
+                                <span>好き</span>
+                            </button>
+                            <button class="preference-btn dislike">
+                                <span class="preference-icon">✗</span>
+                                <span>嫌い</span>
+                            </button>
+                            <button class="preference-btn neutral">
+                                <span class="preference-icon">—</span>
+                                <span>どちらでもない</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Green Sports -->
+                <div class="category-card green">
+                    <div class="category-header">
+                        <div class="category-info">
+                            <div>
+                                <h3 class="category-title">Green Sports</h3>
+                                <p class="category-subtitle">(動画ページへ)</p>
+                            </div>
+                        </div>
+                        <a href="#" class="video-link">
+                            <span class="video-icon">▶</span>
+                        </a>
+                    </div>
+
+                    <ul class="task-list">
+                        <li class="task-item">
+                            <input type="checkbox" id="green-task1" class="task-checkbox">
+                            <div class="task-content">
+                                <label for="green-task1" class="task-label">15分ジョグ</label>
+                            </div>
+                        </li>
+                    </ul>
+
+                    <div class="preference-section">
+                        <p class="preference-label">好み評価:</p>
+                        <div class="preference-buttons">
+                            <button class="preference-btn active like">
+                                <span class="preference-icon">❤️</span>
+                                <span>好き</span>
+                            </button>
+                            <button class="preference-btn dislike">
+                                <span class="preference-icon">✗</span>
+                                <span>嫌い</span>
+                            </button>
+                            <button class="preference-btn neutral">
+                                <span class="preference-icon">—</span>
+                                <span>どちらでもない</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Yellow Movement -->
+                <div class="category-card yellow">
+                    <div class="category-header">
+                        <div class="category-info">
+                            <div>
+                                <h3 class="category-title">Yellow Movement</h3>
+                                <p class="category-subtitle">(動画ページへ)</p>
+                            </div>
+                        </div>
+                        <a href="#" class="video-link">
+                            <span class="video-icon">▶</span>
+                        </a>
+                    </div>
+
+                    <ul class="task-list">
+                        <li class="task-item">
+                            <input type="checkbox" id="yellow-task1" class="task-checkbox">
+                            <div class="task-content">
+                                <label for="yellow-task1" class="task-label">肩甲骨ストレッチ</label>
+                            </div>
+                        </li>
+                    </ul>
+
+                    <div class="preference-section">
+                        <p class="preference-label">好み評価:</p>
+                        <div class="preference-buttons">
+                            <button class="preference-btn active like">
+                                <span class="preference-icon">❤️</span>
+                                <span>好き</span>
+                            </button>
+                            <button class="preference-btn dislike">
+                                <span class="preference-icon">✗</span>
+                                <span>嫌い</span>
+                            </button>
+                            <button class="preference-btn neutral">
+                                <span class="preference-icon">—</span>
+                                <span>どちらでもない</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 予約セクション -->
+            <div class="reservation-section">
+                <button class="reservation-btn">
+                    <span class="reservation-icon">📅</span>
+                    <span>現在の予約状況はこちら</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- ナビゲーションバー -->
+    <nav class="bottom-nav">
+        <button class="nav-btn">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-label">ホーム</span>
+        </button>
+        <button class="nav-btn active">
+            <span class="nav-icon">🎯</span>
+            <span class="nav-label">アクション</span>
+        </button>
+        <button class="nav-btn">
+            <span class="nav-icon">⛰️</span>
+            <span class="nav-label">ステージ</span>
+        </button>
+        <button class="nav-btn">
+            <span class="nav-icon">👤</span>
+            <span class="nav-label">プロフィール</span>
+        </button>
+        <button class="nav-btn">
+            <span class="nav-icon">📅</span>
+            <span class="nav-label">予約</span>
+        </button>
+    </nav>
+
+    <script type="module" src="./src/main.ts"></script>
+</body>
+
+</html>

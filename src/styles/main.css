@@ -1,0 +1,376 @@
+/* ========================================
+   ベーススタイル
+   ======================================== */
+
+:root {
+    /* カラーパレット - パステルカラー */
+    --color-primary: #A8D8EA;
+    /* メイン水色 */
+    --color-blue: #87CEEB;
+    /* Blue Pilates */
+    --color-red: #FFB6B9;
+    /* Red Weight */
+    --color-green: #98D8C8;
+    /* Green Sports */
+    --color-yellow: #F7DC6F;
+    /* Yellow Movement */
+    --color-bg: #E8F6F8;
+    /* 背景色 */
+    --color-white: #FFFFFF;
+    --color-text-dark: #2C3E50;
+    --color-text-light: #7F8C8D;
+    --color-border: #BDC3C7;
+    --color-shadow: rgba(0, 0, 0, 0.1);
+
+    /* フォント */
+    --font-main: 'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN W3', 'Meiryo', 'メイリオ', sans-serif;
+
+    /* スペーシング */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+
+    /* ボーダーラジウス */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+
+    /* シャドウ */
+    --shadow-sm: 0 2px 4px var(--color-shadow);
+    --shadow-md: 0 4px 8px var(--color-shadow);
+    --shadow-lg: 0 8px 16px var(--color-shadow);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html,
+body {
+    height: 100%;
+    overflow-x: hidden;
+}
+
+body {
+    font-family: var(--font-main);
+    background-color: var(--color-bg);
+    color: var(--color-text-dark);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ========================================
+   ヘッダー
+   ======================================== */
+
+.app-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: linear-gradient(135deg, var(--color-primary) 0%, #7CB9D1 100%);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--spacing-md);
+    box-shadow: var(--shadow-md);
+    z-index: 1000;
+}
+
+.menu-btn,
+.help-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-white);
+    font-size: 20px;
+    font-weight: bold;
+    border-radius: 50%;
+    transition: background-color 0.3s ease;
+}
+
+.menu-btn:hover,
+.help-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.hamburger {
+    width: 24px;
+    height: 2px;
+    background-color: var(--color-white);
+    position: relative;
+    display: block;
+}
+
+.hamburger::before,
+.hamburger::after {
+    content: '';
+    position: absolute;
+    width: 24px;
+    height: 2px;
+    background-color: var(--color-white);
+    left: 0;
+}
+
+.hamburger::before {
+    top: -8px;
+}
+
+.hamburger::after {
+    top: 8px;
+}
+
+.app-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--color-white);
+    text-align: center;
+    flex: 1;
+    letter-spacing: 0.5px;
+}
+
+/* ========================================
+   メインコンテンツ
+   ======================================== */
+
+.main-content {
+    margin-top: 60px;
+    margin-bottom: 80px;
+    padding: var(--spacing-lg) var(--spacing-md);
+    min-height: calc(100vh - 140px);
+}
+
+.view {
+    display: none;
+}
+
+.view.active {
+    display: block;
+}
+
+.section-title {
+    font-size: 22px;
+    font-weight: bold;
+    color: var(--color-text-dark);
+    text-align: center;
+    margin-bottom: var(--spacing-lg);
+}
+
+/* ========================================
+   ボトムナビゲーション
+   ======================================== */
+
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background-color: var(--color-white);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 -2px 8px var(--color-shadow);
+    z-index: 1000;
+    padding: var(--spacing-sm) 0;
+}
+
+.nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    flex: 1;
+    padding: var(--spacing-xs);
+    transition: transform 0.2s ease;
+}
+
+.nav-btn:active {
+    transform: scale(0.95);
+}
+
+.nav-icon {
+    font-size: 24px;
+    margin-bottom: var(--spacing-xs);
+}
+
+.nav-label {
+    font-size: 12px;
+    color: var(--color-text-light);
+    font-weight: 500;
+}
+
+.nav-btn.active .nav-label {
+    color: var(--color-primary);
+    font-weight: bold;
+}
+
+.nav-btn.active .nav-icon {
+    transform: scale(1.1);
+}
+
+/* ========================================
+   共通ボタン
+   ======================================== */
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--color-primary) 0%, #7CB9D1 100%);
+    color: var(--color-white);
+    border: none;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: var(--shadow-md);
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-secondary {
+    background-color: var(--color-white);
+    color: var(--color-text-dark);
+    border: 2px solid var(--color-border);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background-color: var(--color-bg);
+    border-color: var(--color-primary);
+}
+
+/* ========================================
+   カード
+   ======================================== */
+
+.card {
+    background-color: var(--color-white);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.card-title {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: var(--spacing-md);
+    color: var(--color-text-dark);
+}
+
+/* ========================================
+   レスポンシブ対応
+   ======================================== */
+
+@media (min-width: 768px) {
+    .main-content {
+        max-width: 480px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .app-header {
+        max-width: 480px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    .bottom-nav {
+        max-width: 480px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+}
+
+/* ========================================
+   アニメーション
+   ======================================== */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* ========================================
+   ユーティリティ
+   ======================================== */
+
+.text-center {
+    text-align: center;
+}
+
+.mt-sm {
+    margin-top: var(--spacing-sm);
+}
+
+.mt-md {
+    margin-top: var(--spacing-md);
+}
+
+.mt-lg {
+    margin-top: var(--spacing-lg);
+}
+
+.mb-sm {
+    margin-bottom: var(--spacing-sm);
+}
+
+.mb-md {
+    margin-bottom: var(--spacing-md);
+}
+
+.mb-lg {
+    margin-bottom: var(--spacing-lg);
+}
+
+.p-sm {
+    padding: var(--spacing-sm);
+}
+
+.p-md {
+    padding: var(--spacing-md);
+}
+
+.p-lg {
+    padding: var(--spacing-lg);
+}
