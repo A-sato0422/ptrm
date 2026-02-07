@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   root: '.',
-  base: '/PTRM-Personal-Training-Customer-Management-System/',
+  base: '/',
   build: {
     outDir: 'dist',
     rollupOptions: {
