@@ -13,89 +13,56 @@
 .mountains-container {
     position: relative;
     width: 100%;
-    max-width: 400px;
+    max-width: 100%;
     margin: 0 auto var(--spacing-xl);
-    padding: var(--spacing-md);
+    /* padding: var(--spacing-sm); */
 }
 
 .mountain-row {
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
     align-items: center;
-    gap: var(--spacing-md);
-    margin-bottom: var(--spacing-lg);
+    gap: 0;
+    margin-bottom: 0;
 }
 
 .mountain {
     flex: 1;
-    max-width: 150px;
+    max-width: 50%;
     text-align: center;
 }
 
 .mountain-icon {
     position: relative;
     display: inline-block;
+    width: 100%;
 }
 
 .mountain-img {
-    width: 120px;
-    height: 120px;
+    width: 100%;
+    height: auto;
     filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+    object-fit: contain;
 }
 
 .mountain-label {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    top: 18px;
+    left: 36px;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     gap: var(--spacing-xs);
 }
 
-.avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: 2px solid var(--color-white);
-    box-shadow: var(--shadow-sm);
-}
-
 .level-badge {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: bold;
     color: var(--color-white);
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.category-name {
-    font-size: 12px;
-    font-weight: bold;
-    color: var(--color-white);
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    white-space: nowrap;
-}
-
-/* 山ごとの色設定 */
-.blue-mountain .mountain-img {
-    background: linear-gradient(135deg, #87CEEB 0%, #5FA8D3 100%);
-    border-radius: 50% 50% 0 0;
-}
-
-.red-mountain .mountain-img {
-    background: linear-gradient(135deg, #FFB6B9 0%, #FF8B8F 100%);
-    border-radius: 50% 50% 0 0;
-}
-
-.green-mountain .mountain-img {
-    background: linear-gradient(135deg, #98D8C8 0%, #6FC4B0 100%);
-    border-radius: 50% 50% 0 0;
-}
-
-.yellow-mountain .mountain-img {
-    background: linear-gradient(135deg, #F7DC6F 0%, #F4D03F 100%);
-    border-radius: 50% 50% 0 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.3);
+    padding: 4px 8px;
+    border-radius: 4px;
 }
 
 /* ========================================
@@ -103,23 +70,31 @@
    ======================================== */
 
 .gate-lock {
-    position: relative;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     text-align: center;
-    margin: var(--spacing-xl) auto;
     z-index: 10;
 }
 
 .lock-icon {
-    font-size: 48px;
-    margin-bottom: var(--spacing-sm);
+    font-size: 60px;
     filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+    position: relative;
 }
 
 .lock-message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     font-size: 14px;
     font-weight: bold;
-    color: var(--color-text-dark);
+    color: var(--color-white);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
     line-height: 1.4;
+    white-space: nowrap;
 }
 
 /* ========================================
@@ -188,13 +163,16 @@
     font-weight: bold;
     color: var(--color-text-dark);
     text-align: center;
-    margin-bottom: var(--spacing-md);
+    background: linear-gradient(135deg, var(--color-yellow) 0%, #F9E79F 100%);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    margin-bottom: 0;
 }
 
 .action-box {
-    background: linear-gradient(135deg, var(--color-yellow) 0%, #F9E79F 100%);
+    background: var(--color-white);
     padding: var(--spacing-lg);
-    border-radius: var(--radius-md);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
     box-shadow: var(--shadow-md);
 }
 
@@ -218,7 +196,67 @@
     width: 20px;
     height: 20px;
     cursor: pointer;
-    accent-color: var(--color-primary);
+    appearance: none;
+    -webkit-appearance: none;
+    border: 2px solid #000;
+    border-radius: 3px;
+    outline: none;
+    position: relative;
+    background-color: white;
+    transition: all 0.2s ease;
+}
+
+.action-item input[type="checkbox"]:checked {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.action-item input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* チェックボックスの色を項目ごとに設定 */
+.action-item.blue input[type="checkbox"] {
+    border-color: #5FA8D3;
+}
+
+.action-item.blue input[type="checkbox"]:checked {
+    background-color: #5FA8D3;
+    border-color: #5FA8D3;
+}
+
+.action-item.red input[type="checkbox"] {
+    border-color: #FF8B8F;
+}
+
+.action-item.red input[type="checkbox"]:checked {
+    background-color: #FF8B8F;
+    border-color: #FF8B8F;
+}
+
+.action-item.yellow input[type="checkbox"] {
+    border-color: #F4D03F;
+}
+
+.action-item.yellow input[type="checkbox"]:checked {
+    background-color: #F4D03F;
+    border-color: #F4D03F;
+}
+
+.action-item.green input[type="checkbox"] {
+    border-color: #6FC4B0;
+}
+
+.action-item.green input[type="checkbox"]:checked {
+    background-color: #6FC4B0;
+    border-color: #6FC4B0;
 }
 
 .action-item label {
