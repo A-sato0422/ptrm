@@ -79,7 +79,7 @@ body {
     background: linear-gradient(135deg, var(--color-primary) 0%, #7CB9D1 100%);
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     padding: 0 var(--spacing-md);
     box-shadow: var(--shadow-md);
     z-index: 1000;
@@ -116,8 +116,24 @@ body {
     font-weight: bold;
     color: var(--color-white);
     text-align: center;
-    flex: 1;
     letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: var(--spacing-md);
+}
+
+.app-title span {
+    font-size: 10px;
+    font-weight: normal;
+    white-space: nowrap;
+    opacity: 0.8;
+}
+
+@media (min-width: 768px) {
+    .app-title span {
+        font-size: 12px;
+    }
 }
 
 /* ========================================
