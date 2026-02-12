@@ -351,7 +351,6 @@ const mountainModalCloseBtn = document.querySelector('.mountain-modal-close');
 mountainModalCloseBtn?.addEventListener('click', closeMountainDetailModal);
 
 // モーダル背景クリックで閉じる
-const mountainModal = document.getElementById('mountain-detail-modal');
 const mountainModalOverlay = document.querySelector('.mountain-modal-overlay');
 mountainModalOverlay?.addEventListener('click', closeMountainDetailModal);
 
