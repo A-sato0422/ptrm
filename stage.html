@@ -12,269 +12,129 @@
 <body>
     <!-- ヘッダー -->
     <header class="app-header">
-        <button class="menu-btn" aria-label="メニュー">
-            <span class="hamburger"></span>
-        </button>
         <h1 class="app-title">PTRM</h1>
-        <button class="help-btn" aria-label="ヘルプ">?</button>
     </header>
 
     <!-- メインコンテンツ -->
     <main class="main-content">
-        <div id="stage-view" class="view active">
-            <h2 class="section-title">6つのステージ（合目）</h2>
-
-            <!-- イントロ -->
-            <div class="stage-intro">
-                <h3 class="stage-intro-title">あなたの成長の道のり</h3>
-                <p class="stage-intro-text">
-                    6つのステージを登っていくことで、あなたの成長を実感できます。<br>
-                    各ステージをクリアして、さらなる高みを目指しましょう！
-                </p>
-            </div>
-
-            <!-- プログレスインジケーター -->
-            <div class="stage-progress-section">
-                <h3 class="progress-title">現在の進捗</h3>
-                <div class="progress-timeline">
-                    <div class="progress-line">
-                        <div class="progress-fill" style="width: 16.6%;"></div>
-                    </div>
-                    <div class="progress-dots">
-                        <div class="progress-dot completed">
-                            <div class="dot"></div>
-                            <div class="dot-label">Stage 1</div>
-                        </div>
-                        <div class="progress-dot current">
-                            <div class="dot"></div>
-                            <div class="dot-label">Stage 2</div>
-                        </div>
-                        <div class="progress-dot">
-                            <div class="dot"></div>
-                            <div class="dot-label">Stage 3</div>
-                        </div>
-                        <div class="progress-dot">
-                            <div class="dot"></div>
-                            <div class="dot-label">Stage 4</div>
-                        </div>
-                        <div class="progress-dot">
-                            <div class="dot"></div>
-                            <div class="dot-label">Stage 5</div>
-                        </div>
-                        <div class="progress-dot">
-                            <div class="dot"></div>
-                            <div class="dot-label">Stage 6</div>
-                        </div>
-                    </div>
+        <!-- ステータスカード -->
+        <div class="status-cards">
+            <div class="status-card primary">
+                <div class="status-icon">🚩</div>
+                <div class="status-info">
+                    <p class="status-label">現在のステータス</p>
+                    <h2 class="status-value">第3合目 到着！</h2>
+                    <p class="status-subtitle">頂上まであと3ステージ</p>
                 </div>
             </div>
 
-            <!-- ステージリスト -->
-            <div class="stage-list">
-                <!-- Stage 1 -->
-                <div class="stage-card stage-1 completed">
-                    <div class="stage-header">
-                        <div class="stage-number">1</div>
-                        <div class="stage-title-group">
-                            <h3 class="stage-name">導入・習得期</h3>
-                            <p class="stage-level-range">Lv.1 - Lv.5</p>
+            <div class="status-card goal">
+                <div class="goal-info">
+                    <div class="goal-header">
+                        <div>
+                            <p class="goal-label">最終目標：体重 60kg</p>
+                            <h3 class="goal-current">現在の差: <span class="goal-diff">-5.0kg</span></h3>
+                        </div>
+                        <div class="goal-stats">
+                            <p class="goal-start">スタート: 70kg</p>
+                            <p class="goal-now">現在: 65.0kg</p>
                         </div>
                     </div>
-                    <div class="stage-content">
-                        <p class="stage-description">
-                            トレーニングの基礎を学び、正しいフォームを身につける期間です。
-                        </p>
-                        <div class="stage-categories">
-                            <div class="stage-category-item">
-                                <div class="category-icon">💙</div>
-                                <div class="category-level">Lv.1-5</div>
-                            </div>
-                            <div class="stage-category-item">
-                                <div class="category-icon">❤️</div>
-                                <div class="category-level">Lv.1-5</div>
-                            </div>
-                            <div class="stage-category-item">
-                                <div class="category-icon">💚</div>
-                                <div class="category-level">Lv.1-5</div>
-                            </div>
-                            <div class="stage-category-item">
-                                <div class="category-icon">💛</div>
-                                <div class="category-level">Lv.1-5</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Stage 2 -->
-                <div class="stage-card stage-2">
-                    <div class="stage-header">
-                        <div class="stage-number">2</div>
-                        <div class="stage-title-group">
-                            <h3 class="stage-name">定着・習慣期</h3>
-                            <p class="stage-level-range">Lv.6 - Lv.10</p>
-                        </div>
-                    </div>
-                    <div class="stage-content">
-                        <p class="stage-description">
-                            トレーニングが習慣化し、体の変化を実感し始める期間です。
-                        </p>
-                        <div class="stage-categories">
-                            <div class="stage-category-item">
-                                <div class="category-icon">💙</div>
-                                <div class="category-level">Lv.6-10</div>
-                            </div>
-                            <div class="stage-category-item">
-                                <div class="category-icon">❤️</div>
-                                <div class="category-level">Lv.6-10</div>
-                            </div>
-                            <div class="stage-category-item">
-                                <div class="category-icon">💚</div>
-                                <div class="category-level">Lv.6-10</div>
-                            </div>
-                            <div class="stage-category-item">
-                                <div class="category-icon">💛</div>
-                                <div class="category-level">Lv.6-10</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Stage 3 -->
-                <div class="stage-card stage-3">
-                    <div class="stage-header">
-                        <div class="stage-number">3</div>
-                        <div class="stage-title-group">
-                            <h3 class="stage-name">向上・変化期</h3>
-                            <p class="stage-level-range">Lv.11 - Lv.15</p>
-                        </div>
-                    </div>
-                    <div class="stage-content">
-                        <p class="stage-description">
-                            明確な体の変化を感じ、新しいチャレンジに挑む期間です。
-                        </p>
-                        <div class="stage-categories">
-                            <div class="stage-category-item">
-                                <div class="category-icon">💙</div>
-                                <div class="category-level">Lv.11-15</div>
-                            </div>
-                            <div class="stage-category-item">
-                                <div class="category-icon">❤️</div>
-                                <div class="category-level">Lv.11-15</div>
-                            </div>
-                            <div class="stage-category-item">
-                                <div class="category-icon">💚</div>
-                                <div class="category-level">Lv.11-15</div>
-                            </div>
-                            <div class="stage-category-item">
-                                <div class="category-icon">💛</div>
-                                <div class="category-level">Lv.11-15</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Stage 4 -->
-                <div class="stage-card stage-4">
-                    <div class="stage-header">
-                        <div class="stage-number">4</div>
-                        <div class="stage-title-group">
-                            <h3 class="stage-name">応用・発展期</h3>
-                            <p class="stage-level-range">Lv.16 - Lv.20</p>
-                        </div>
-                    </div>
-                    <div class="stage-content">
-                        <p class="stage-description">
-                            ★40代レベルへの挑戦。より高度なトレーニングに取り組む期間です。
-                        </p>
-                        <div class="stage-categories">
-                            <div class="stage-category-item">
-                                <div class="category-icon">💙</div>
-                                <div class="category-level">Lv.16-20</div>
-                            </div>
-                            <div class="stage-category-item">
-                                <div class="category-icon">❤️</div>
-                                <div class="category-level">Lv.16-20</div>
-                            </div>
-                            <div class="stage-category-item">
-                                <div class="category-icon">💚</div>
-                                <div class="category-level">Lv.16-20</div>
-                            </div>
-                            <div class="stage-category-item">
-                                <div class="category-icon">💛</div>
-                                <div class="category-level">Lv.16-20</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Stage 5 -->
-                <div class="stage-card stage-5">
-                    <div class="stage-header">
-                        <div class="stage-number">5</div>
-                        <div class="stage-title-group">
-                            <h3 class="stage-name">洗練・専門期</h3>
-                            <p class="stage-level-range">Lv.21 - Lv.25</p>
-                        </div>
-                    </div>
-                    <div class="stage-content">
-                        <p class="stage-description">
-                            専門的なスキルを磨き、高いレベルの技術を習得する期間です。
-                        </p>
-                        <div class="stage-categories">
-                            <div class="stage-category-item">
-                                <div class="category-icon">💙</div>
-                                <div class="category-level">Lv.21-25</div>
-                            </div>
-                            <div class="stage-category-item">
-                                <div class="category-icon">❤️</div>
-                                <div class="category-level">Lv.21-25</div>
-                            </div>
-                            <div class="stage-category-item">
-                                <div class="category-icon">💚</div>
-                                <div class="category-level">Lv.21-25</div>
-                            </div>
-                            <div class="stage-category-item">
-                                <div class="category-icon">💛</div>
-                                <div class="category-level">Lv.21-25</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Stage 6 -->
-                <div class="stage-card stage-6">
-                    <div class="stage-header">
-                        <div class="stage-number">6</div>
-                        <div class="stage-title-group">
-                            <h3 class="stage-name">究極・レジェンド</h3>
-                            <p class="stage-level-range">Lv.26 - Lv.30</p>
-                        </div>
-                    </div>
-                    <div class="stage-content">
-                        <p class="stage-description">
-                            究極のレベルに到達し、レジェンドとして輝く期間です。
-                        </p>
-                        <div class="stage-categories">
-                            <div class="stage-category-item">
-                                <div class="category-icon">💙</div>
-                                <div class="category-level">Lv.26-30</div>
-                            </div>
-                            <div class="stage-category-item">
-                                <div class="category-icon">❤️</div>
-                                <div class="category-level">Lv.26-30</div>
-                            </div>
-                            <div class="stage-category-item">
-                                <div class="category-icon">💚</div>
-                                <div class="category-level">Lv.26-30</div>
-                            </div>
-                            <div class="stage-category-item">
-                                <div class="category-icon">💛</div>
-                                <div class="category-level">Lv.26-30</div>
-                            </div>
-                        </div>
+                    <div class="goal-progress">
+                        <div class="goal-progress-bar" style="width: 50%;"></div>
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- ステージコンテナ -->
+        <div class="stage-container">
+            <!-- 山のライン（背景） -->
+            <div class="mountain-line"></div>
+            <div class="mountain-line mountain-line-active"></div>
+
+            <!-- Stage 6: 山頂 -->
+            <div class="stage-row">
+                <div class="trail-dot"></div>
+                <div class="stage-card inactive-stage locked-stage">
+                    <div class="stage-icon">
+                        <span class="icon">🏔️</span>
+                    </div>
+                    <span class="stage-badge">Stage 6</span>
+                    <h3 class="stage-title">山頂：目標達成</h3>
+                    <p class="stage-description">未知の領域、理想の自分へ到達</p>
+                </div>
+            </div>
+
+            <!-- Stage 5: 第5合目 -->
+            <div class="stage-row">
+                <div class="trail-dot"></div>
+                <div class="stage-card inactive-stage">
+                    <div class="stage-icon">
+                        <span class="icon">💪</span>
+                    </div>
+                    <span class="stage-badge">Stage 5</span>
+                    <h3 class="stage-title">5合目：洗練・専門期</h3>
+                    <p class="stage-description">より高度なトレーニングと習慣化</p>
+                </div>
+            </div>
+
+            <!-- Stage 4: 第4合目 -->
+            <div class="stage-row">
+                <div class="trail-dot"></div>
+                <div class="stage-card inactive-stage">
+                    <div class="stage-icon">
+                        <span class="icon">⚡</span>
+                    </div>
+                    <span class="stage-badge">Stage 4</span>
+                    <h3 class="stage-title">4合目：加速・強化期</h3>
+                    <p class="stage-description">代謝が上がり、身体の変化を実感するフェーズ</p>
+                </div>
+            </div>
+
+            <!-- Stage 3: 第3合目（現在地） -->
+            <div class="stage-row">
+                <div class="trail-dot active-dot"></div>
+                <div class="stage-card active-stage">
+                    <div class="stage-icon active-icon">
+                        <span class="icon">🧘</span>
+                    </div>
+                    <span class="stage-badge active-badge">Stage 3 - Current</span>
+                    <h3 class="stage-title">3合目：調整・安定期</h3>
+                    <p class="stage-description">
+                        正しいフォームを体に刻み込み、安定したパフォーマンスの土台を築きます。
+                    </p>
+                </div>
+            </div>
+
+            <!-- Stage 2: 第2合目（完了） -->
+            <div class="stage-row">
+                <div class="trail-dot completed-dot"></div>
+                <div class="stage-card completed-stage">
+                    <div class="stage-icon completed-icon">
+                        <span class="icon">🏃</span>
+                    </div>
+                    <span class="stage-badge completed-badge">Stage 2</span>
+                    <h3 class="stage-title">2合目：導入・基礎期</h3>
+                    <p class="stage-description">無理のない運動習慣の土台作りを完了しました</p>
+                </div>
+            </div>
+
+            <!-- Stage 1: 第1合目（完了） -->
+            <div class="stage-row">
+                <div class="trail-dot completed-dot"></div>
+                <div class="stage-card completed-stage">
+                    <div class="stage-icon completed-icon">
+                        <span class="icon">🏠</span>
+                    </div>
+                    <span class="stage-badge completed-badge">Stage 1</span>
+                    <h3 class="stage-title">1合目：スタート・準備期</h3>
+                    <p class="stage-description">最初の一歩。カウンセリングと基本姿勢の習得</p>
+                </div>
+            </div>
+
+            <!-- ベースキャンプ -->
+            <div class="stage-row base-camp"></div>
         </div>
     </main>
 

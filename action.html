@@ -12,16 +12,16 @@
 <body>
     <!-- ヘッダー -->
     <header class="app-header">
-        <button class="menu-btn" aria-label="メニュー">
-            <span class="hamburger"></span>
-        </button>
-        <h1 class="app-title">PTRM</h1>
-        <button class="help-btn" aria-label="ヘルプ">?</button>
+        <h1 class="app-title">aaaaa</h1>
     </header>
-
     <!-- メインコンテンツ -->
     <main class="main-content">
         <div id="action-view" class="view active">
+            <!-- 成功メッセージ -->
+            <div id="success-message" class="success-message" style="display: none;">
+                課題を提出しました
+            </div>
+
             <h2 class="section-title">現在の課題 (Action List)</h2>
 
             <!-- カテゴリーカード -->
@@ -41,31 +41,13 @@
                     </div>
 
                     <ul class="task-list">
-                        <li class="task-item">
-                            <input type="checkbox" id="blue-task1" class="task-checkbox">
+                        <li class="task-item" data-task-id="blue-task1" data-completed="false">
                             <div class="task-content">
-                                <label for="blue-task1" class="task-label">骨盤ニュートラル維持</label>
+                                <span class="task-label">骨盤ニュートラル維持</span>
                             </div>
+                            <button class="complete-btn">完了</button>
                         </li>
                     </ul>
-
-                    <div class="preference-section">
-                        <p class="preference-label">好み評価:</p>
-                        <div class="preference-buttons">
-                            <button class="preference-btn active like">
-                                <span class="preference-icon">❤️</span>
-                                <span>好き</span>
-                            </button>
-                            <button class="preference-btn dislike">
-                                <span class="preference-icon">✗</span>
-                                <span>嫌い</span>
-                            </button>
-                            <button class="preference-btn neutral">
-                                <span class="preference-icon">—</span>
-                                <span>どちらでもない</span>
-                            </button>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Red Weight -->
@@ -83,31 +65,13 @@
                     </div>
 
                     <ul class="task-list">
-                        <li class="task-item completed">
-                            <input type="checkbox" id="red-task1" class="task-checkbox" checked>
+                        <li class="task-item" data-task-id="red-task1" data-completed="false">
                             <div class="task-content">
-                                <label for="red-task1" class="task-label">骨盤ニュートラル維持</label>
+                                <span class="task-label">骨盤ニュートラル維持</span>
                             </div>
+                            <button class="complete-btn">完了</button>
                         </li>
                     </ul>
-
-                    <div class="preference-section">
-                        <p class="preference-label">好み評価:</p>
-                        <div class="preference-buttons">
-                            <button class="preference-btn active like">
-                                <span class="preference-icon">❤️</span>
-                                <span>好き</span>
-                            </button>
-                            <button class="preference-btn dislike">
-                                <span class="preference-icon">✗</span>
-                                <span>嫌い</span>
-                            </button>
-                            <button class="preference-btn neutral">
-                                <span class="preference-icon">—</span>
-                                <span>どちらでもない</span>
-                            </button>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Green Sports -->
@@ -125,31 +89,13 @@
                     </div>
 
                     <ul class="task-list">
-                        <li class="task-item">
-                            <input type="checkbox" id="green-task1" class="task-checkbox">
+                        <li class="task-item" data-task-id="green-task1" data-completed="false">
                             <div class="task-content">
-                                <label for="green-task1" class="task-label">15分ジョグ</label>
+                                <span class="task-label">15分ジョグ</span>
                             </div>
+                            <button class="complete-btn">完了</button>
                         </li>
                     </ul>
-
-                    <div class="preference-section">
-                        <p class="preference-label">好み評価:</p>
-                        <div class="preference-buttons">
-                            <button class="preference-btn active like">
-                                <span class="preference-icon">❤️</span>
-                                <span>好き</span>
-                            </button>
-                            <button class="preference-btn dislike">
-                                <span class="preference-icon">✗</span>
-                                <span>嫌い</span>
-                            </button>
-                            <button class="preference-btn neutral">
-                                <span class="preference-icon">—</span>
-                                <span>どちらでもない</span>
-                            </button>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Yellow Movement -->
@@ -167,31 +113,13 @@
                     </div>
 
                     <ul class="task-list">
-                        <li class="task-item">
-                            <input type="checkbox" id="yellow-task1" class="task-checkbox">
+                        <li class="task-item" data-task-id="yellow-task1" data-completed="false">
                             <div class="task-content">
-                                <label for="yellow-task1" class="task-label">肩甲骨ストレッチ</label>
+                                <span class="task-label">肩甲骨ストレッチ</span>
                             </div>
+                            <button class="complete-btn">完了</button>
                         </li>
                     </ul>
-
-                    <div class="preference-section">
-                        <p class="preference-label">好み評価:</p>
-                        <div class="preference-buttons">
-                            <button class="preference-btn active like">
-                                <span class="preference-icon">❤️</span>
-                                <span>好き</span>
-                            </button>
-                            <button class="preference-btn dislike">
-                                <span class="preference-icon">✗</span>
-                                <span>嫌い</span>
-                            </button>
-                            <button class="preference-btn neutral">
-                                <span class="preference-icon">—</span>
-                                <span>どちらでもない</span>
-                            </button>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -203,6 +131,39 @@
             </div>
         </div>
     </main>
+
+    <!-- 好み評価モーダル -->
+    <div id="preference-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close" aria-label="閉じる">&times;</button>
+            <h3 class="modal-title">課題完了</h3>
+            <p class="modal-description">このトレーニングに対するあなたの意見を教えてください。今後の提案の参考にさせていただきます。</p>
+
+            <form id="preference-form" class="preference-form">
+                <input type="hidden" id="form-task-id" name="taskId">
+
+                <div class="preference-section">
+                    <p class="preference-label">好み評価:</p>
+                    <div class="preference-buttons">
+                        <button type="button" class="preference-btn like" data-value="like">
+                            <span class="preference-icon">❤️</span>
+                            <span>好き</span>
+                        </button>
+                        <button type="button" class="preference-btn dislike" data-value="dislike">
+                            <span class="preference-icon">✗</span>
+                            <span>嫌い</span>
+                        </button>
+                        <button type="button" class="preference-btn neutral" data-value="neutral">
+                            <span class="preference-icon">—</span>
+                            <span>どちらでもない</span>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">提出</button>
+            </form>
+        </div>
+    </div>
 
     <!-- ナビゲーションバー -->
     <nav class="bottom-nav">

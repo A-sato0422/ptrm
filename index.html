@@ -12,11 +12,7 @@
 <body>
     <!-- ヘッダー -->
     <header class="app-header">
-        <button class="menu-btn" aria-label="メニュー">
-            <span class="hamburger"></span>
-        </button>
         <h1 class="app-title">PTRM</h1>
-        <button class="help-btn" aria-label="ヘルプ">?</button>
     </header>
 
     <!-- メインコンテンツ -->
@@ -29,7 +25,8 @@
             <div class="mountains-container">
                 <!-- Top Row: Blue Pilates & Red Weight -->
                 <div class="mountain-row top-row">
-                    <div class="mountain blue-mountain">
+                    <div class="mountain blue-mountain" data-mountain="blue" data-level="9"
+                        data-category="Blue Pilates">
                         <div class="mountain-icon">
                             <img src="./assets/yama01.png" alt="Blue Pilates" class="mountain-img">
                             <div class="mountain-label">
@@ -38,7 +35,7 @@
                         </div>
                     </div>
 
-                    <div class="mountain red-mountain">
+                    <div class="mountain red-mountain" data-mountain="red" data-level="7" data-category="Red Weight">
                         <div class="mountain-icon">
                             <img src="./assets/yama02.png" alt="Red Weight" class="mountain-img">
                             <div class="mountain-label">
@@ -58,7 +55,8 @@
 
                 <!-- Bottom Row: Green Sports & Yellow Movement -->
                 <div class="mountain-row bottom-row">
-                    <div class="mountain green-mountain">
+                    <div class="mountain green-mountain" data-mountain="green" data-level="6"
+                        data-category="Green Sports">
                         <div class="mountain-icon">
                             <img src="./assets/yama03.png" alt="Sports" class="mountain-img">
                             <div class="mountain-label">
@@ -67,7 +65,8 @@
                         </div>
                     </div>
 
-                    <div class="mountain yellow-mountain">
+                    <div class="mountain yellow-mountain" data-mountain="yellow" data-level="7"
+                        data-category="Yellow Movement">
                         <div class="mountain-icon">
                             <img src="./assets/yama04.png" alt="Movement" class="mountain-img">
                             <div class="mountain-label">
@@ -78,46 +77,54 @@
                 </div>
             </div>
 
-            <!-- ゴールメッセージ -->
-            <div class="goal-message">
-                <p class="goal-text">全項目1合目クリアで<br>2合目ゲートを開放せよ！</p>
-            </div>
-
             <!-- 次のチャレンジ項目 -->
             <div class="next-challenge">
                 <h3 class="challenge-title">次のチャレンジ項目</h3>
                 <div class="challenge-box">
-                    <p class="challenge-text">全項目1合目クリアで<br>2合目ゲートを開放せよ！</p>
+                    <p class="challenge-text">全項目Lv.10クリアで<br>3合目にランクアップ!</p>
                 </div>
             </div>
 
             <!-- アクションリストプレビュー -->
             <div class="action-preview">
-                <h3 class="action-title">現在のあなたの身体の課題一覧</h3>
+                <h3 class="action-title">現在のあなたの身体の宿題一覧</h3>
                 <div class="action-box">
                     <ul class="action-list-preview">
-                        <li class="action-item blue">
-                            <input type="checkbox" id="task1">
-                            <label for="task1">骨盤ニュートラル維持</label>
+                        <li class="action-item blue" data-action-id="task1">
+                            <span class="action-text">骨盤ニュートラル維持</span>
                         </li>
-                        <li class="action-item red completed">
-                            <input type="checkbox" id="task2" checked>
-                            <label for="task2">スクワット+5kg (完了)</label>
+                        <li class="action-item red completed" data-action-id="task2">
+                            <span class="action-text">スクワット+5kg (完了)</span>
                         </li>
-                        <li class="action-item yellow">
-                            <input type="checkbox" id="task3">
-                            <label for="task3">15分ジョグ</label>
+                        <li class="action-item yellow" data-action-id="task3">
+                            <span class="action-text">15分ジョグ</span>
                         </li>
-                        <li class="action-item yellow">
-                            <input type="checkbox" id="task4">
-                            <label for="task4">肩甲骨ストレッチ</label>
+                        <li class="action-item yellow" data-action-id="task4">
+                            <span class="action-text">肩甲骨ストレッチ</span>
                         </li>
                     </ul>
+                    <p class="action-note">※タップで編集画面へ</p>
                 </div>
                 <button class="view-detail-btn">現在の予約状況はこちら »</button>
             </div>
         </div>
     </main>
+
+    <!-- 山の詳細モーダル -->
+    <div id="mountain-detail-modal" class="mountain-modal" style="display: none;">
+        <div class="mountain-modal-overlay"></div>
+        <div class="mountain-modal-content">
+            <div class="mountain-modal-header">
+                <h3 id="modal-category-title" class="modal-category-title"></h3>
+                <button class="mountain-modal-close" aria-label="閉じる">&times;</button>
+            </div>
+            <div class="mountain-modal-body">
+                <div id="modal-tasks-list" class="modal-tasks-list">
+                    <!-- タスクリストがここに動的に挿入される -->
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- ナビゲーションバー -->
     <nav class="bottom-nav">

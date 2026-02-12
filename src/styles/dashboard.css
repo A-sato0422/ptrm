@@ -183,92 +183,62 @@
 .action-item {
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-sm) 0;
+    padding: var(--spacing-md) var(--spacing-sm);
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: var(--radius-sm);
 }
 
 .action-item:last-child {
     border-bottom: none;
 }
 
-.action-item input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-    appearance: none;
-    -webkit-appearance: none;
-    border: 2px solid #000;
-    border-radius: 3px;
-    outline: none;
-    position: relative;
-    background-color: white;
-    transition: all 0.2s ease;
+.action-item:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    transform: translateX(4px);
 }
 
-.action-item input[type="checkbox"]:checked {
-    background-color: var(--color-primary);
-    border-color: var(--color-primary);
+.action-item:active {
+    background-color: rgba(0, 0, 0, 0.1);
 }
 
-.action-item input[type="checkbox"]:checked::after {
-    content: '✓';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: white;
-    font-size: 14px;
-    font-weight: bold;
-}
-
-/* チェックボックスの色を項目ごとに設定 */
-.action-item.blue input[type="checkbox"] {
-    border-color: #5FA8D3;
-}
-
-.action-item.blue input[type="checkbox"]:checked {
-    background-color: #5FA8D3;
-    border-color: #5FA8D3;
-}
-
-.action-item.red input[type="checkbox"] {
-    border-color: #FF8B8F;
-}
-
-.action-item.red input[type="checkbox"]:checked {
-    background-color: #FF8B8F;
-    border-color: #FF8B8F;
-}
-
-.action-item.yellow input[type="checkbox"] {
-    border-color: #F4D03F;
-}
-
-.action-item.yellow input[type="checkbox"]:checked {
-    background-color: #F4D03F;
-    border-color: #F4D03F;
-}
-
-.action-item.green input[type="checkbox"] {
-    border-color: #6FC4B0;
-}
-
-.action-item.green input[type="checkbox"]:checked {
-    background-color: #6FC4B0;
-    border-color: #6FC4B0;
-}
-
-.action-item label {
+.action-text {
     flex: 1;
     font-size: 14px;
-    color: var(--color-text-dark);
-    cursor: pointer;
+    font-weight: 500;
 }
 
-.action-item.completed label {
+/* 各カテゴリーの文字色 */
+.action-item.blue .action-text {
+    color: #5FA8D3;
+}
+
+.action-item.red .action-text {
+    color: #FF8B8F;
+}
+
+.action-item.yellow .action-text {
+    color: #F4D03F;
+}
+
+.action-item.green .action-text {
+    color: #6FC4B0;
+}
+
+.action-item.completed .action-text {
     text-decoration: line-through;
     opacity: 0.6;
+}
+
+/* タップで編集画面へ の注釈 */
+.action-note {
+    font-size: 11px;
+    color: #999;
+    text-align: right;
+    margin-top: var(--spacing-sm);
+    margin-bottom: 0;
+    text-align: center;
 }
 
 .view-detail-btn {
@@ -323,5 +293,251 @@
     .mountain-img {
         width: 140px;
         height: 140px;
+    }
+}
+
+/* ========================================
+   山の詳細モーダル
+   ======================================== */
+
+.mountain {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.mountain:hover .mountain-img {
+    transform: scale(1.05);
+}
+
+.mountain-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: flex-end;
+}
+
+.mountain-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(200, 200, 200, 0.7);
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.mountain-modal-content {
+    position: relative;
+    background-color: #f8f8f8;
+    background-position: center top;
+    background-repeat: no-repeat;
+    background-size: cover;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    width: 100%;
+    max-height: 82vh;
+    display: flex;
+    flex-direction: column;
+    animation: slideUp 0.3s ease-out;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+.mountain-modal.closing .mountain-modal-content {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(0);
+    }
+
+    to {
+        transform: translateY(100%);
+    }
+}
+
+.mountain-modal.closing .mountain-modal-overlay {
+    animation: fadeOut 0.3s ease-out;
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
+}
+
+.mountain-modal-header {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 24px;
+    background-color: rgba(255, 255, 255, 0.75);
+    border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(5px);
+}
+
+.modal-category-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--color-text-dark);
+    margin: 0;
+}
+
+.mountain-modal-close {
+    background: none;
+    border: none;
+    font-size: 32px;
+    color: var(--color-text-light);
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.mountain-modal-close:hover {
+    background-color: var(--color-bg);
+    color: var(--color-text-dark);
+}
+
+.mountain-modal-body {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-lg);
+    padding: 12px 24px 86px;
+}
+
+.modal-tasks-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.modal-level-section {
+    background-color: rgba(255, 255, 255, 0.85);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(5px);
+}
+
+.modal-level-section.completed {
+    border-color: #4CAF50;
+    background-color: rgba(241, 248, 244, 0.85);
+}
+
+.modal-level-section.locked {
+    border-color: rgba(0, 0, 0, 0.2);
+    background-color: rgba(245, 245, 245, 0.85);
+    opacity: 0.8;
+}
+
+.modal-level-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-sm);
+}
+
+.modal-level-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--color-text-dark);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.modal-level-status {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    font-weight: bold;
+}
+
+.modal-level-status.completed {
+    background-color: #4CAF50;
+    color: var(--color-white);
+}
+
+.modal-level-status.locked {
+    background-color: var(--color-text-light);
+    color: var(--color-white);
+}
+
+.modal-task-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+}
+
+.modal-task-name {
+    font-size: 14px;
+    color: var(--color-text-dark);
+    line-height: 1.4;
+    flex: 1;
+}
+
+.modal-task-date {
+    font-size: 11px;
+    color: var(--color-text-light);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.modal-locked-message {
+    font-size: 14px;
+    color: var(--color-text-light);
+    text-align: center;
+    padding: var(--spacing-sm);
+}
+
+@media (min-width: 768px) {
+    .mountain-modal-content {
+        max-width: 600px;
+        margin: 0 auto;
+        border-radius: var(--radius-lg);
+        max-height: 70vh;
+    }
+
+    .mountain-modal {
+        align-items: center;
+        padding: var(--spacing-xl);
     }
 }
