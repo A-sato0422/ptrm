@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trainer Dashboard - Client List</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#1d4ed8",
+                        "background-light": "#f8fafc",
+                        "background-dark": "#0f172a",
+                    },
+                    fontFamily: {
+                        display: ["Inter", "Noto Sans JP", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.5rem",
+                    },
+                },
+            },
+        };
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+    </style>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex">
+    <!-- Sidebar -->
+    <aside id="mobileSidebar"
+        class="w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col h-screen fixed inset-y-0 left-0 z-40 -translate-x-full transition-transform duration-300 lg:static lg:translate-x-0 lg:shrink-0">
+        <div class="p-4 flex justify-end lg:hidden">
+            <button id="mobileSidebarClose"
+                class="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+                aria-label="サイドバーを閉じる">
+                <span class="material-icons-outlined">close</span>
+            </button>
+        </div>
+        <div class="p-6 flex items-center gap-3">
+            <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-xl">S
+            </div>
+            <span class="font-bold text-lg tracking-tight">PTRM 管理画面</span>
+        </div>
+        <nav class="flex-1 px-4 space-y-1">
+            <a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md transition-colors"
+                href="index.html">
+                <span class="material-icons-outlined text-xl">home</span>
+                <span class="font-medium">ホーム</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2 text-primary bg-blue-50 dark:bg-blue-900/20 rounded-md transition-colors"
+                href="clients.html">
+                <span class="material-icons-outlined text-xl">people_alt</span>
+                <span class="font-medium">顧客リスト</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md transition-colors"
+                href="#">
+                <span class="material-icons-outlined text-xl">calendar_today</span>
+                <span class="font-medium">スケジュール</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md transition-colors"
+                href="#">
+                <span class="material-icons-outlined text-xl">chat_bubble_outline</span>
+                <span class="font-medium">メッセージ</span>
+            </a>
+        </nav>
+        <div class="p-4 mt-auto border-t border-slate-200 dark:border-slate-800">
+            <a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md transition-colors"
+                href="settings.html">
+                <span class="material-icons-outlined text-xl">settings</span>
+                <span class="font-medium">設定</span>
+            </a>
+        </div>
+    </aside>
+    <div id="mobileSidebarOverlay" class="fixed inset-0 bg-slate-900/50 z-30 hidden lg:hidden"></div>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+        <!-- Header -->
+        <header
+            class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-10 px-8 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <button id="mobileMenuButton"
+                    class="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors lg:hidden"
+                    aria-label="サイドバーを開く">
+                    <span class="material-icons-outlined">menu</span>
+                </button>
+                <h1 class="text-xl font-bold">顧客リスト</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <button
+                    class="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors relative">
+                    <span class="material-icons-outlined">notifications</span>
+                    <span
+                        class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
+                </button>
+                <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                    <img alt="Trainer Profile"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXEOg_iYS6LRYZdmYsddpvMq1b1NLpiwiBqsWwnq6fjeMuXE3I65zj6J8vL1QveMdUvcox_fMUJpAK45iRJoWmlGEt4EMAy98rqLJNY6jcytcf9FnzNVMgrVbPYcEW4PRYa31ShXRUcNw8U9OUSK9z243YfaZeoLn3NmDBWU25J9LM5H659zpPHMF0gnRgvcoo1RiOpqh7VmorM2A-kuO_Zek0Sd4zJpqZ4wMmH949oAiukXk-07aAf1tv20p4iY0D8gpkh6cI8Hk" />
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-8">
+            <!-- Search and Filter Bar -->
+            <div class="flex flex-col md:flex-row gap-4 mb-8">
+                <div class="relative flex-1">
+                    <span
+                        class="material-icons-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+                    <input id="searchInput"
+                        class="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                        placeholder="顧客を検索..." type="text" />
+                </div>
+                <div class="flex gap-3">
+                    <select id="filterSelect"
+                        class="pl-4 pr-8 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg outline-none focus:ring-2 focus:ring-primary">
+                        <option value="">フィルターを選択</option>
+                        <option value="trainer">担当者別</option>
+                        <option value="course">コース別</option>
+                    </select>
+                    <button
+                        class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+                        <span class="material-icons-outlined text-sm">add</span>
+                        <span>新規登録</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Client Cards Container -->
+            <div id="clientsContainer" class="space-y-6">
+                <!-- Client cards will be dynamically rendered here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Dark Mode Toggle Button -->
+    <button id="darkModeToggle"
+        class="fixed bottom-6 right-6 w-12 h-12 bg-white dark:bg-slate-800 shadow-lg rounded-full flex items-center justify-center border border-slate-200 dark:border-slate-700 hover:scale-110 transition-transform">
+        <span class="material-icons-outlined dark:hidden">dark_mode</span>
+        <span class="material-icons-outlined hidden dark:block">light_mode</span>
+    </button>
+
+    <script type="module" src="/src/clients.ts"></script>
+</body>
+
+</html>
