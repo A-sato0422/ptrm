@@ -1,3 +1,6 @@
+// このファイルをモジュールとして扱う
+export { };
+
 // 顧客データの型定義
 interface Client {
   id: number;
@@ -200,7 +203,7 @@ function createClientCard(client: Client): string {
   `;
 }
 
-// 顧客リストをレンダリングする関数
+// 顧客一覧をレンダリングする関数
 function renderClients(clients: Client[]): void {
   const container = document.getElementById('clientsContainer');
   if (!container) return;
@@ -218,11 +221,10 @@ function renderClients(clients: Client[]): void {
   container.innerHTML = clients.map((client) => createClientCard(client)).join('');
 }
 
-// 顧客詳細画面への遷移（将来実装）
+// 顧客詳細画面への遷移
 function navigateToClientDetail(clientId: number): void {
   console.log(`Navigating to client detail: ${clientId}`);
-  // 将来的には client-detail.html?id=${clientId} への遷移を実装
-  alert(`顧客詳細画面（ID: ${clientId}）は今後実装予定です`);
+  window.location.href = `client-detail.html?id=${clientId}`;
 }
 
 // グローバルスコープに関数を追加
