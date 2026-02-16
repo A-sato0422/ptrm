@@ -3,6 +3,52 @@
 
 console.log('PTRM System Initialized');
 
+// ポイント管理システム
+interface UserPoints {
+  total: number;
+  history: PointHistory[];
+}
+
+interface PointHistory {
+  date: string;
+  amount: number;
+  reason: string;
+}
+
+// ユーザーポイントの初期データ
+let userPoints: UserPoints = {
+  total: 1250,
+  history: [
+    { date: '2026-02-15', amount: 100, reason: 'パーソナルトレーニング実施' },
+    { date: '2026-02-10', amount: 100, reason: 'パーソナルトレーニング実施' },
+    { date: '2026-02-05', amount: 50, reason: '目標達成ボーナス' }
+  ]
+};
+
+// ポイント表示を更新する関数
+function updatePointsDisplay(): void {
+  const pointsValueElement = document.getElementById('userPoints');
+  if (pointsValueElement) {
+    // 3桁ごとにカンマを追加
+    pointsValueElement.textContent = userPoints.total.toLocaleString();
+  }
+}
+
+// ポイントを追加する関数
+function addPoints(amount: number, reason: string): void {
+  userPoints.total += amount;
+  userPoints.history.unshift({
+    date: new Date().toISOString().split('T')[0],
+    amount: amount,
+    reason: reason
+  });
+  updatePointsDisplay();
+  console.log(`ポイント追加: +${amount}pt (${reason})`);
+}
+
+// 初期化時にポイント表示を更新
+updatePointsDisplay();
+
 // DOM要素の取得
 const navButtons = document.querySelectorAll('.nav-btn');
 
