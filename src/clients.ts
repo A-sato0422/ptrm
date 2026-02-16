@@ -147,16 +147,16 @@ function createClientCard(client: Client): string {
               <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">進捗状況</h4>
               <div class="flex flex-wrap gap-2">
                 <span class="px-2 py-1 bg-blue-600 text-white text-[10px] font-bold rounded">
-                  BLUE PILATES: LV.${client.levels.blue}
+                  Mat Pilates: LV.${client.levels.blue}
                 </span>
                 <span class="px-2 py-1 bg-red-600 text-white text-[10px] font-bold rounded">
-                  RED WEIGHT: LV.${client.levels.red}
+                  Weight Training: LV.${client.levels.red}
                 </span>
                 <span class="px-2 py-1 bg-green-600 text-white text-[10px] font-bold rounded">
-                  GREEN SPORTS: LV.${client.levels.green}
+                  Sports Training: LV.${client.levels.green}
                 </span>
                 <span class="px-2 py-1 bg-yellow-500 text-white text-[10px] font-bold rounded">
-                  YELLOW MOVEMENT: LV.${client.levels.yellow}
+                  Movement Training: LV.${client.levels.yellow}
                 </span>
               </div>
               <p class="text-xs text-slate-500 mt-2">Next: ${client.nextGoal}</p>
