@@ -206,7 +206,6 @@ function renderSettings(): void {
     const currentTasks = tasksData.filter(task => task.category === currentCategory);
     const tasksHTML = currentTasks.map(task => createTaskCard(task)).join('');
     const trainersHTML = trainersData.map(trainer => createTrainerCard(trainer)).join('');
-    const activeSessionsCount = trainersData.filter(t => t.isOnline).length * 8;
 
     container.innerHTML = `
         <div class="flex flex-col lg:flex-row gap-8">

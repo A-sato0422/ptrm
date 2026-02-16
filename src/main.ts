@@ -34,7 +34,7 @@ function updatePointsDisplay(): void {
   }
 }
 
-// ポイントを追加する関数
+// ポイントを追加する関数（将来のトレーニング実施時に使用予定）
 function addPoints(amount: number, reason: string): void {
   userPoints.total += amount;
   userPoints.history.unshift({
@@ -45,6 +45,9 @@ function addPoints(amount: number, reason: string): void {
   updatePointsDisplay();
   console.log(`ポイント追加: +${amount}pt (${reason})`);
 }
+
+// 外部からアクセス可能にする（将来のAPI連携用）
+(window as any).addPoints = addPoints;
 
 // 初期化時にポイント表示を更新
 updatePointsDisplay();
