@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>PTRM — RDB設計図 v6</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+      background: #f4f7fb;
+      padding: 32px;
+    }
+    h1 { font-size: 22px; color: #2c3e50; margin-bottom: 6px; }
+    .subtitle { font-size: 13px; color: #888; margin-bottom: 24px; }
+    .callout {
+      background: #fff8e1;
+      border-left: 4px solid #f5a623;
+      border-radius: 6px;
+      padding: 14px 18px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: #555;
+      line-height: 1.8;
+    }
+    .callout strong { color: #2c3e50; display: block; margin-bottom: 4px; font-size: 14px; }
+    .callout-blue {
+      background: #e8f4fd;
+      border-left: 4px solid #3498db;
+      border-radius: 6px;
+      padding: 14px 18px;
+      margin-bottom: 28px;
+      font-size: 13px;
+      color: #555;
+      line-height: 1.8;
+    }
+    .callout-blue strong { color: #2c3e50; display: block; margin-bottom: 4px; font-size: 14px; }
+    .diagram-wrap {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      padding: 32px;
+      overflow-x: auto;
+    }
+    .legend {
+      margin-top: 28px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .legend-item {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #555;
+      min-width: 220px;
+    }
+    .legend-item strong { display: block; color: #2c3e50; margin-bottom: 4px; font-size: 14px; }
+    .tag {
+      display: inline-block;
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      margin-left: 6px;
+      font-weight: bold;
+    }
+    .tag-master  { background: #dff0d8; color: #3c763d; }
+    .tag-client  { background: #d9edf7; color: #31708f; }
+    .tag-trainer { background: #fcf8e3; color: #8a6d3b; }
+    .tag-log     { background: #f2dede; color: #a94442; }
+    .tag-calc    { background: #e8d5f5; color: #6a3d9a; }
+    .sql-block {
+      margin-top: 28px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      padding: 24px 28px;
+    }
+    .sql-block h2 { font-size: 15px; color: #2c3e50; margin-bottom: 12px; }
+    pre {
+      background: #f6f8fa;
+      border-radius: 6px;
+      padding: 16px;
+      font-size: 12.5px;
+      line-height: 1.7;
+      overflow-x: auto;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+
+<h1>PTRM — RDB設計図</h1>
+<p class="subtitle">パーソナル・トレーニング・ロードマップ / MVP（P0）データベース設計 v6</p>
+
+<div class="callout">
+  <strong>⚡ ステージ判定ロジック</strong>
+  クライアントの「現在ステージ」は DB に保存しない。<br>
+  <code>client_levels</code> の 4カテゴリ <code>current_level</code> の <strong>最小値</strong> が
+  <code>stages.level_to</code> 以下のステージのうち、最小の <code>level_to</code> を持つものが現在ステージ。
+</div>
+
+<div class="callout-blue">
+  <strong>📝 categories の色・アイコン・並び順はコード側で管理</strong>
+  変更機能がないため DB には持たない。フロントエンドの定数として定義する。
+</div>
+
+<div class="diagram-wrap">
+  <div class="mermaid">
+erDiagram
+
+  %% ─── マスターデータ ───────────────────────────────
+
+  categories {
+    uuid    id    PK
+    string  name
+  }
+
+  stages {
+    uuid    id           PK
+    int     stage_no
+    string  name
+    string  description
+    int     level_to
+    string  updated_at
+  }
+
+  tasks {
+    uuid    id           PK
+    uuid    category_id  FK
+    string  title
+    string  why_text
+    string  youtube_url
+    string  deleted_at
+    string  created_at
+    string  updated_at
+  }
+
+  %% ─── ユーザー系 ──────────────────────────────────
+
+  clients {
+    uuid    id                 PK
+    string  line_user_id       UK
+    string  display_name
+    string  profile_image_url
+    string  course_name
+    int     points
+    string  created_at
+    string  updated_at
+  }
+
+  trainers {
+    uuid    id            PK
+    string  line_user_id  UK
+    string  display_name
+    bool    is_active
+    string  created_at
+    string  updated_at
+  }
+
+  %% ─── クライアント状態 ────────────────────────────
+
+  client_levels {
+    uuid    id            PK
+    uuid    client_id     FK
+    uuid    category_id   FK
+    int     current_level
+    string  updated_at
+    uuid    updated_by    FK
+  }
+
+  client_tasks {
+    uuid    id            PK
+    uuid    client_id     FK
+    uuid    task_id       FK
+    bool    is_completed
+    string  assigned_at
+    string  completed_at
+  }
+
+  will_matrix {
+    uuid    id          PK
+    uuid    client_id   FK
+    uuid    task_id     FK
+    int     like_status
+    string  updated_at
+  }
+
+  %% ─── 履歴・ログ ──────────────────────────────────
+
+  level_history {
+    uuid    id            PK
+    uuid    client_id     FK
+    uuid    category_id   FK
+    int     level_before
+    int     level_after
+    uuid    updated_by    FK
+    string  updated_at
+  }
+
+  trainer_memos {
+    uuid    id           PK
+    uuid    client_id    FK
+    uuid    trainer_id   FK
+    string  content
+    string  created_at
+    string  updated_at
+  }
+
+  %% ─── リレーション ────────────────────────────────
+
+  categories  ||--o{ tasks          : "1カテゴリ → 複数タスク"
+  categories  ||--o{ client_levels  : "4カテゴリ × クライアント数分"
+  categories  ||--o{ level_history  : ""
+
+  clients     ||--o{ client_levels  : "1クライアント → 4レコード"
+  trainers    ||--o{ client_levels  : "更新者"
+
+  clients     ||--o{ client_tasks   : ""
+  tasks       ||--o{ client_tasks   : ""
+
+  clients     ||--o{ will_matrix    : ""
+  tasks       ||--o{ will_matrix    : "タスクへの好み評価"
+
+  clients     ||--o{ level_history  : ""
+  trainers    ||--o{ level_history  : "更新トレーナー"
+
+  clients     ||--o{ trainer_memos  : ""
+  trainers    ||--o{ trainer_memos  : ""
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-item">
+    <strong>マスターデータ <span class="tag tag-master">master</span></strong>
+    categories / stages / tasks
+  </div>
+  <div class="legend-item">
+    <strong>ユーザー系 <span class="tag tag-client">client</span> <span class="tag tag-trainer">trainer</span></strong>
+    clients / trainers（LINE IDで識別）
+  </div>
+  <div class="legend-item">
+    <strong>クライアント状態 <span class="tag tag-client">client</span></strong>
+    client_levels / client_tasks / will_matrix
+  </div>
+  <div class="legend-item">
+    <strong>履歴・ログ <span class="tag tag-log">log</span></strong>
+    level_history / trainer_memos
+  </div>
+  <div class="legend-item">
+    <strong>現在ステージ <span class="tag tag-calc">動的計算</span></strong>
+    DBに保存しない。MIN(current_level) ≤ stages.level_to で算出。
+  </div>
+</div>
+
+<div class="sql-block">
+  <h2>📌 現在ステージ取得クエリ（参考）</h2>
+  <pre>SELECT s.*
+FROM stages s
+WHERE s.level_to >= (
+  SELECT MIN(current_level)
+  FROM client_levels
+  WHERE client_id = '{{ client_id }}'
+)
+ORDER BY s.level_to ASC
+LIMIT 1;</pre>
+</div>
+
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'default', er: { diagramPadding: 30 } });
+</script>
+</body>
+</html>

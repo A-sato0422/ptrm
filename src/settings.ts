@@ -7,6 +7,7 @@ interface Stage {
     level: string;
     name: string;
     description: string;
+    levelThreshold: number; // このステージをクリアするための最低レベル（全カテゴリーがこの値を超えたら次ステージへ）
 }
 
 // タスクの型定義
@@ -30,12 +31,12 @@ interface Trainer {
 
 // サンプルステージデータ
 const stagesData: Stage[] = [
-    { id: 1, level: '1合目', name: 'カウンセリング前', description: 'お問い合わせ後、体験予約の調整を行っている段階' },
-    { id: 2, level: '2合目', name: '体験・体験待ち', description: '体験レッスンを予約済み、または体験が完了し検討中の段階' },
-    { id: 3, level: '3合目', name: '初期・導入期', description: '入会後1〜2ヶ月。基本動作の習得と習慣化を目指す段階' },
-    { id: 4, level: '4合目', name: '成長期', description: '3〜6ヶ月。動作の質が向上し、目標達成に向けて安定した進捗' },
-    { id: 5, level: '5合目', name: '習熟期', description: '6〜12ヶ月。自立したトレーニングが可能になる段階' },
-    { id: 6, level: '6合目', name: 'マスター期', description: '1年以上。高度な技術習得と長期的な習慣の確立' }
+    { id: 1, level: '1合目', name: 'カウンセリング前', description: 'お問い合わせ後、体験予約の調整を行っている段階', levelThreshold: 5 },
+    { id: 2, level: '2合目', name: '体験・体験待ち', description: '体験レッスンを予約済み、または体験が完了し検討中の段階', levelThreshold: 10 },
+    { id: 3, level: '3合目', name: '初期・導入期', description: '入会後1〜2ヶ月。基本動作の習得と習慣化を目指す段階', levelThreshold: 15 },
+    { id: 4, level: '4合目', name: '成長期', description: '3〜6ヶ月。動作の質が向上し、目標達成に向けて安定した進捗', levelThreshold: 20 },
+    { id: 5, level: '5合目', name: '習熟期', description: '6〜12ヶ月。自立したトレーニングが可能になる段階', levelThreshold: 25 },
+    { id: 6, level: '6合目', name: 'マスター期', description: '1年以上。高度な技術習得と長期的な習慣の確立', levelThreshold: 30 }
 ];
 
 // サンプルタスクデータ
@@ -87,6 +88,24 @@ function createStageCard(stage: Stage): string {
                         value="${stage.name}"
                         data-stage-id="${stage.id}"
                     />
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">レベル上限（クリア条件）</label>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-slate-400 whitespace-nowrap">全カテゴリーが</span>
+                        <div class="relative flex-1">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-primary">Lv.</span>
+                            <input 
+                                class="w-full pl-9 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg focus:ring-primary focus:border-primary text-sm font-bold stage-level-threshold" 
+                                type="number" 
+                                min="1"
+                                max="99"
+                                value="${stage.levelThreshold}"
+                                data-stage-id="${stage.id}"
+                            />
+                        </div>
+                        <span class="text-xs text-slate-400 whitespace-nowrap">を超えたら次へ</span>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-slate-500 mb-1">説明</label>
@@ -340,6 +359,23 @@ function setupStageEventListeners(): void {
             if (stage) {
                 stage.description = target.value;
                 console.log(`Stage ${stageId} description updated:`, stage.description);
+            }
+        });
+    });
+
+    // レベル上限の変更
+    document.querySelectorAll('.stage-level-threshold').forEach((input) => {
+        input.addEventListener('change', (event) => {
+            const target = event.target as HTMLInputElement;
+            const stageId = parseInt(target.getAttribute('data-stage-id') || '0');
+            const stage = stagesData.find(s => s.id === stageId);
+            const newValue = parseInt(target.value);
+            if (stage && !isNaN(newValue) && newValue >= 1) {
+                stage.levelThreshold = newValue;
+                console.log(`Stage ${stageId} levelThreshold updated:`, stage.levelThreshold);
+            } else {
+                // 無効な値はリセット
+                target.value = String(stage?.levelThreshold ?? 1);
             }
         });
     });
