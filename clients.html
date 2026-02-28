@@ -1,165 +1,323 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
-
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Trainer Dashboard - Client List</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap"
-        rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined"
+      rel="stylesheet"
+    />
     <script>
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        primary: "#1d4ed8",
-                        "background-light": "#f8fafc",
-                        "background-dark": "#0f172a",
-                    },
-                    fontFamily: {
-                        display: ["Inter", "Noto Sans JP", "sans-serif"],
-                    },
-                    borderRadius: {
-                        DEFAULT: "0.5rem",
-                    },
-                },
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#1d4ed8",
+              "background-light": "#f8fafc",
+              "background-dark": "#0f172a",
             },
-        };
+            fontFamily: {
+              display: ["Inter", "Noto Sans JP", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "0.5rem",
+            },
+          },
+        },
+      };
     </script>
     <style>
-        body {
-            font-family: 'Inter', 'Noto Sans JP', sans-serif;
-        }
+      body {
+        font-family: "Inter", "Noto Sans JP", sans-serif;
+      }
 
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-        }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
 
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: transparent;
-        }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
 
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 10px;
-        }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+      }
 
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #475569;
-        }
+      .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #475569;
+      }
     </style>
-</head>
+  </head>
 
-<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex">
+  <body
+    class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex"
+  >
     <!-- Sidebar -->
-    <aside id="mobileSidebar"
-        class="w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col h-screen fixed inset-y-0 left-0 z-40 -translate-x-full transition-transform duration-300 lg:static lg:translate-x-0 lg:shrink-0">
-        <div class="p-4 flex justify-end lg:hidden">
-            <button id="mobileSidebarClose"
-                class="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
-                aria-label="サイドバーを閉じる">
-                <span class="material-icons-outlined">close</span>
-            </button>
+    <aside
+      id="mobileSidebar"
+      class="w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col h-screen fixed inset-y-0 left-0 z-40 -translate-x-full transition-transform duration-300 lg:static lg:translate-x-0 lg:shrink-0"
+    >
+      <div class="p-4 flex justify-end lg:hidden">
+        <button
+          id="mobileSidebarClose"
+          class="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+          aria-label="サイドバーを閉じる"
+        >
+          <span class="material-icons-outlined">close</span>
+        </button>
+      </div>
+      <div class="p-6 flex items-center gap-3">
+        <div
+          class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-xl"
+        >
+          S
         </div>
-        <div class="p-6 flex items-center gap-3">
-            <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-xl">S
-            </div>
-            <span class="font-bold text-lg tracking-tight">PTRM 管理画面</span>
+        <span class="font-bold text-lg tracking-tight">PTRM 管理画面</span>
+      </div>
+      <nav class="flex-1 px-4 space-y-1">
+        <a
+          class="flex items-center gap-3 px-3 py-2 text-primary bg-blue-50 dark:bg-blue-900/20 rounded-md transition-colors"
+          href="clients.html"
+        >
+          <span class="material-icons-outlined text-xl">people_alt</span>
+          <span class="font-medium">顧客一覧</span>
+        </a>
+        <a
+          class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md transition-colors"
+          href="settings.html"
+        >
+          <span class="material-icons-outlined text-xl">settings</span>
+          <span class="font-medium">設定</span>
+        </a>
+      </nav>
+      <div class="p-4 mt-auto border-t border-slate-200 dark:border-slate-800">
+        <div class="flex items-center gap-3 p-2">
+          <img
+            alt="Admin Profile"
+            class="w-10 h-10 rounded-full object-cover"
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXEOg_iYS6LRYZdmYsddpvMq1b1NLpiwiBqsWwnq6fjeMuXE3I65zj6J8vL1QveMdUvcox_fMUJpAK45iRJoWmlGEt4EMAy98rqLJNY6jcytcf9FnzNVMgrVbPYcEW4PRYa31ShXRUcNw8U9OUSK9z243YfaZeoLn3NmDBWU25J9LM5H659zpPHMF0gnRgvcoo1RiOpqh7VmorM2A-kuO_Zek0Sd4zJpqZ4wMmH949oAiukXk-07aAf1tv20p4iY0D8gpkh6cI8Hk"
+          />
+          <div class="overflow-hidden">
+            <p class="text-sm font-semibold truncate">田中 管理者</p>
+            <p class="text-xs text-slate-500 truncate">admin@ecosystem.jp</p>
+          </div>
         </div>
-        <nav class="flex-1 px-4 space-y-1">
-            <a class="flex items-center gap-3 px-3 py-2 text-primary bg-blue-50 dark:bg-blue-900/20 rounded-md transition-colors"
-                href="clients.html">
-                <span class="material-icons-outlined text-xl">people_alt</span>
-                <span class="font-medium">顧客一覧</span>
-            </a>
-            <a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md transition-colors"
-                href="settings.html">
-                <span class="material-icons-outlined text-xl">settings</span>
-                <span class="font-medium">設定</span>
-            </a>
-        </nav>
-        <div class="p-4 mt-auto border-t border-slate-200 dark:border-slate-800">
-            <div class="flex items-center gap-3 p-2">
-                <img alt="Admin Profile" class="w-10 h-10 rounded-full object-cover"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXEOg_iYS6LRYZdmYsddpvMq1b1NLpiwiBqsWwnq6fjeMuXE3I65zj6J8vL1QveMdUvcox_fMUJpAK45iRJoWmlGEt4EMAy98rqLJNY6jcytcf9FnzNVMgrVbPYcEW4PRYa31ShXRUcNw8U9OUSK9z243YfaZeoLn3NmDBWU25J9LM5H659zpPHMF0gnRgvcoo1RiOpqh7VmorM2A-kuO_Zek0Sd4zJpqZ4wMmH949oAiukXk-07aAf1tv20p4iY0D8gpkh6cI8Hk" />
-                <div class="overflow-hidden">
-                    <p class="text-sm font-semibold truncate">田中 管理者</p>
-                    <p class="text-xs text-slate-500 truncate">admin@ecosystem.jp</p>
-                </div>
-            </div>
-        </div>
+      </div>
     </aside>
-    <div id="mobileSidebarOverlay" class="fixed inset-0 bg-slate-900/50 z-30 hidden lg:hidden"></div>
+    <div
+      id="mobileSidebarOverlay"
+      class="fixed inset-0 bg-slate-900/50 z-30 hidden lg:hidden"
+    ></div>
 
     <!-- Main Content -->
     <main class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        <!-- Header -->
-        <header
-            class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-10 px-8 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <button id="mobileMenuButton"
-                    class="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors lg:hidden"
-                    aria-label="サイドバーを開く">
-                    <span class="material-icons-outlined">menu</span>
-                </button>
-                <h1 class="text-xl font-bold">顧客一覧</h1>
-            </div>
-            <div class="flex items-center gap-4">
-                <button
-                    class="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors relative">
-                    <span class="material-icons-outlined">notifications</span>
-                    <span
-                        class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
-                </button>
-
-            </div>
-        </header>
-
-        <!-- Content Area -->
-        <div class="flex-1 overflow-y-auto custom-scrollbar p-8">
-            <!-- Search and Filter Bar -->
-            <div class="flex flex-col md:flex-row gap-4 mb-8">
-                <div class="relative flex-1">
-                    <span
-                        class="material-icons-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
-                    <input id="searchInput"
-                        class="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
-                        placeholder="顧客を検索..." type="text" />
-                </div>
-                <div class="flex gap-3">
-                    <select id="filterSelect"
-                        class="pl-4 pr-8 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg outline-none focus:ring-2 focus:ring-primary">
-                        <option value="">フィルターを選択</option>
-                        <option value="trainer">担当者別</option>
-                        <option value="course">コース別</option>
-                    </select>
-                    <button
-                        class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
-                        <span class="material-icons-outlined text-sm">add</span>
-                        <span>新規登録</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Client Cards Container -->
-            <div id="clientsContainer" class="space-y-6">
-                <!-- Client cards will be dynamically rendered here -->
-            </div>
+      <!-- Header -->
+      <header
+        class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-10 px-8 flex items-center justify-between"
+      >
+        <div class="flex items-center gap-3">
+          <button
+            id="mobileMenuButton"
+            class="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors lg:hidden"
+            aria-label="サイドバーを開く"
+          >
+            <span class="material-icons-outlined">menu</span>
+          </button>
+          <h1 class="text-xl font-bold">顧客一覧</h1>
         </div>
+        <div class="flex items-center gap-4">
+          <button
+            class="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors relative"
+          >
+            <span class="material-icons-outlined">notifications</span>
+            <span
+              class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"
+            ></span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Content Area -->
+      <div id="contentArea" class="flex-1 overflow-y-auto custom-scrollbar p-8">
+        <!-- Search and Filter Bar -->
+        <div class="flex flex-col md:flex-row gap-4 mb-8">
+          <div class="relative flex-1">
+            <span
+              class="material-icons-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              >search</span
+            >
+            <input
+              id="searchInput"
+              class="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+              placeholder="顧客を検索..."
+              type="text"
+            />
+          </div>
+          <div class="flex gap-3">
+            <select
+              id="trainerFilter"
+              class="pl-4 pr-8 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">担当者: 全員</option>
+            </select>
+            <select
+              id="courseFilter"
+              class="pl-4 pr-8 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">コース: 全て</option>
+            </select>
+            <button
+              id="openAddClientModal"
+              class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+            >
+              <span class="material-icons-outlined text-sm">add</span>
+              <span>新規登録</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Client Cards Container -->
+        <div id="clientsContainer" class="space-y-6">
+          <!-- Client cards will be dynamically rendered here -->
+        </div>
+
+        <!-- ページネーション -->
+        <div
+          id="paginationContainer"
+          class="mt-8 flex flex-col items-center gap-3 hidden"
+        >
+          <p
+            id="clientCount"
+            class="text-sm text-slate-500 dark:text-slate-400"
+          ></p>
+          <div id="paginationButtons" class="flex items-center gap-1"></div>
+        </div>
+      </div>
     </main>
 
     <!-- Dark Mode Toggle Button -->
-    <button id="darkModeToggle"
-        class="fixed bottom-6 right-6 w-12 h-12 bg-white dark:bg-slate-800 shadow-lg rounded-full flex items-center justify-center border border-slate-200 dark:border-slate-700 hover:scale-110 transition-transform">
-        <span class="material-icons-outlined dark:hidden">dark_mode</span>
-        <span class="material-icons-outlined hidden dark:block">light_mode</span>
+    <button
+      id="darkModeToggle"
+      class="fixed bottom-6 right-6 w-12 h-12 bg-white dark:bg-slate-800 shadow-lg rounded-full flex items-center justify-center border border-slate-200 dark:border-slate-700 hover:scale-110 transition-transform"
+    >
+      <span class="material-icons-outlined dark:hidden">dark_mode</span>
+      <span class="material-icons-outlined hidden dark:block">light_mode</span>
     </button>
 
-    <script type="module" src="/src/clients.ts"></script>
-</body>
+    <!-- 新規登録モーダル -->
+    <div
+      id="addClientModal"
+      class="fixed inset-0 z-50 hidden flex items-center justify-center p-4"
+    >
+      <!-- オーバーレイ -->
+      <div
+        id="modalOverlay"
+        class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+      ></div>
+      <!-- モーダル本体 -->
+      <div
+        class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md p-8 z-10"
+      >
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-xl font-bold">新規クライアント登録</h2>
+          <button
+            id="closeAddClientModal"
+            class="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+          >
+            <span class="material-icons-outlined">close</span>
+          </button>
+        </div>
 
+        <form id="addClientForm" class="space-y-5" novalidate>
+          <!-- 名前 -->
+          <div>
+            <label
+              class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1"
+            >
+              表示名 <span class="text-red-500">*</span>
+            </label>
+            <input
+              id="fieldDisplayName"
+              type="text"
+              required
+              placeholder="山田 花子"
+              class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+            />
+          </div>
+
+          <!-- LINEユーザーID -->
+          <div>
+            <label
+              class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1"
+            >
+              LINEユーザーID <span class="text-red-500">*</span>
+            </label>
+            <input
+              id="fieldLineUserId"
+              type="text"
+              required
+              placeholder="Uxxxxxxxxxxxxxxxxxxxx"
+              class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-mono text-sm"
+            />
+            <p class="mt-1 text-xs text-slate-400">
+              LINEのユーザーID（U始まりの33文字）
+            </p>
+          </div>
+
+          <!-- コース名 -->
+          <div>
+            <label
+              class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1"
+            >
+              コース名
+            </label>
+            <input
+              id="fieldCourseName"
+              type="text"
+              placeholder="スタンダード月４回コース"
+              class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+            />
+          </div>
+
+          <!-- エラーメッセージ -->
+          <p
+            id="addClientError"
+            class="hidden text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-4 py-2 rounded-lg"
+          ></p>
+
+          <!-- ボタン -->
+          <div class="flex gap-3 pt-2">
+            <button
+              type="button"
+              id="cancelAddClient"
+              class="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors font-medium"
+            >
+              キャンセル
+            </button>
+            <button
+              type="submit"
+              class="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <span id="addClientBtnText">登録する</span>
+              <span
+                id="addClientBtnSpinner"
+                class="hidden material-icons-outlined animate-spin text-base"
+                >autorenew</span
+              >
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script type="module" src="/src/clients.ts"></script>
+  </body>
 </html>

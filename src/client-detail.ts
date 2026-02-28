@@ -1,152 +1,152 @@
-// このファイルをモジュールとして扱う
-export { };
+import { supabase } from "./supabase";
+import {
+  CATEGORY_COLOR_MAP,
+  DEFAULT_AVATAR_URL,
+  Client,
+  Task,
+  MemoHistory,
+} from "./shared";
 
-// 顧客データの型定義
-interface Client {
-    id: number;
-    name: string;
-    avatarUrl: string;
-    lastUpdate: string;
-    lastMemo: string;
-    email?: string;
-    course?: string;
-    status?: string;
-    levels: {
-        blue: number;
-        red: number;
-        green: number;
-        yellow: number;
-    };
-    nextGoal: string;
-    previousNote: string;
-    currentTasks: Task[];
-    preferences: {
-        likes: string;
-        dislikes: string;
-    };
-    history?: MemoHistory[];
+// Supabaseから取得したデータを表示用Clientに変換する
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapDbClientToDisplay(dbClient: any): Client {
+  // レベルマッピング
+  const levels = { blue: 0, red: 0, green: 0, yellow: 0 };
+  for (const cl of dbClient.client_levels || []) {
+    const colorKey = CATEGORY_COLOR_MAP[cl.categories?.name];
+    if (colorKey) levels[colorKey] = cl.current_level;
+  }
+
+  // メモ履歴（updated_at降順）
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const history: MemoHistory[] = [...(dbClient.trainer_memos || [])]
+    .sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    )
+    .map((memo: any, idx: number) => ({
+      id: idx + 1,
+      date: new Date(memo.created_at).toLocaleDateString("ja-JP"),
+      trainer: memo.trainers?.display_name || "トレーナー",
+      content: memo.content,
+    }));
+
+  const lastMemo = history[0]?.content?.slice(0, 20) || "";
+
+  // タスクマッピング
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const currentTasks: Task[] = (dbClient.client_tasks || [])
+    .filter((ct: any) => ct.tasks)
+    .map((ct: any, idx: number) => ({
+      id: idx + 1,
+      title: ct.tasks.title,
+      reason: ct.tasks.why_text || "",
+      youtubeUrl: ct.tasks.youtube_url || "",
+      completed: ct.is_completed,
+    }));
+
+  // やりたい/やりたくないマッピング（will_matrix）
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const likes = (dbClient.will_matrix || [])
+    .filter((w: any) => w.like_status === 1)
+    .map((w: any) => w.tasks?.title)
+    .filter(Boolean)
+    .join("、");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const dislikes = (dbClient.will_matrix || [])
+    .filter((w: any) => w.like_status === -1)
+    .map((w: any) => w.tasks?.title)
+    .filter(Boolean)
+    .join("、");
+
+  return {
+    id: dbClient.id,
+    name: dbClient.display_name || "名前未設定",
+    avatarUrl: dbClient.profile_image_url || DEFAULT_AVATAR_URL,
+    course: dbClient.course_name || "",
+    status: "Active",
+    lastUpdate: new Date(dbClient.updated_at).toLocaleDateString("ja-JP"),
+    lastMemo,
+    levels,
+    nextGoal: "",
+    previousNote: history[0]?.content || "",
+    currentTasks,
+    preferences: { likes, dislikes },
+    history,
+  };
 }
 
-interface Task {
-    id: number;
-    title: string;
-    reason?: string;
-    youtubeUrl?: string;
-    completed: boolean;
+// URLパラメータから顧客UUIDを取得
+function getClientIdFromUrl(): string | null {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("id");
 }
 
-interface MemoHistory {
-    id: number;
-    date: string;
-    trainer: string;
-    content: string;
-}
+// Supabaseから顧客データを取得
+async function getClientFromSupabase(id: string): Promise<Client | null> {
+  const { data, error } = await supabase
+    .from("clients")
+    .select(
+      `
+            id,
+            display_name,
+            profile_image_url,
+            course_name,
+            updated_at,
+            client_levels (
+                current_level,
+                categories ( name )
+            ),
+            trainer_memos (
+                content,
+                created_at,
+                trainers ( display_name )
+            ),
+            client_tasks (
+                is_completed,
+                tasks (
+                    id,
+                    title,
+                    why_text,
+                    youtube_url
+                )
+            ),
+            will_matrix (
+                like_status,
+                tasks ( title )
+            )
+        `,
+    )
+    .eq("id", id)
+    .single();
 
-// サンプル顧客データ（clients.tsと同じデータを使用）
-const clientsData: Client[] = [
-    {
-        id: 10294,
-        name: "山田 花子",
-        avatarUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuCOTmHNB0ZGcIs7hqgp3jVkx0h_A8bS9jIPtjq4JilvCwWCfrthpclirCPZIrj4PfMO3A2rNy-M1KCda_jq7iLPtk-xNVFKZqippajxl7L2xfxi8doWUcU-zk4aX93tYV02_QfZC2HwXPKswxrZ56baNNmN5NL-TZPATuQQbZb2gF4A5g8_V9T3K4MRarGpZjflvueHtTm9OMlGyV2Z1fOTeBP-g4SoHTzZhRhacx91Q-QBGpm1HJJapLAJvlTqaonOuMLfXzkByEI",
-        email: "yamada.hanako@example.com",
-        course: "スタンダード月4回コース",
-        status: "Active",
-        lastUpdate: "2026/01/08",
-        lastMemo: "スクワット+5kg",
-        levels: { blue: 7, red: 7, green: 6, yellow: 7 },
-        nextGoal: "全項目1合目クリアで2合目ゲート開放（あとGreen Sportsのみ）",
-        previousNote: "スクワット+5kg達成。膝の調子良好。次回はデッドリフトのフォーム確認。",
-        currentTasks: [
-            { id: 1, title: "骨盤ニュートラル維持", reason: "腰痛予防と体幹の安定性向上のため", youtubeUrl: "https://youtube.com/watch?v=...", completed: false },
-            { id: 2, title: "15分ジョグ", reason: "心肺機能の向上と脂肪燃焼の促進", youtubeUrl: "", completed: false },
-            { id: 3, title: "肩甲骨ストレッチ", reason: "巻き肩の改善と呼吸の質を高める", youtubeUrl: "https://youtube.com/watch?v=...", completed: true }
-        ],
-        preferences: {
-            likes: "ストレッチ、ダンス、リズムトレーニング",
-            dislikes: "高負荷ジャンプ、長距離走、バーベル種目"
-        },
-        history: [
-            { id: 1, date: "2026/01/08", trainer: "佐藤", content: "スクワット+5kg達成。膝の調子良好。次回はデッドリフトのフォーム確認。" },
-            { id: 2, date: "2025/12/25", trainer: "鈴木", content: "年末年始の自宅トレについて相談。モチベーションは安定している。" }
-        ]
-    },
-    {
-        id: 10452,
-        name: "田中 健太",
-        avatarUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuCQf2u7bWWNdS4xlN4kt82KQWQJ5HWwNsRdHMqv2QgiQTTOzR3Fr7IzR3bMrjBji7F1AO_PHeDvg4mA9vp5Rro9AjNisa2_7W7IJG_cUlEL8IE_si1Lja1Klqc3HvTuK6SGeIEfnSGqClWMZuxfy_-Zx5xV3iAlQDY9rZatwxccBRWKZe9AzCq1vMlRD2a5Tg-7TvT1mSMO3BUtwE14iD68Z65tOkO3xI0llhCMcR_mTqJS9Ds9juQP5fFNnzIzY2sUlPz-AmNCI9E",
-        email: "tanaka.kenta@example.com",
-        course: "プレミアム月8回コース",
-        status: "Active",
-        lastUpdate: "2026/01/08",
-        lastMemo: "バルクアップ順調",
-        levels: { blue: 4, red: 8, green: 3, yellow: 5 },
-        nextGoal: "重量アップ目標達成まであと少し",
-        previousNote: "ベンチプレス80kg更新。食事管理も徹底されており、体脂肪率も安定。",
-        currentTasks: [
-            { id: 1, title: "プロテイン摂取タイミング", reason: "筋肉合成の最適化", youtubeUrl: "", completed: false },
-            { id: 2, title: "ストレッチ10分", reason: "柔軟性向上とケガ予防", youtubeUrl: "", completed: true }
-        ],
-        preferences: {
-            likes: "重量挙げ、HIIT",
-            dislikes: "ヨガ、ピラティス"
-        },
-        history: [
-            { id: 1, date: "2026/01/08", trainer: "山本", content: "ベンチプレス80kg更新。食事管理も徹底されており、体脂肪率も安定。" }
-        ]
-    },
-    {
-        id: 10588,
-        name: "佐藤 美咲",
-        avatarUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuBdzUzh6YDvL-cSZWWaZQjUUF2Z4sHgv7dtZpas0u1Le5uWk53U90PKLtlumKqCmAfer6ykpgO-qsS9N3x7UGpmgk7iefAW53UjBn9hwVhgzd2GfETZKt9Q_mdaq6jpxYjeRNJyOrFvDDuHd9WwOmOmnpN_W9Hsr3B8HDN3fTiiEZmiU8wXRKBZYfFTBanCDbDpb_uqElJElVkvtG4MBMrzoRy8fSNjStH2YtD1SW_mlmn2hARqiuSa6Z_JCVq0aoYuhl8_NOB-l54",
-        email: "sato.misaki@example.com",
-        course: "ライト月2回コース",
-        status: "Active",
-        lastUpdate: "2026/01/08",
-        lastMemo: "姿勢改善が見られる",
-        levels: { blue: 9, red: 3, green: 7, yellow: 8 },
-        nextGoal: "ピラティスマスターコース挑戦",
-        previousNote: "インナーマッスルの使い方が非常に上手くなっています。呼吸法も完璧。",
-        currentTasks: [
-            { id: 1, title: "片足バランス強化", reason: "体幹安定性の向上", youtubeUrl: "", completed: false },
-            { id: 2, title: "腹横筋の意識", reason: "コアの強化", youtubeUrl: "", completed: false }
-        ],
-        preferences: {
-            likes: "マットピラティス",
-            dislikes: "重い負荷のスクワット"
-        },
-        history: [
-            { id: 1, date: "2026/01/08", trainer: "高橋", content: "インナーマッスルの使い方が非常に上手くなっています。呼吸法も完璧。" }
-        ]
-    }
-];
-
-// URLパラメータから顧客IDを取得
-function getClientIdFromUrl(): number | null {
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get('id');
-    return id ? parseInt(id, 10) : null;
-}
-
-// 顧客データを取得
-function getClientById(id: number): Client | undefined {
-    return clientsData.find(client => client.id === id);
+  if (error || !data) {
+    console.error("顧客データ取得エラー:", error?.message);
+    return null;
+  }
+  return mapDbClientToDisplay(data);
 }
 
 // レベルセレクトボックスの生成
-function createLevelSelect(color: string, name: string, level: number, key: string): string {
-    const colorMap: { [key: string]: string } = {
-        blue: 'bg-blue-600',
-        red: 'bg-red-600',
-        green: 'bg-emerald-600',
-        yellow: 'bg-amber-500'
-    };
+function createLevelSelect(
+  color: string,
+  name: string,
+  level: number,
+  key: string,
+): string {
+  const colorMap: { [key: string]: string } = {
+    blue: "bg-blue-600",
+    red: "bg-red-600",
+    green: "bg-emerald-600",
+    yellow: "bg-amber-500",
+  };
 
-    const options = Array.from({ length: 11 }, (_, i) => {
-        const selected = i === level ? 'selected' : '';
-        return `<option value="${i}" ${selected}>Lv.${i}</option>`;
-    }).join('');
+  const options = Array.from({ length: 11 }, (_, i) => {
+    const selected = i === level ? "selected" : "";
+    return `<option value="${i}" ${selected}>Lv.${i}</option>`;
+  }).join("");
 
-    return `
+  return `
     <div class="flex items-center justify-center gap-2 ${colorMap[color]} text-white px-4 py-2 rounded-xl text-sm font-medium shadow-sm">
       <span class="mr-2">${name}:</span>
       <select 
@@ -161,19 +161,23 @@ function createLevelSelect(color: string, name: string, level: number, key: stri
 
 // 課題カードの生成
 function createTaskCard(task: Task): string {
-    const completedClass = task.completed ? 'bg-slate-50/50 dark:bg-slate-800/20 opacity-70' : 'bg-white dark:bg-slate-900/40';
-    const lineThrough = task.completed ? 'line-through' : '';
-    const youtubeIcon = task.youtubeUrl ? `
+  const completedClass = task.completed
+    ? "bg-slate-50/50 dark:bg-slate-800/20 opacity-70"
+    : "bg-white dark:bg-slate-900/40";
+  const lineThrough = task.completed ? "line-through" : "";
+  const youtubeIcon = task.youtubeUrl
+    ? `
     <span class="material-icons-outlined text-red-500 text-lg">play_circle</span>
-  ` : `
+  `
+    : `
     <span class="material-icons-outlined text-red-400 text-lg opacity-50">play_circle</span>
   `;
 
-    return `
+  return `
     <div class="flex gap-4 p-5 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-900 ${completedClass} transition-all group items-start shadow-sm">
       <div class="pt-2">
         <input 
-          ${task.completed ? 'checked' : ''} 
+          ${task.completed ? "checked" : ""} 
           class="w-5 h-5 rounded text-primary border-slate-300 dark:border-slate-700 focus:ring-primary cursor-pointer task-checkbox" 
           type="checkbox"
           data-task-id="${task.id}"
@@ -196,7 +200,7 @@ function createTaskCard(task: Task): string {
             class="w-full bg-transparent border-none p-0 focus:ring-0 text-sm text-slate-600 dark:text-slate-400 placeholder-slate-300 ${lineThrough} task-reason" 
             placeholder="なぜこの課題が必要か" 
             type="text" 
-            value="${task.reason || ''}"
+            value="${task.reason || ""}"
             data-task-id="${task.id}"
           />
         </div>
@@ -208,7 +212,7 @@ function createTaskCard(task: Task): string {
               class="w-full bg-transparent border-none p-0 focus:ring-0 text-sm text-blue-500 dark:text-blue-400 underline placeholder-slate-300 task-url" 
               placeholder="動画のリンク" 
               type="text" 
-              value="${task.youtubeUrl || ''}"
+              value="${task.youtubeUrl || ""}"
               data-task-id="${task.id}"
             />
           </div>
@@ -229,14 +233,14 @@ function createTaskCard(task: Task): string {
 
 // メモ履歴の生成
 function createMemoHistoryItem(memo: MemoHistory, isLatest: boolean): string {
-    const dotColor = isLatest ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-700';
-    const opacityClass = isLatest ? '' : 'opacity-70';
-    const isNewMemo = !memo.date || !memo.content;
+  const dotColor = isLatest ? "bg-primary" : "bg-slate-300 dark:bg-slate-700";
+  const opacityClass = isLatest ? "" : "opacity-70";
+  const isNewMemo = !memo.date || !memo.content;
 
-    return `
+  return `
     <div class="relative pl-8 border-l-2 border-slate-100 dark:border-slate-800 ml-2" data-memo-id="${memo.id}">
       <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full ${dotColor} border-4 border-white dark:border-slate-900 shadow-sm"></div>
-      <div class="bg-slate-50 dark:bg-slate-800/30 p-5 rounded-xl ${opacityClass} border ${isNewMemo ? 'border-primary ring-2 ring-primary/20' : 'border-transparent hover:border-slate-200 dark:hover:border-slate-700'} transition-all group">
+      <div class="bg-slate-50 dark:bg-slate-800/30 p-5 rounded-xl ${opacityClass} border ${isNewMemo ? "border-primary ring-2 ring-primary/20" : "border-transparent hover:border-slate-200 dark:hover:border-slate-700"} transition-all group">
         <div class="flex justify-between items-start gap-4 mb-3">
           <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
             <div class="space-y-1">
@@ -245,7 +249,7 @@ function createMemoHistoryItem(memo: MemoHistory, isLatest: boolean): string {
                 class="w-full bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-900 dark:text-slate-100 placeholder-slate-300 focus:ring-2 focus:ring-primary focus:border-primary memo-date" 
                 placeholder="2026/01/08" 
                 type="text" 
-                value="${memo.date || ''}"
+                value="${memo.date || ""}"
                 data-memo-id="${memo.id}"
               />
             </div>
@@ -255,7 +259,7 @@ function createMemoHistoryItem(memo: MemoHistory, isLatest: boolean): string {
                 class="w-full bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 placeholder-slate-300 focus:ring-2 focus:ring-primary focus:border-primary memo-trainer" 
                 placeholder="担当者名" 
                 type="text" 
-                value="${memo.trainer || ''}"
+                value="${memo.trainer || ""}"
                 data-memo-id="${memo.id}"
               />
             </div>
@@ -275,7 +279,7 @@ function createMemoHistoryItem(memo: MemoHistory, isLatest: boolean): string {
             placeholder="メモ内容を入力してください..." 
             rows="3"
             data-memo-id="${memo.id}"
-          >${memo.content || ''}</textarea>
+          >${memo.content || ""}</textarea>
         </div>
       </div>
     </div>
@@ -284,37 +288,42 @@ function createMemoHistoryItem(memo: MemoHistory, isLatest: boolean): string {
 
 // 詳細画面のコンテンツを生成
 function renderClientDetail(client: Client): void {
-    const container = document.getElementById('clientDetailContainer');
-    if (!container) return;
+  const container = document.getElementById("clientDetailContainer");
+  if (!container) return;
 
-    // ページタイトルを更新
-    const pageTitle = document.getElementById('pageTitle');
-    if (pageTitle) {
-        pageTitle.textContent = `顧客詳細: ${client.name}`;
-    }
+  // ページタイトルを更新
+  const pageTitle = document.getElementById("pageTitle");
+  if (pageTitle) {
+    pageTitle.textContent = `顧客詳細: ${client.name}`;
+  }
 
-    const tasksHTML = client.currentTasks.map(task => createTaskCard(task)).join('');
-    const historyHTML = client.history?.map((memo, index) => createMemoHistoryItem(memo, index === 0)).join('') || '';
+  const tasksHTML = client.currentTasks
+    .map((task) => createTaskCard(task))
+    .join("");
+  const historyHTML =
+    client.history
+      ?.map((memo, index) => createMemoHistoryItem(memo, index === 0))
+      .join("") || "";
 
-    container.innerHTML = `
+  container.innerHTML = `
     <form id="clientDetailForm">
     <!-- Client Profile Section -->
     <section class="bg-surface-light dark:bg-surface-dark rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
       <div class="flex items-center gap-6">
-        <img alt="${client.name}" class="w-24 h-24 rounded-2xl object-cover ring-4 ring-blue-50 dark:ring-blue-900/20" src="${client.avatarUrl}" />
+        <img alt="${client.name}" class="w-24 h-24 rounded-2xl object-cover ring-4 ring-blue-50 dark:ring-blue-900/20" src="${client.avatarUrl}" onerror="this.onerror=null; this.src=window.DEFAULT_AVATAR_URL" />
         <div>
           <div class="flex items-center gap-3">
             <h2 class="text-2xl font-bold">${client.name}</h2>
-            <span class="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-semibold rounded-full uppercase tracking-wider">${client.status || 'Active'}</span>
+            <span class="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-semibold rounded-full uppercase tracking-wider">${client.status || "Active"}</span>
           </div>
           <div class="mt-3 space-y-1">
             <div class="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm">
               <span class="material-icons-outlined text-base">fitness_center</span>
-              <span>コース: ${client.course || '未設定'}</span>
+              <span>コース: ${client.course || "未設定"}</span>
             </div>
             <div class="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm">
               <span class="material-icons-outlined text-base">mail</span>
-              <span>${client.email || '未設定'}</span>
+              <span>${client.email || "未設定"}</span>
             </div>
           </div>
         </div>
@@ -334,10 +343,10 @@ function renderClientDetail(client: Client): void {
         </div>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
-        ${createLevelSelect('blue', 'Mat Pilates:', client.levels.blue, 'blue')}
-        ${createLevelSelect('red', 'Weight Training', client.levels.red, 'red')}
-        ${createLevelSelect('green', 'Sports Training', client.levels.green, 'green')}
-        ${createLevelSelect('yellow', 'Movement Training', client.levels.yellow, 'yellow')}
+        ${createLevelSelect("blue", "Mat Pilates:", client.levels.blue, "blue")}
+        ${createLevelSelect("red", "Weight Training", client.levels.red, "red")}
+        ${createLevelSelect("green", "Sports Training", client.levels.green, "green")}
+        ${createLevelSelect("yellow", "Movement Training", client.levels.yellow, "yellow")}
       </div>
       <div class="space-y-3">
         <div class="flex items-center gap-2">
@@ -443,303 +452,325 @@ function renderClientDetail(client: Client): void {
     </form>
   `;
 
-    // イベントリスナーを設定
-    setupTaskEventListeners(client);
-    setupLevelSelects(client);
-    setupMemoCreation(client);
-    setupMemoEventListeners(client);
-    setupFormSubmit(client);
+  // イベントリスナーを設定
+  setupTaskEventListeners(client);
+  setupLevelSelects(client);
+  setupMemoCreation(client);
+  setupMemoEventListeners(client);
+  setupFormSubmit(client);
 }
 
 // タスク関連のイベントリスナーを設定
 function setupTaskEventListeners(client: Client): void {
-    // チェックボックスの変更
-    document.querySelectorAll('.task-checkbox').forEach((checkbox) => {
-        checkbox.addEventListener('change', (event) => {
-            const target = event.target as HTMLInputElement;
-            const taskId = parseInt(target.getAttribute('data-task-id') || '0');
-            const task = client.currentTasks.find(t => t.id === taskId);
-            if (task) {
-                task.completed = target.checked;
-                console.log(`Task ${taskId} completed:`, task.completed);
-                // ここでAPIへの保存処理を追加可能
-                // 見た目を更新
-                renderClientDetail(client);
-            }
-        });
+  // チェックボックスの変更
+  document.querySelectorAll(".task-checkbox").forEach((checkbox) => {
+    checkbox.addEventListener("change", (event) => {
+      const target = event.target as HTMLInputElement;
+      const taskId = parseInt(target.getAttribute("data-task-id") || "0");
+      const task = client.currentTasks.find((t) => t.id === taskId);
+      if (task) {
+        task.completed = target.checked;
+        console.log(`Task ${taskId} completed:`, task.completed);
+        // ここでAPIへの保存処理を追加可能
+        // 見た目を更新
+        renderClientDetail(client);
+      }
+    });
+  });
+
+  // 削除ボタン
+  document.querySelectorAll(".task-delete").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      const target = event.target as HTMLElement;
+      const taskId = parseInt(
+        target.closest("button")?.getAttribute("data-task-id") || "0",
+      );
+      if (confirm("この課題を削除しますか?")) {
+        const index = client.currentTasks.findIndex((t) => t.id === taskId);
+        if (index !== -1) {
+          client.currentTasks.splice(index, 1);
+          console.log(`Task ${taskId} deleted`);
+          // ここでAPIへの保存処理を追加可能
+          renderClientDetail(client);
+        }
+      }
+    });
+  });
+
+  // 新規課題追加
+  const addNewTaskBtn = document.getElementById("addNewTaskBtn");
+  if (addNewTaskBtn) {
+    addNewTaskBtn.addEventListener("click", () => {
+      const newTask: Task = {
+        id: Date.now(), // 仮のID
+        title: "",
+        reason: "",
+        youtubeUrl: "",
+        completed: false,
+      };
+      client.currentTasks.push(newTask);
+      console.log("New task added");
+      renderClientDetail(client);
+    });
+  }
+
+  // タスクの入力フィールド変更（リアルタイム保存）
+  document
+    .querySelectorAll(".task-title, .task-reason, .task-url")
+    .forEach((input) => {
+      input.addEventListener("change", (event) => {
+        const target = event.target as HTMLInputElement;
+        const taskId = parseInt(target.getAttribute("data-task-id") || "0");
+        const task = client.currentTasks.find((t) => t.id === taskId);
+        if (task) {
+          if (target.classList.contains("task-title")) {
+            task.title = target.value;
+          } else if (target.classList.contains("task-reason")) {
+            task.reason = target.value;
+          } else if (target.classList.contains("task-url")) {
+            task.youtubeUrl = target.value;
+          }
+          console.log(`Task ${taskId} updated:`, task);
+          // ここでAPIへの保存処理を追加可能
+        }
+      });
     });
 
-    // 削除ボタン
-    document.querySelectorAll('.task-delete').forEach((button) => {
-        button.addEventListener('click', (event) => {
-            const target = event.target as HTMLElement;
-            const taskId = parseInt(target.closest('button')?.getAttribute('data-task-id') || '0');
-            if (confirm('この課題を削除しますか?')) {
-                const index = client.currentTasks.findIndex(t => t.id === taskId);
-                if (index !== -1) {
-                    client.currentTasks.splice(index, 1);
-                    console.log(`Task ${taskId} deleted`);
-                    // ここでAPIへの保存処理を追加可能
-                    renderClientDetail(client);
-                }
-            }
-        });
+  // Next Goal の変更
+  const nextGoalInput = document.getElementById(
+    "nextGoalInput",
+  ) as HTMLInputElement;
+  if (nextGoalInput) {
+    nextGoalInput.addEventListener("change", (event) => {
+      const target = event.target as HTMLInputElement;
+      client.nextGoal = target.value;
+      console.log("Next Goal updated:", client.nextGoal);
+      // ここでAPIへの保存処理を追加可能
     });
-
-    // 新規課題追加
-    const addNewTaskBtn = document.getElementById('addNewTaskBtn');
-    if (addNewTaskBtn) {
-        addNewTaskBtn.addEventListener('click', () => {
-            const newTask: Task = {
-                id: Date.now(), // 仮のID
-                title: '',
-                reason: '',
-                youtubeUrl: '',
-                completed: false
-            };
-            client.currentTasks.push(newTask);
-            console.log('New task added');
-            renderClientDetail(client);
-        });
-    }
-
-    // タスクの入力フィールド変更（リアルタイム保存）
-    document.querySelectorAll('.task-title, .task-reason, .task-url').forEach((input) => {
-        input.addEventListener('change', (event) => {
-            const target = event.target as HTMLInputElement;
-            const taskId = parseInt(target.getAttribute('data-task-id') || '0');
-            const task = client.currentTasks.find(t => t.id === taskId);
-            if (task) {
-                if (target.classList.contains('task-title')) {
-                    task.title = target.value;
-                } else if (target.classList.contains('task-reason')) {
-                    task.reason = target.value;
-                } else if (target.classList.contains('task-url')) {
-                    task.youtubeUrl = target.value;
-                }
-                console.log(`Task ${taskId} updated:`, task);
-                // ここでAPIへの保存処理を追加可能
-            }
-        });
-    });
-
-    // Next Goal の変更
-    const nextGoalInput = document.getElementById('nextGoalInput') as HTMLInputElement;
-    if (nextGoalInput) {
-        nextGoalInput.addEventListener('change', (event) => {
-            const target = event.target as HTMLInputElement;
-            client.nextGoal = target.value;
-            console.log('Next Goal updated:', client.nextGoal);
-            // ここでAPIへの保存処理を追加可能
-        });
-    }
+  }
 }
 
 // レベルセレクトボックスのイベントリスナーを設定
 function setupLevelSelects(client: Client): void {
-    document.querySelectorAll('.level-select').forEach((select) => {
-        select.addEventListener('change', (event) => {
-            const target = event.target as HTMLSelectElement;
-            const levelKey = target.getAttribute('data-level-key') as 'blue' | 'red' | 'green' | 'yellow';
-            const newLevel = parseInt(target.value, 10);
+  document.querySelectorAll(".level-select").forEach((select) => {
+    select.addEventListener("change", (event) => {
+      const target = event.target as HTMLSelectElement;
+      const levelKey = target.getAttribute("data-level-key") as
+        | "blue"
+        | "red"
+        | "green"
+        | "yellow";
+      const newLevel = parseInt(target.value, 10);
 
-            if (levelKey && client.levels[levelKey] !== undefined) {
-                client.levels[levelKey] = newLevel;
-                console.log(`Level ${levelKey} updated to:`, newLevel);
-                // ここでAPIへの保存処理を追加可能
-                // UI を更新（クリアバッジを反映）
-                renderClientDetail(client);
-            }
-        });
+      if (levelKey && client.levels[levelKey] !== undefined) {
+        client.levels[levelKey] = newLevel;
+        console.log(`Level ${levelKey} updated to:`, newLevel);
+        // ここでAPIへの保存処理を追加可能
+        // UI を更新（クリアバッジを反映）
+        renderClientDetail(client);
+      }
     });
+  });
 }
 
 // メモ作成機能のイベントリスナーを設定
 function setupMemoCreation(client: Client): void {
-    const addMemoBtn = document.getElementById('addMemoBtn');
-    if (!addMemoBtn) return;
+  const addMemoBtn = document.getElementById("addMemoBtn");
+  if (!addMemoBtn) return;
 
-    addMemoBtn.addEventListener('click', () => {
-        // 新しい空のメモを作成
-        const newMemo: MemoHistory = {
-            id: Date.now(),
-            date: new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '/'),
-            trainer: '',
-            content: ''
-        };
+  addMemoBtn.addEventListener("click", () => {
+    // 新しい空のメモを作成
+    const newMemo: MemoHistory = {
+      id: Date.now(),
+      date: new Date()
+        .toLocaleDateString("ja-JP", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        })
+        .replace(/\//g, "/"),
+      trainer: "",
+      content: "",
+    };
 
-        // メモ履歴の先頭に追加
-        if (!client.history) {
-            client.history = [];
-        }
-        client.history.unshift(newMemo);
+    // メモ履歴の先頭に追加
+    if (!client.history) {
+      client.history = [];
+    }
+    client.history.unshift(newMemo);
 
-        console.log('New memo added:', newMemo);
-        // UI を更新
-        renderClientDetail(client);
-    });
+    console.log("New memo added:", newMemo);
+    // UI を更新
+    renderClientDetail(client);
+  });
 }
 
 // メモ関連のイベントリスナーを設定
 function setupMemoEventListeners(client: Client): void {
-    // メモの削除
-    document.querySelectorAll('.memo-delete').forEach((button) => {
-        button.addEventListener('click', (event) => {
-            const target = event.target as HTMLElement;
-            const memoId = parseInt(target.closest('button')?.getAttribute('data-memo-id') || '0');
-            if (confirm('このメモを削除しますか?')) {
-                const index = client.history?.findIndex(m => m.id === memoId) ?? -1;
-                if (index !== -1 && client.history) {
-                    client.history.splice(index, 1);
-                    console.log(`Memo ${memoId} deleted`);
-                    // ここでAPIへの保存処理を追加可能
-                    renderClientDetail(client);
-                }
-            }
-        });
+  // メモの削除
+  document.querySelectorAll(".memo-delete").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      const target = event.target as HTMLElement;
+      const memoId = parseInt(
+        target.closest("button")?.getAttribute("data-memo-id") || "0",
+      );
+      if (confirm("このメモを削除しますか?")) {
+        const index = client.history?.findIndex((m) => m.id === memoId) ?? -1;
+        if (index !== -1 && client.history) {
+          client.history.splice(index, 1);
+          console.log(`Memo ${memoId} deleted`);
+          // ここでAPIへの保存処理を追加可能
+          renderClientDetail(client);
+        }
+      }
     });
+  });
 
-    // メモの日付変更
-    document.querySelectorAll('.memo-date').forEach((input) => {
-        input.addEventListener('change', (event) => {
-            const target = event.target as HTMLInputElement;
-            const memoId = parseInt(target.getAttribute('data-memo-id') || '0');
-            const memo = client.history?.find(m => m.id === memoId);
-            if (memo) {
-                memo.date = target.value;
-                console.log(`Memo ${memoId} date updated:`, memo.date);
-                // ここでAPIへの保存処理を追加可能
-            }
-        });
+  // メモの日付変更
+  document.querySelectorAll(".memo-date").forEach((input) => {
+    input.addEventListener("change", (event) => {
+      const target = event.target as HTMLInputElement;
+      const memoId = parseInt(target.getAttribute("data-memo-id") || "0");
+      const memo = client.history?.find((m) => m.id === memoId);
+      if (memo) {
+        memo.date = target.value;
+        console.log(`Memo ${memoId} date updated:`, memo.date);
+        // ここでAPIへの保存処理を追加可能
+      }
     });
+  });
 
-    // メモの担当者変更
-    document.querySelectorAll('.memo-trainer').forEach((input) => {
-        input.addEventListener('change', (event) => {
-            const target = event.target as HTMLInputElement;
-            const memoId = parseInt(target.getAttribute('data-memo-id') || '0');
-            const memo = client.history?.find(m => m.id === memoId);
-            if (memo) {
-                memo.trainer = target.value;
-                console.log(`Memo ${memoId} trainer updated:`, memo.trainer);
-                // ここでAPIへの保存処理を追加可能
-            }
-        });
+  // メモの担当者変更
+  document.querySelectorAll(".memo-trainer").forEach((input) => {
+    input.addEventListener("change", (event) => {
+      const target = event.target as HTMLInputElement;
+      const memoId = parseInt(target.getAttribute("data-memo-id") || "0");
+      const memo = client.history?.find((m) => m.id === memoId);
+      if (memo) {
+        memo.trainer = target.value;
+        console.log(`Memo ${memoId} trainer updated:`, memo.trainer);
+        // ここでAPIへの保存処理を追加可能
+      }
     });
+  });
 
-    // メモの内容変更
-    document.querySelectorAll('.memo-content').forEach((textarea) => {
-        textarea.addEventListener('change', (event) => {
-            const target = event.target as HTMLTextAreaElement;
-            const memoId = parseInt(target.getAttribute('data-memo-id') || '0');
-            const memo = client.history?.find(m => m.id === memoId);
-            if (memo) {
-                memo.content = target.value;
-                console.log(`Memo ${memoId} content updated:`, memo.content);
-                // ここでAPIへの保存処理を追加可能
-            }
-        });
+  // メモの内容変更
+  document.querySelectorAll(".memo-content").forEach((textarea) => {
+    textarea.addEventListener("change", (event) => {
+      const target = event.target as HTMLTextAreaElement;
+      const memoId = parseInt(target.getAttribute("data-memo-id") || "0");
+      const memo = client.history?.find((m) => m.id === memoId);
+      if (memo) {
+        memo.content = target.value;
+        console.log(`Memo ${memoId} content updated:`, memo.content);
+        // ここでAPIへの保存処理を追加可能
+      }
     });
+  });
 }
 
 // フォーム送信のイベントリスナーを設定
 function setupFormSubmit(client: Client): void {
-    const form = document.getElementById('clientDetailForm') as HTMLFormElement;
-    if (!form) return;
+  const form = document.getElementById("clientDetailForm") as HTMLFormElement;
+  if (!form) return;
 
-    form.addEventListener('submit', (event) => {
-        event.preventDefault();
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
 
-        // フォームデータを収集
-        const formData = {
-            clientId: client.id,
-            name: client.name,
-            email: client.email,
-            course: client.course,
-            status: client.status,
-            levels: client.levels,
-            nextGoal: client.nextGoal,
-            currentTasks: client.currentTasks,
-            preferences: client.preferences,
-            history: client.history
-        };
+    // フォームデータを収集
+    const formData = {
+      clientId: client.id,
+      name: client.name,
+      email: client.email,
+      course: client.course,
+      status: client.status,
+      levels: client.levels,
+      nextGoal: client.nextGoal,
+      currentTasks: client.currentTasks,
+      preferences: client.preferences,
+      history: client.history,
+    };
 
-        console.log('Form submitted with data:', formData);
+    console.log("Form submitted with data:", formData);
 
-        // ここでAPIへのPOST/PUT処理を追加
-        // 例: fetch('/api/clients/' + client.id, { method: 'PUT', body: JSON.stringify(formData) })
+    // ここでAPIへのPOST/PUT処理を追加
+    // 例: fetch('/api/clients/' + client.id, { method: 'PUT', body: JSON.stringify(formData) })
 
-        // 成功メッセージを表示
-        alert('顧客情報を登録しました！\n\n※現在はローカルデータのみ更新されています。\nDB連携は今後実装予定です。');
-    });
+    // 成功メッセージを表示
+    alert(
+      "顧客情報を登録しました！\n\n※現在はローカルデータのみ更新されています。\nDB連携は今後実装予定です。",
+    );
+  });
 }
 
 // ダークモードの切り替え
 function setupDarkMode(): void {
-    const darkModeToggle = document.getElementById('darkModeToggle');
-    if (!darkModeToggle) return;
+  const darkModeToggle = document.getElementById("darkModeToggle");
+  if (!darkModeToggle) return;
 
-    // ローカルストレージから設定を読み込む
-    const isDarkMode = localStorage.getItem('darkMode') === 'true';
-    if (isDarkMode) {
-        document.documentElement.classList.add('dark');
-    }
+  // ローカルストレージから設定を読み込む
+  const isDarkMode = localStorage.getItem("darkMode") === "true";
+  if (isDarkMode) {
+    document.documentElement.classList.add("dark");
+  }
 
-    darkModeToggle.addEventListener('click', () => {
-        const isDark = document.documentElement.classList.toggle('dark');
-        localStorage.setItem('darkMode', isDark.toString());
-    });
+  darkModeToggle.addEventListener("click", () => {
+    const isDark = document.documentElement.classList.toggle("dark");
+    localStorage.setItem("darkMode", isDark.toString());
+  });
 }
 
 // モバイルサイドバーの開閉
 function setupMobileSidebar(): void {
-    const menuButton = document.getElementById('mobileMenuButton');
-    const sidebar = document.getElementById('mobileSidebar');
-    const closeButton = document.getElementById('mobileSidebarClose');
-    const overlay = document.getElementById('mobileSidebarOverlay');
+  const menuButton = document.getElementById("mobileMenuButton");
+  const sidebar = document.getElementById("mobileSidebar");
+  const closeButton = document.getElementById("mobileSidebarClose");
+  const overlay = document.getElementById("mobileSidebarOverlay");
 
-    if (!menuButton || !sidebar || !closeButton || !overlay) return;
+  if (!menuButton || !sidebar || !closeButton || !overlay) return;
 
-    const openSidebar = (): void => {
-        sidebar.classList.remove('-translate-x-full');
-        overlay.classList.remove('hidden');
-        document.body.classList.add('overflow-hidden');
-    };
+  const openSidebar = (): void => {
+    sidebar.classList.remove("-translate-x-full");
+    overlay.classList.remove("hidden");
+    document.body.classList.add("overflow-hidden");
+  };
 
-    const closeSidebar = (): void => {
-        sidebar.classList.add('-translate-x-full');
-        overlay.classList.add('hidden');
-        document.body.classList.remove('overflow-hidden');
-    };
+  const closeSidebar = (): void => {
+    sidebar.classList.add("-translate-x-full");
+    overlay.classList.add("hidden");
+    document.body.classList.remove("overflow-hidden");
+  };
 
-    menuButton.addEventListener('click', openSidebar);
-    closeButton.addEventListener('click', closeSidebar);
-    overlay.addEventListener('click', closeSidebar);
+  menuButton.addEventListener("click", openSidebar);
+  closeButton.addEventListener("click", closeSidebar);
+  overlay.addEventListener("click", closeSidebar);
 
-    // ナビゲーションリンクをクリックしたら閉じる
-    const navLinks = sidebar.querySelectorAll('a[href]');
-    navLinks.forEach((link) => {
-        link.addEventListener('click', closeSidebar);
-    });
+  // ナビゲーションリンクをクリックしたら閉じる
+  const navLinks = sidebar.querySelectorAll("a[href]");
+  navLinks.forEach((link) => {
+    link.addEventListener("click", closeSidebar);
+  });
 
-    // 画面サイズが変わったら調整
-    window.addEventListener('resize', () => {
-        if (window.innerWidth >= 1024) {
-            overlay.classList.add('hidden');
-            document.body.classList.remove('overflow-hidden');
-        }
-    });
+  // 画面サイズが変わったら調整
+  window.addEventListener("resize", () => {
+    if (window.innerWidth >= 1024) {
+      overlay.classList.add("hidden");
+      document.body.classList.remove("overflow-hidden");
+    }
+  });
 }
 
 // 初期化処理
-function init(): void {
-    console.log('Initializing client detail page...');
+async function init(): Promise<void> {
+  console.log("Initializing client detail page...");
+  setupDarkMode();
+  setupMobileSidebar();
 
-    const clientId = getClientIdFromUrl();
-    if (!clientId) {
-        const container = document.getElementById('clientDetailContainer');
-        if (container) {
-            container.innerHTML = `
+  const clientId = getClientIdFromUrl();
+  if (!clientId) {
+    const container = document.getElementById("clientDetailContainer");
+    if (container) {
+      container.innerHTML = `
         <div class="flex flex-col items-center justify-center h-64">
           <span class="material-icons-outlined text-6xl text-slate-300 dark:text-slate-700 mb-4">error</span>
           <p class="text-lg text-slate-500">顧客IDが指定されていません</p>
@@ -748,35 +779,38 @@ function init(): void {
           </a>
         </div>
       `;
-        }
-        return;
     }
+    return;
+  }
 
-    const client = getClientById(clientId);
-    if (!client) {
-        const container = document.getElementById('clientDetailContainer');
-        if (container) {
-            container.innerHTML = `
+  const container = document.getElementById("clientDetailContainer");
+  if (container) {
+    container.innerHTML =
+      '<p class="text-center py-12 text-slate-400">読み込み中...</p>';
+  }
+
+  const client = await getClientFromSupabase(clientId);
+  if (!client) {
+    if (container) {
+      container.innerHTML = `
         <div class="flex flex-col items-center justify-center h-64">
           <span class="material-icons-outlined text-6xl text-slate-300 dark:text-slate-700 mb-4">person_off</span>
-          <p class="text-lg text-slate-500">顧客が見つかりませんでした (ID: ${clientId})</p>
+          <p class="text-lg text-slate-500">顧客が見つかりませんでした</p>
           <a href="clients.html" class="mt-4 px-6 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors">
             顧客一覧に戻る
           </a>
         </div>
       `;
-        }
-        return;
     }
+    return;
+  }
 
-    renderClientDetail(client);
-    setupDarkMode();
-    setupMobileSidebar();
+  renderClientDetail(client);
 }
 
 // DOMContentLoaded時に初期化
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
 } else {
-    init();
+  init();
 }
