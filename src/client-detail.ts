@@ -1,81 +1,22 @@
 import { supabase } from "./supabase";
+import { Client, Task, MemoHistory } from "./shared";
+import { mapDbClientToDisplay } from "./lib/mapper";
 import {
-  CATEGORY_COLOR_MAP,
-  DEFAULT_AVATAR_URL,
-  Client,
-  Task,
-  MemoHistory,
-} from "./shared";
-
-// Supabaseから取得したデータを表示用Clientに変換する
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapDbClientToDisplay(dbClient: any): Client {
-  // レベルマッピング
-  const levels = { blue: 0, red: 0, green: 0, yellow: 0 };
-  for (const cl of dbClient.client_levels || []) {
-    const colorKey = CATEGORY_COLOR_MAP[cl.categories?.name];
-    if (colorKey) levels[colorKey] = cl.current_level;
-  }
-
-  // メモ履歴（updated_at降順）
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const history: MemoHistory[] = [...(dbClient.trainer_memos || [])]
-    .sort(
-      (a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-    )
-    .map((memo: any, idx: number) => ({
-      id: idx + 1,
-      date: new Date(memo.created_at).toLocaleDateString("ja-JP"),
-      trainer: memo.trainers?.display_name || "トレーナー",
-      content: memo.content,
-    }));
-
-  const lastMemo = history[0]?.content?.slice(0, 20) || "";
-
-  // タスクマッピング
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const currentTasks: Task[] = (dbClient.client_tasks || [])
-    .filter((ct: any) => ct.tasks)
-    .map((ct: any, idx: number) => ({
-      id: idx + 1,
-      title: ct.tasks.title,
-      reason: ct.tasks.why_text || "",
-      youtubeUrl: ct.tasks.youtube_url || "",
-      completed: ct.is_completed,
-    }));
-
-  // やりたい/やりたくないマッピング（will_matrix）
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const likes = (dbClient.will_matrix || [])
-    .filter((w: any) => w.like_status === 1)
-    .map((w: any) => w.tasks?.title)
-    .filter(Boolean)
-    .join("、");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const dislikes = (dbClient.will_matrix || [])
-    .filter((w: any) => w.like_status === -1)
-    .map((w: any) => w.tasks?.title)
-    .filter(Boolean)
-    .join("、");
-
-  return {
-    id: dbClient.id,
-    name: dbClient.display_name || "名前未設定",
-    avatarUrl: dbClient.profile_image_url || DEFAULT_AVATAR_URL,
-    course: dbClient.course_name || "",
-    status: "Active",
-    lastUpdate: new Date(dbClient.updated_at).toLocaleDateString("ja-JP"),
-    lastMemo,
-    levels,
-    nextGoal: "",
-    previousNote: history[0]?.content || "",
-    currentTasks,
-    preferences: { likes, dislikes },
-    history,
-  };
-}
-
+  fetchCategories,
+  fetchTrainers,
+  fetchAllTasks,
+  updateLevel,
+  updateNextGoal,
+  updateClientProfile,
+  createMemo,
+  updateMemo,
+  deleteMemo,
+  createTask,
+  assignExistingTask,
+  updateTask,
+  toggleTask,
+  deleteClientTask,
+} from "./api/client-crud";
 // URLパラメータから顧客UUIDを取得
 function getClientIdFromUrl(): string | null {
   const params = new URLSearchParams(window.location.search);
@@ -92,17 +33,23 @@ async function getClientFromSupabase(id: string): Promise<Client | null> {
             display_name,
             profile_image_url,
             course_name,
+            line_user_id,
+            next_goal,
             updated_at,
             client_levels (
+                id,
+                category_id,
                 current_level,
                 categories ( name )
             ),
             trainer_memos (
+                id,
                 content,
                 created_at,
                 trainers ( display_name )
             ),
             client_tasks (
+                id,
                 is_completed,
                 tasks (
                     id,
@@ -125,6 +72,46 @@ async function getClientFromSupabase(id: string): Promise<Client | null> {
     return null;
   }
   return mapDbClientToDisplay(data);
+}
+
+/** DBロード時のレベルスナップショット（level_history の before 値に使用） */
+let _dbLevels: Record<string, number> = {};
+
+/** トレーナー一覧キャッシュ */
+let _trainers: { id: string; name: string }[] = [];
+
+// ============================================================
+// トースト通知
+// ============================================================
+
+function showToast(
+  message: string,
+  type: "success" | "error" = "success",
+): void {
+  const existing = document.getElementById("toastNotification");
+  if (existing) existing.remove();
+
+  const toast = document.createElement("div");
+  toast.id = "toastNotification";
+  const colorClass =
+    type === "success" ? "bg-green-600 text-white" : "bg-red-600 text-white";
+  toast.className = `fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-lg ${colorClass} transition-all duration-300 opacity-0 translate-y-2`;
+  const icon = type === "success" ? "check_circle" : "error";
+  toast.innerHTML = `<span class="material-icons-outlined">${icon}</span><span class="font-medium">${message}</span>`;
+  document.body.appendChild(toast);
+
+  // フェードイン
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      toast.classList.remove("opacity-0", "translate-y-2");
+    });
+  });
+
+  // 3秒後にフェードアウト → 削除
+  setTimeout(() => {
+    toast.classList.add("opacity-0", "translate-y-2");
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
 }
 
 // レベルセレクトボックスの生成
@@ -220,6 +207,7 @@ function createTaskCard(task: Task): string {
       </div>
       <div class="pt-2">
         <button 
+          type="button"
           class="p-2 text-slate-300 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-all task-delete" 
           title="削除"
           data-task-id="${task.id}"
@@ -236,6 +224,23 @@ function createMemoHistoryItem(memo: MemoHistory, isLatest: boolean): string {
   const dotColor = isLatest ? "bg-primary" : "bg-slate-300 dark:bg-slate-700";
   const opacityClass = isLatest ? "" : "opacity-70";
   const isNewMemo = !memo.date || !memo.content;
+
+  const trainerInList = _trainers.some((t) => t.name === memo.trainer);
+  const extraOption =
+    memo.trainer && !trainerInList
+      ? `<option value="${memo.trainer}" selected>${memo.trainer}</option>`
+      : "";
+
+  const trainerSelectOptions = [
+    `<option value="">—未選択—</option>`,
+    extraOption,
+    ..._trainers.map((t) => {
+      const selected = memo.trainer === t.name ? "selected" : "";
+      return `<option value="${t.name}" ${selected}>${t.name}</option>`;
+    }),
+  ]
+    .filter(Boolean)
+    .join("");
 
   return `
     <div class="relative pl-8 border-l-2 border-slate-100 dark:border-slate-800 ml-2" data-memo-id="${memo.id}">
@@ -255,16 +260,16 @@ function createMemoHistoryItem(memo: MemoHistory, isLatest: boolean): string {
             </div>
             <div class="space-y-1">
               <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">担当者</label>
-              <input 
-                class="w-full bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 placeholder-slate-300 focus:ring-2 focus:ring-primary focus:border-primary memo-trainer" 
-                placeholder="担当者名" 
-                type="text" 
-                value="${memo.trainer || ""}"
+              <select
+                class="w-full bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 focus:ring-2 focus:ring-primary focus:border-primary memo-trainer"
                 data-memo-id="${memo.id}"
-              />
+              >
+                ${trainerSelectOptions}
+              </select>
             </div>
           </div>
           <button 
+            type="button"
             class="p-2 text-slate-300 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-all memo-delete" 
             title="削除"
             data-memo-id="${memo.id}"
@@ -286,6 +291,151 @@ function createMemoHistoryItem(memo: MemoHistory, isLatest: boolean): string {
   `;
 }
 
+// 過去の課題選択モーダルを表示
+async function showPastTaskModal(client: Client): Promise<void> {
+  // 既に割り当て済みのタスクID（削除フラグが立っているものは再追加可能）
+  const assignedTaskIds = new Set(
+    client.currentTasks
+      .filter((t) => !t.isDeleted && t.dbTaskId)
+      .map((t) => t.dbTaskId as string),
+  );
+
+  const allTasks = await fetchAllTasks();
+  const availableTasks = allTasks.filter((t) => !assignedTaskIds.has(t.id));
+
+  // カテゴリ別にグループ化
+  const grouped = availableTasks.reduce(
+    (acc, task) => {
+      const key = task.categoryName || "その他";
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(task);
+      return acc;
+    },
+    {} as Record<string, typeof availableTasks>,
+  );
+
+  const categoryColorClass: Record<string, string> = {
+    マットピラティス:
+      "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+    ウェイトトレーニング:
+      "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+    スポーツトレーニング:
+      "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+    ムーブメントトレーニング:
+      "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  };
+
+  const tasksHTML =
+    availableTasks.length === 0
+      ? `<p class="text-center text-slate-400 py-8">追加できる課題がありません</p>`
+      : Object.entries(grouped)
+          .map(
+            ([categoryName, tasks]) => `
+          <div class="mb-4">
+            <span class="inline-block px-2 py-0.5 text-xs font-bold rounded-full mb-2 ${categoryColorClass[categoryName] || "bg-slate-100 text-slate-600"}">${categoryName}</span>
+            <div class="space-y-1">
+              ${tasks
+                .map(
+                  (task) => `
+                <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors">
+                  <input type="checkbox" class="past-task-checkbox mt-0.5 w-4 h-4 rounded text-primary border-slate-300 focus:ring-primary cursor-pointer" data-task-id="${task.id}" data-title="${task.title.replace(/"/g, "&quot;")}" data-why="${(task.whyText ?? "").replace(/"/g, "&quot;")}" data-url="${(task.youtubeUrl ?? "").replace(/"/g, "&quot;")}" data-category-id="${task.categoryId}" />
+                  <div>
+                    <p class="text-sm font-medium text-slate-800 dark:text-slate-100">${task.title}</p>
+                    ${task.whyText ? `<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">${task.whyText}</p>` : ""}
+                  </div>
+                </label>
+              `,
+                )
+                .join("")}
+            </div>
+          </div>
+        `,
+          )
+          .join("");
+
+  // モーダルを挿入
+  const existing = document.getElementById("pastTaskModal");
+  if (existing) existing.remove();
+
+  const modal = document.createElement("div");
+  modal.id = "pastTaskModal";
+  modal.className =
+    "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm";
+  modal.innerHTML = `
+    <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
+      <div class="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
+        <h3 class="text-lg font-bold flex items-center gap-2">
+          <span class="material-icons-outlined text-primary">history</span>
+          過去の課題を追加
+        </h3>
+        <button id="pastTaskModalClose" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+          <span class="material-icons-outlined">close</span>
+        </button>
+      </div>
+      <div class="overflow-y-auto flex-1 p-6">
+        ${tasksHTML}
+      </div>
+      <div class="p-6 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
+        <button id="pastTaskModalCancel" type="button" class="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors font-medium">
+          キャンセル
+        </button>
+        <button id="pastTaskModalConfirm" type="button" disabled class="px-5 py-2.5 rounded-xl bg-primary text-white hover:bg-blue-700 transition-colors font-bold disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-primary">
+          追加する
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const closeModal = (): void => modal.remove();
+
+  document
+    .getElementById("pastTaskModalClose")
+    ?.addEventListener("click", closeModal);
+  document
+    .getElementById("pastTaskModalCancel")
+    ?.addEventListener("click", closeModal);
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  // チェックボックスの変更に応じてボタンの活性/非活性を切り替え
+  const confirmBtn = document.getElementById(
+    "pastTaskModalConfirm",
+  ) as HTMLButtonElement | null;
+  modal.addEventListener("change", () => {
+    const anyChecked =
+      modal.querySelectorAll<HTMLInputElement>(".past-task-checkbox:checked")
+        .length > 0;
+    if (confirmBtn) confirmBtn.disabled = !anyChecked;
+  });
+
+  document
+    .getElementById("pastTaskModalConfirm")
+    ?.addEventListener("click", () => {
+      const checked = modal.querySelectorAll<HTMLInputElement>(
+        ".past-task-checkbox:checked",
+      );
+      checked.forEach((checkbox) => {
+        const newTask: import("./shared").Task = {
+          id: Date.now() + Math.random(),
+          dbTaskId: checkbox.dataset.taskId,
+          title: checkbox.dataset.title ?? "",
+          reason: checkbox.dataset.why ?? "",
+          youtubeUrl: checkbox.dataset.url ?? "",
+          completed: false,
+          isNew: true,
+        };
+        client.currentTasks.push(newTask);
+      });
+
+      closeModal();
+      if (checked.length > 0) {
+        renderClientDetail(client);
+      }
+    });
+}
+
 // 詳細画面のコンテンツを生成
 function renderClientDetail(client: Client): void {
   const container = document.getElementById("clientDetailContainer");
@@ -298,11 +448,13 @@ function renderClientDetail(client: Client): void {
   }
 
   const tasksHTML = client.currentTasks
+    .filter((task) => !task.isDeleted)
     .map((task) => createTaskCard(task))
     .join("");
   const historyHTML =
     client.history
-      ?.map((memo, index) => createMemoHistoryItem(memo, index === 0))
+      ?.filter((memo) => !memo.isDeleted)
+      .map((memo, index) => createMemoHistoryItem(memo, index === 0))
       .join("") || "";
 
   container.innerHTML = `
@@ -313,29 +465,46 @@ function renderClientDetail(client: Client): void {
         <img alt="${client.name}" class="w-24 h-24 rounded-2xl object-cover ring-4 ring-blue-50 dark:ring-blue-900/20" src="${client.avatarUrl}" onerror="this.onerror=null; this.src=window.DEFAULT_AVATAR_URL" />
         <div>
           <div class="flex items-center gap-3">
-            <h2 class="text-2xl font-bold">${client.name}</h2>
-            <span class="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-semibold rounded-full uppercase tracking-wider">${client.status || "Active"}</span>
+            <input
+              id="profileNameInput"
+              class="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-1 text-2xl font-bold text-slate-800 dark:text-slate-100 placeholder-slate-300 focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+              placeholder="名前を入力"
+              type="text"
+              value="${client.name}"
+            />
+            <span class="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-semibold rounded-full uppercase tracking-wider shrink-0">${client.status || "Active"}</span>
           </div>
           <div class="mt-3 space-y-1">
             <div class="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm">
-              <span class="material-icons-outlined text-base">fitness_center</span>
-              <span>コース: ${client.course || "未設定"}</span>
+              <span class="material-icons-outlined text-base shrink-0">fitness_center</span>
+              <span class="text-slate-400 shrink-0">コース:</span>
+              <input
+                id="profileCourseInput"
+                class="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-2 py-1 text-sm text-slate-600 dark:text-slate-300 placeholder-slate-300 focus:ring-2 focus:ring-primary focus:border-primary transition-colors flex-1"
+                placeholder="未設定"
+                type="text"
+                value="${client.course || ""}"
+              />
             </div>
             <div class="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm">
-              <span class="material-icons-outlined text-base">mail</span>
-              <span>${client.email || "未設定"}</span>
+              <span class="material-icons-outlined text-base shrink-0">chat</span>
+              <span class="text-slate-400 shrink-0">LINE ID:</span>
+
+              <input
+                id="profileLineIdInput"
+                class="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-2 py-1 text-sm text-slate-600 dark:text-slate-300 placeholder-slate-300 focus:ring-2 focus:ring-primary focus:border-primary transition-colors flex-1"
+                placeholder="LINEユーザーID"
+                type="text"
+                value="${client.lineUserId || ""}"
+              />
             </div>
           </div>
         </div>
       </div>
-      <button class="flex items-center gap-2 px-5 py-2.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors font-medium text-sm">
-        <span class="material-icons-outlined text-lg">edit</span>
-        編集
-      </button>
     </section>
 
     <!-- Progress Section -->
-    <section class="bg-surface-light dark:bg-surface-dark rounded-2xl p-6 shadow-sm border-2 border-primary ring-4 ring-primary/10">
+    <section class="bg-surface-light dark:bg-surface-dark rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
       <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-2">
           <span class="material-icons-outlined text-primary">trending_up</span>
@@ -386,7 +555,7 @@ function renderClientDetail(client: Client): void {
           <span class="material-icons-outlined">add_circle</span>
           + 新規課題を追加
         </button>
-        <button class="flex items-center justify-center gap-2 py-3.5 border-2 border-dashed border-slate-200 dark:border-slate-700 text-slate-500 hover:text-primary hover:border-primary dark:hover:border-primary/50 transition-all rounded-xl font-bold bg-white dark:bg-transparent">
+        <button id="addPastTaskBtn" type="button" class="flex items-center justify-center gap-2 py-3.5 border-2 border-dashed border-slate-200 dark:border-slate-700 text-slate-500 hover:text-primary hover:border-primary dark:hover:border-primary/50 transition-all rounded-xl font-bold bg-white dark:bg-transparent">
           <span class="material-icons-outlined">history</span>
           + 過去の課題を追加
         </button>
@@ -414,7 +583,6 @@ function renderClientDetail(client: Client): void {
     <section class="bg-surface-light dark:bg-surface-dark rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
       <div class="flex items-center justify-between mb-8">
         <h3 class="text-lg font-bold">やりたい・やりたくない確認</h3>
-        <button class="px-5 py-2 text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl hover:bg-slate-200 transition-colors">内容を編集</button>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
         <div class="flex items-start gap-5">
@@ -486,12 +654,22 @@ function setupTaskEventListeners(client: Client): void {
         target.closest("button")?.getAttribute("data-task-id") || "0",
       );
       if (confirm("この課題を削除しますか?")) {
-        const index = client.currentTasks.findIndex((t) => t.id === taskId);
-        if (index !== -1) {
-          client.currentTasks.splice(index, 1);
-          console.log(`Task ${taskId} deleted`);
-          // ここでAPIへの保存処理を追加可能
+        const task = client.currentTasks.find((t) => t.id === taskId);
+        if (task) {
+          if (task.isNew) {
+            // まだDB未登録の新規タスクは即座に配列から削除
+            const index = client.currentTasks.indexOf(task);
+            client.currentTasks.splice(index, 1);
+          } else {
+            // 既存タスクはフラグを立てて登録時にDELETE
+            task.isDeleted = true;
+          }
           renderClientDetail(client);
+          // 削除確定後にフォームを自動送信して登録を完了
+          const form = document.getElementById(
+            "clientDetailForm",
+          ) as HTMLFormElement;
+          form?.requestSubmit();
         }
       }
     });
@@ -502,15 +680,23 @@ function setupTaskEventListeners(client: Client): void {
   if (addNewTaskBtn) {
     addNewTaskBtn.addEventListener("click", () => {
       const newTask: Task = {
-        id: Date.now(), // 仮のID
+        id: Date.now(),
         title: "",
         reason: "",
         youtubeUrl: "",
         completed: false,
+        isNew: true, // DB未登録フラグ
       };
       client.currentTasks.push(newTask);
-      console.log("New task added");
       renderClientDetail(client);
+    });
+  }
+
+  // 過去の課題追加
+  const addPastTaskBtn = document.getElementById("addPastTaskBtn");
+  if (addPastTaskBtn) {
+    addPastTaskBtn.addEventListener("click", () => {
+      showPastTaskModal(client);
     });
   }
 
@@ -535,6 +721,32 @@ function setupTaskEventListeners(client: Client): void {
         }
       });
     });
+
+  // 名前・コース名・LINE IDの変更
+  const profileNameInput = document.getElementById(
+    "profileNameInput",
+  ) as HTMLInputElement;
+  if (profileNameInput) {
+    profileNameInput.addEventListener("change", (event) => {
+      client.name = (event.target as HTMLInputElement).value;
+    });
+  }
+  const profileCourseInput = document.getElementById(
+    "profileCourseInput",
+  ) as HTMLInputElement;
+  if (profileCourseInput) {
+    profileCourseInput.addEventListener("change", (event) => {
+      client.course = (event.target as HTMLInputElement).value;
+    });
+  }
+  const profileLineIdInput = document.getElementById(
+    "profileLineIdInput",
+  ) as HTMLInputElement;
+  if (profileLineIdInput) {
+    profileLineIdInput.addEventListener("change", (event) => {
+      client.lineUserId = (event.target as HTMLInputElement).value;
+    });
+  }
 
   // Next Goal の変更
   const nextGoalInput = document.getElementById(
@@ -591,6 +803,7 @@ function setupMemoCreation(client: Client): void {
         .replace(/\//g, "/"),
       trainer: "",
       content: "",
+      isNew: true, // DB未登録フラグ
     };
 
     // メモ履歴の先頭に追加
@@ -599,7 +812,6 @@ function setupMemoCreation(client: Client): void {
     }
     client.history.unshift(newMemo);
 
-    console.log("New memo added:", newMemo);
     // UI を更新
     renderClientDetail(client);
   });
@@ -615,12 +827,22 @@ function setupMemoEventListeners(client: Client): void {
         target.closest("button")?.getAttribute("data-memo-id") || "0",
       );
       if (confirm("このメモを削除しますか?")) {
-        const index = client.history?.findIndex((m) => m.id === memoId) ?? -1;
-        if (index !== -1 && client.history) {
-          client.history.splice(index, 1);
-          console.log(`Memo ${memoId} deleted`);
-          // ここでAPIへの保存処理を追加可能
+        const memo = client.history?.find((m) => m.id === memoId);
+        if (memo && client.history) {
+          if (memo.isNew) {
+            // まだDB未登録の新規メモは即座に配列から削除
+            const index = client.history.indexOf(memo);
+            client.history.splice(index, 1);
+          } else {
+            // 既存メモはフラグを立てて登録時にDELETE
+            memo.isDeleted = true;
+          }
           renderClientDetail(client);
+          // 削除確定後にフォームを自動送信して登録を完了
+          const form = document.getElementById(
+            "clientDetailForm",
+          ) as HTMLFormElement;
+          form?.requestSubmit();
         }
       }
     });
@@ -643,7 +865,7 @@ function setupMemoEventListeners(client: Client): void {
   // メモの担当者変更
   document.querySelectorAll(".memo-trainer").forEach((input) => {
     input.addEventListener("change", (event) => {
-      const target = event.target as HTMLInputElement;
+      const target = event.target as HTMLSelectElement;
       const memoId = parseInt(target.getAttribute("data-memo-id") || "0");
       const memo = client.history?.find((m) => m.id === memoId);
       if (memo) {
@@ -674,32 +896,163 @@ function setupFormSubmit(client: Client): void {
   const form = document.getElementById("clientDetailForm") as HTMLFormElement;
   if (!form) return;
 
-  form.addEventListener("submit", (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    // フォームデータを収集
-    const formData = {
-      clientId: client.id,
-      name: client.name,
-      email: client.email,
-      course: client.course,
-      status: client.status,
-      levels: client.levels,
-      nextGoal: client.nextGoal,
-      currentTasks: client.currentTasks,
-      preferences: client.preferences,
-      history: client.history,
-    };
+    // 登録ボタンをローディング状態に
+    const submitBtn = form.querySelector(
+      'button[type="submit"]',
+    ) as HTMLButtonElement;
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML =
+        '<span class="material-icons-outlined animate-spin">sync</span> 登録中...';
+    }
 
-    console.log("Form submitted with data:", formData);
+    const errors: string[] = [];
 
-    // ここでAPIへのPOST/PUT処理を追加
-    // 例: fetch('/api/clients/' + client.id, { method: 'PUT', body: JSON.stringify(formData) })
-
-    // 成功メッセージを表示
-    alert(
-      "顧客情報を登録しました！\n\n※現在はローカルデータのみ更新されています。\nDB連携は今後実装予定です。",
+    // ============================================================
+    // 1. プロフィール更新（名前・コース名・LINE ID）
+    // ============================================================
+    const profileOk = await updateClientProfile(
+      client.id,
+      client.name,
+      client.course ?? "",
+      client.lineUserId ?? "",
     );
+    if (!profileOk) errors.push("プロフィール更新エラー");
+
+    // ============================================================
+    // 2. レベル更新
+    // ============================================================
+    const colorKeys = ["blue", "red", "green", "yellow"] as const;
+    for (const colorKey of colorKeys) {
+      const levelId = client.levelIdMap?.[colorKey];
+      const categoryId = client.categoryIdMap?.[colorKey];
+      if (!levelId || !categoryId) continue;
+
+      const newLevel = client.levels[colorKey];
+      const prevLevel = _dbLevels[colorKey] ?? 0;
+      const ok = await updateLevel(
+        client.id,
+        levelId,
+        categoryId,
+        newLevel,
+        prevLevel,
+      );
+      if (!ok) errors.push(`レベル更新エラー (${colorKey})`);
+    }
+
+    // ============================================================
+    // 3. タスク CRUD
+    // ============================================================
+    const defaultCategoryId = (await fetchCategories())[0]?.id ?? "";
+
+    for (const task of client.currentTasks) {
+      if (task.isNew && !task.isDeleted) {
+        // 新規追加
+        if (!task.title.trim()) continue; // 空のタスクはスキップ
+        if (task.dbTaskId) {
+          // 過去の課題から選択：tasksマスターは既存 → client_tasksにのみ INSERT
+          const clientTaskId = await assignExistingTask(
+            client.id,
+            task.dbTaskId,
+          );
+          if (clientTaskId) {
+            task.clientTaskId = clientTaskId;
+            task.isNew = false;
+          } else {
+            errors.push(`タスク割り当てエラー: ${task.title}`);
+          }
+        } else {
+          // 新規作成：tasks + client_tasks の両方 INSERT
+          const result = await createTask(
+            client.id,
+            defaultCategoryId,
+            task.title,
+            task.reason ?? "",
+            task.youtubeUrl ?? "",
+          );
+          if (result) {
+            task.dbTaskId = result.dbTaskId;
+            task.clientTaskId = result.clientTaskId;
+            task.isNew = false;
+          } else {
+            errors.push(`タスク作成エラー: ${task.title}`);
+          }
+        }
+      } else if (task.isDeleted && task.clientTaskId) {
+        // 削除
+        const ok = await deleteClientTask(task.clientTaskId);
+        if (!ok) errors.push(`タスク削除エラー: ${task.title}`);
+      } else if (
+        !task.isNew &&
+        !task.isDeleted &&
+        task.dbTaskId &&
+        task.clientTaskId
+      ) {
+        // 既存タスクの更新
+        const [taskOk, toggleOk] = await Promise.all([
+          updateTask(
+            task.dbTaskId,
+            task.title,
+            task.reason ?? "",
+            task.youtubeUrl ?? "",
+          ),
+          toggleTask(task.clientTaskId, task.completed),
+        ]);
+        if (!taskOk || !toggleOk)
+          errors.push(`タスク更新エラー: ${task.title}`);
+      }
+    }
+
+    // ============================================================
+    // 4. メモ CRUD
+    // ============================================================
+    for (const memo of client.history ?? []) {
+      if (memo.isNew && !memo.isDeleted) {
+        // 新規作成
+        if (!memo.content.trim()) continue; // 空メモはスキップ
+        const dbId = await createMemo(client.id, memo.content);
+        if (dbId) {
+          memo.dbId = dbId;
+          memo.isNew = false;
+        } else {
+          errors.push("メモ作成エラー");
+        }
+      } else if (memo.isDeleted && memo.dbId) {
+        // 削除
+        const ok = await deleteMemo(memo.dbId);
+        if (!ok) errors.push("メモ削除エラー");
+      } else if (!memo.isNew && !memo.isDeleted && memo.dbId) {
+        // 既存メモの更新
+        const ok = await updateMemo(memo.dbId, memo.content);
+        if (!ok) errors.push("メモ更新エラー");
+      }
+    }
+
+    // ============================================================
+    // 5. Next Goal 更新
+    // ============================================================
+    const goalOk = await updateNextGoal(client.id, client.nextGoal);
+    if (!goalOk) errors.push("Next Goal 更新エラー");
+
+    // ============================================================
+    // 6. 登録結果をトーストで通知
+    // ============================================================
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML =
+        '<span class="material-icons-outlined">save</span> 登録する';
+    }
+
+    if (errors.length === 0) {
+      showToast("顧客情報を登録しました");
+      // DB値スナップショットを更新
+      _dbLevels = { ...client.levels };
+    } else {
+      showToast(`一部の登録に失敗しました: ${errors.join(", ")}`, "error");
+    }
   });
 }
 
@@ -804,6 +1157,13 @@ async function init(): Promise<void> {
     }
     return;
   }
+
+  // DBロード時のレベルをスナップショット（level_history 用）
+  _dbLevels = { ...client.levels };
+
+  // カテゴリをプリフェッチ（新規タスク作成時に必要）
+  await fetchCategories();
+  _trainers = await fetchTrainers();
 
   renderClientDetail(client);
 }
