@@ -1,191 +1,160 @@
-// このファイルをモジュールとして扱う
-export {};
+import {
+  fetchStages,
+  fetchTasksMaster,
+  fetchTrainersMaster,
+  createTaskMaster,
+  updateTaskMaster,
+  deleteTaskMaster,
+  createTrainerMaster,
+  updateTrainerMaster,
+  deactivateTrainer,
+  updateStage,
+  uploadTrainerAvatar,
+} from "./api/settings-crud";
+import { fetchCategories } from "./api/client-crud";
 
-// ステージの型定義
+// ============================================================
+// 型定義
+// ============================================================
+
 interface Stage {
-  id: number;
-  level: string;
+  dbId: string;
+  stageNo: number;
+  level: string; // "1合目" etc. (stageNo から生成)
   name: string;
   description: string;
-  levelThreshold: number; // このステージをクリアするための最低レベル（全カテゴリーがこの値を超えたら次ステージへ）
+  levelThreshold: number; // DB: level_to
+  isDirty: boolean;
 }
 
-// タスクの型定義
 interface Task {
-  id: number;
+  dbId: string | null; // null = 新規（未保存）
+  tempId: number; // UI キー
   category: "blue" | "red" | "green" | "yellow";
   name: string;
   youtubeUrl: string;
   reason: string;
+  isNew: boolean;
+  isDeleted: boolean;
+  isDirty: boolean;
 }
 
-// トレーナーの型定義
 interface Trainer {
-  id: number;
+  dbId: string | null; // null = 新規（未保存）
+  tempId: number;
   name: string;
-  email: string;
+  lineUserId: string;
   avatarUrl: string;
   role: "Head" | "Staff";
   isOnline: boolean;
 }
 
-// サンプルステージデータ
-const stagesData: Stage[] = [
-  {
-    id: 1,
-    level: "1合目",
-    name: "カウンセリング前",
-    description: "お問い合わせ後、体験予約の調整を行っている段階",
-    levelThreshold: 5,
-  },
-  {
-    id: 2,
-    level: "2合目",
-    name: "体験・体験待ち",
-    description: "体験レッスンを予約済み、または体験が完了し検討中の段階",
-    levelThreshold: 10,
-  },
-  {
-    id: 3,
-    level: "3合目",
-    name: "初期・導入期",
-    description: "入会後1〜2ヶ月。基本動作の習得と習慣化を目指す段階",
-    levelThreshold: 15,
-  },
-  {
-    id: 4,
-    level: "4合目",
-    name: "成長期",
-    description: "3〜6ヶ月。動作の質が向上し、目標達成に向けて安定した進捗",
-    levelThreshold: 20,
-  },
-  {
-    id: 5,
-    level: "5合目",
-    name: "習熟期",
-    description: "6〜12ヶ月。自立したトレーニングが可能になる段階",
-    levelThreshold: 25,
-  },
-  {
-    id: 6,
-    level: "6合目",
-    name: "マスター期",
-    description: "1年以上。高度な技術習得と長期的な習慣の確立",
-    levelThreshold: 30,
-  },
-];
+// ============================================================
+// モジュール変数
+// ============================================================
 
-// サンプルタスクデータ
-const tasksData: Task[] = [
-  {
-    id: 1,
-    category: "blue",
-    name: "ペルビックティルト",
-    youtubeUrl: "https://www.youtube.com/watch?v=example1",
-    reason: "骨盤の分節的な動きと、ニュートラルポジションの認識を促すため。",
-  },
-  {
-    id: 2,
-    category: "blue",
-    name: "3D呼吸",
-    youtubeUrl: "",
-    reason: "肋骨の広がりを意識し、深い呼吸を通じてコアの安定化を図るため。",
-  },
-  {
-    id: 3,
-    category: "blue",
-    name: "チェストリフト",
-    youtubeUrl: "",
-    reason: "腹部の安定性を保ちながら、胸椎の屈曲可動域を確保するため。",
-  },
-  {
-    id: 4,
-    category: "blue",
-    name: "シングルレッグストレッチ",
-    youtubeUrl: "https://www.youtube.com/watch?v=leg_stretch",
-    reason: "骨盤の安定性を維持しながら股関節を動かす能力を養うため。",
-  },
-  {
-    id: 5,
-    category: "red",
-    name: "スクワット",
-    youtubeUrl: "",
-    reason: "下半身の基礎筋力を構築し、日常動作の質を向上させるため。",
-  },
-  {
-    id: 6,
-    category: "red",
-    name: "デッドリフト",
-    youtubeUrl: "",
-    reason: "後面連鎖の強化と正しいヒンジ動作の習得のため。",
-  },
-  {
-    id: 7,
-    category: "green",
-    name: "ラダートレーニング",
-    youtubeUrl: "",
-    reason: "俊敏性と協調性を向上させ、スポーツパフォーマンスを高めるため。",
-  },
-  {
-    id: 8,
-    category: "yellow",
-    name: "バランスボードトレーニング",
-    youtubeUrl: "",
-    reason: "体幹の安定性と固有受容感覚を向上させるため。",
-  },
-];
+let stagesData: Stage[] = [];
+let tasksData: Task[] = [];
+let trainersData: Trainer[] = [];
 
-// サンプルトレーナーデータ
-const trainersData: Trainer[] = [
-  {
-    id: 1,
-    name: "田中 美咲",
-    email: "m.tanaka@gympro.jp",
-    avatarUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuA2gTAkNMGayh0iynd3OWRaCdhILQkmby4SAH3bPE8hRjqPflU0bR8nxFVmir1TzGWzFUE1FZ6sOX_izYs-EwbRPpL_f63ttrM0He29yqiZ1paaq9ESwxyVvytRl0z2JI5mFsGWAtE7WPYqbMN8HDmv2a0L7FWOJ47TSGQ2Xy75qfiXQLApROvZXxCBcW_J69NezHEi12vrfI93mkVmYY5aEFqWnz6M1vvccDjAI22gkbg8pwk68rj7oXs2agflbd_UstlIQWtkNxk",
-    role: "Head",
-    isOnline: true,
-  },
-  {
-    id: 2,
-    name: "佐藤 健太",
-    email: "k.sato@gympro.jp",
-    avatarUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuAoBZf-C9avRaokbjftgmHxHPKrS7ZBSbJpeNLPBfZon1mDSmIgzj8qVCPrGY-9Rwx1LFgITBVnJVQ9_p56j3IXkN_Ud2gD2Vj_5r01PyrThZtlqQZeg1_-wWNEljSYTYGh66CC9QJ4Z6IXFMsFqZvhBjswa3FnWF5Atob7O_Mupq2lmEOb20-2y6uwYbwS9mCXlOPLbirM3eHLyOH0-fMXOrfq9hg847gjaZHRm_7V4cfVg5pk5lJ3VdcGQ4qz1zcfaeN0ux3jEHk",
-    role: "Staff",
-    isOnline: false,
-  },
-  {
-    id: 3,
-    name: "高橋 愛理",
-    email: "a.takahashi@gympro.jp",
-    avatarUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBZ2q0OJ2u0fG8VfrrC8bRxqq6vcABvxtoO4ogAfDpIZ0O2hsx-8EUutJzXzCK9YhSO4dMz3TJQq59jyPAXbxyhU0CmIOR7BU0FVblJK9GhIR1qyBkcyaHehsSWM6PG1JjQ4DwWG6k1DYWPQLltYlgnfrMjui4vF1PGpy41u-x158OeAXd_78w69RnPEB_m8hvzcGz-RKHyAjsAsDQb7AN3uQRKzV8j77MQJXEHl99w1AuzKpNafYDM6gvRp2ObFn1WleEUqd7R_0M",
-    role: "Staff",
-    isOnline: true,
-  },
-  {
-    id: 4,
-    name: "山本 太郎",
-    email: "t.yamamoto@gympro.jp",
-    avatarUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuAXEOg_iYS6LRYZdmYsddpvMq1b1NLpiwiBqsWwnq6fjeMuXE3I65zj6J8vL1QveMdUvcox_fMUJpAK45iRJoWmlGEt4EMAy98rqLJNY6jcytcf9FnzNVMgrVbPYcEW4PRYa31ShXRUcNw8U9OUSK9z243YfaZeoLn3NmDBWU25J9LM5H659zpPHMF0gnRgvcoo1RiOpqh7VmorM2A-kuO_Zek0Sd4zJpqZ4wMmH949oAiukXk-07aAf1tv20p4iY0D8gpkh6cI8Hk",
-    role: "Staff",
-    isOnline: true,
-  },
-  {
-    id: 5,
-    name: "鈴木 花子",
-    email: "h.suzuki@gympro.jp",
-    avatarUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCOTmHNB0ZGcIs7hqgp3jVkx0h_A8bS9jIPtjq4JilvCwWCfrthpclirCPZIrj4PfMO3A2rNy-M1KCda_jq7iLPtk-xNVFKZqippajxl7L2xfxi8doWUcU-zk4aX93tYV02_QfZC2HwXPKswxrZ56baNNmN5NL-TZPATuQQbZb2gF4A5g8_V9T3K4MRarGpZjflvueHtTm9OMlGyV2Z1fOTeBP-g4SoHTzZhRhacx91Q-QBGpm1HJJapLAJvlTqaonOuMLfXzkByEI",
-    role: "Staff",
-    isOnline: false,
-  },
-];
+// カテゴリー色キー → categories.id (UUID) のマッピング
+const categoryColorMap: Record<"blue" | "red" | "green" | "yellow", string> = {
+  blue: "",
+  red: "",
+  green: "",
+  yellow: "",
+};
 
 // 現在選択中のカテゴリー
 let currentCategory: "blue" | "red" | "green" | "yellow" = "blue";
+
+// トレーナーモーダルのモード管理
+let trainerModalMode: "add" | "edit" = "add";
+let trainerEditTargetId: number | null = null;
+
+// モーダルで選択された画像ファイル
+let selectedAvatarFile: File | null = null;
+
+// ============================================================
+// DB → UI 変換関数
+// ============================================================
+
+const STAGE_LEVEL_LABEL: Record<number, string> = {
+  1: "1合目",
+  2: "2合目",
+  3: "3合目",
+  4: "4合目",
+  5: "5合目",
+  6: "6合目",
+};
+
+const CATEGORY_NAME_TO_COLOR: Record<
+  string,
+  "blue" | "red" | "green" | "yellow"
+> = {
+  マットピラティス: "blue",
+  ウェイトトレーニング: "red",
+  スポーツトレーニング: "green",
+  ムーブメントトレーニング: "yellow",
+};
+
+function dbStageToStage(db: {
+  id: string;
+  stage_no: number;
+  name: string;
+  description: string | null;
+  level_to: number;
+}): Stage {
+  return {
+    dbId: db.id,
+    stageNo: db.stage_no,
+    level: STAGE_LEVEL_LABEL[db.stage_no] ?? `${db.stage_no}合目`,
+    name: db.name,
+    description: db.description ?? "",
+    levelThreshold: db.level_to,
+    isDirty: false,
+  };
+}
+
+function dbTaskToTask(
+  db: {
+    id: string;
+    category_id: string;
+    title: string;
+    why_text: string | null;
+    youtube_url: string | null;
+  },
+  category: "blue" | "red" | "green" | "yellow",
+): Task {
+  return {
+    dbId: db.id,
+    tempId: Date.now() + Math.random(),
+    category,
+    name: db.title,
+    youtubeUrl: db.youtube_url ?? "",
+    reason: db.why_text ?? "",
+    isNew: false,
+    isDeleted: false,
+    isDirty: false,
+  };
+}
+
+function dbTrainerToTrainer(db: {
+  id: string;
+  display_name: string | null;
+  line_user_id: string;
+  profile_image_url?: string | null;
+}): Trainer {
+  return {
+    dbId: db.id,
+    tempId: Date.now() + Math.random(),
+    name: db.display_name ?? "",
+    lineUserId: db.line_user_id,
+    avatarUrl: db.profile_image_url || "/assets/initial-avater.png",
+    role: "Staff",
+    isOnline: false,
+  };
+}
 
 // カテゴリーの情報
 const categoryInfo = {
@@ -221,7 +190,6 @@ function createStageCard(stage: Stage): string {
         <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
             <div class="flex items-center justify-between mb-4">
                 <span class="text-xs font-bold text-primary uppercase tracking-wider bg-primary/10 px-2 py-1 rounded">${stage.level}</span>
-                <span class="material-icons-outlined text-slate-300 cursor-move">drag_indicator</span>
             </div>
             <div class="space-y-4">
                 <div>
@@ -230,7 +198,7 @@ function createStageCard(stage: Stage): string {
                         class="w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg focus:ring-primary focus:border-primary text-sm stage-name" 
                         type="text" 
                         value="${stage.name}"
-                        data-stage-id="${stage.id}"
+                        data-stage-id="${stage.dbId}"
                     />
                 </div>
                 <div>
@@ -245,7 +213,7 @@ function createStageCard(stage: Stage): string {
                                 min="1"
                                 max="99"
                                 value="${stage.levelThreshold}"
-                                data-stage-id="${stage.id}"
+                                data-stage-id="${stage.dbId}"
                             />
                         </div>
                         <span class="text-xs text-slate-400 whitespace-nowrap">を超えたら次へ</span>
@@ -256,7 +224,7 @@ function createStageCard(stage: Stage): string {
                     <textarea 
                         class="w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg focus:ring-primary focus:border-primary text-xs stage-description" 
                         rows="2"
-                        data-stage-id="${stage.id}"
+                        data-stage-id="${stage.dbId}"
                     >${stage.description}</textarea>
                 </div>
             </div>
@@ -276,7 +244,7 @@ function createTaskCard(task: Task): string {
                         class="w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium focus:bg-white dark:focus:bg-slate-900 transition-colors task-name" 
                         type="text" 
                         value="${task.name}"
-                        data-task-id="${task.id}"
+                        data-task-id="${task.tempId}"
                     />
                 </div>
                 <div class="relative">
@@ -288,7 +256,7 @@ function createTaskCard(task: Task): string {
                             type="url" 
                             value="${task.youtubeUrl}"
                             placeholder="URLを入力"
-                            data-task-id="${task.id}"
+                            data-task-id="${task.tempId}"
                         />
                     </div>
                 </div>
@@ -298,14 +266,14 @@ function createTaskCard(task: Task): string {
                 <textarea 
                     class="w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-xs focus:bg-white dark:focus:bg-slate-900 transition-colors task-reason" 
                     rows="2"
-                    data-task-id="${task.id}"
+                    data-task-id="${task.tempId}"
                 >${task.reason}</textarea>
             </div>
             <div class="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button class="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 cursor-move">
                     <span class="material-icons-outlined text-lg">drag_handle</span>
                 </button>
-                <button class="p-1.5 text-slate-400 hover:text-red-500 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 task-delete" data-task-id="${task.id}">
+                <button class="p-1.5 text-slate-400 hover:text-red-500 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 task-delete" data-task-id="${task.tempId}">
                     <span class="material-icons-outlined text-lg">delete_outline</span>
                 </button>
             </div>
@@ -337,7 +305,6 @@ function createCategoryTabs(): string {
 
 // トレーナーカードの生成
 function createTrainerCard(trainer: Trainer): string {
-  const onlineStatusColor = trainer.isOnline ? "bg-green-500" : "bg-slate-300";
   const roleBadgeClass =
     trainer.role === "Head"
       ? "text-primary bg-primary/10"
@@ -346,17 +313,16 @@ function createTrainerCard(trainer: Trainer): string {
   return `
         <div class="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex items-center gap-4">
             <div class="relative">
-                <img alt="${trainer.name}" class="w-12 h-12 rounded-full object-cover border border-slate-100 dark:border-slate-700" src="${trainer.avatarUrl}" />
-                <div class="absolute bottom-0 right-0 w-3 h-3 ${onlineStatusColor} border-2 border-white dark:border-slate-900 rounded-full"></div>
+                <img alt="${trainer.name}" class="w-12 h-12 rounded-full object-cover border border-slate-100 dark:border-slate-700" src="${trainer.avatarUrl}" onerror="this.onerror=null; this.src='/assets/initial-avater.png'" />
             </div>
             <div class="flex-1 min-w-0">
                 <div class="flex items-center justify-between">
                     <h4 class="font-bold truncate text-sm">${trainer.name}</h4>
                     <span class="text-[10px] font-bold ${roleBadgeClass} px-1.5 py-0.5 rounded uppercase">${trainer.role}</span>
                 </div>
-                <p class="text-xs text-slate-500 truncate">${trainer.email}</p>
+                <p class="text-xs text-slate-500 truncate">LINE: ${trainer.lineUserId}</p>
             </div>
-            <button class="text-slate-400 hover:text-slate-600 p-1 trainer-menu" data-trainer-id="${trainer.id}">
+            <button class="text-slate-400 hover:text-slate-600 p-1 trainer-menu" data-trainer-id="${trainer.tempId}">
                 <span class="material-icons-outlined text-lg">more_vert</span>
             </button>
         </div>
@@ -383,18 +349,12 @@ function renderSettings(): void {
             <div class="flex-1 space-y-12">
                 <!-- Stage Management Section -->
                 <section>
-                    <div class="flex items-center justify-between mb-6">
-                        <div>
-                            <h2 class="text-2xl font-bold flex items-center gap-2">
-                                <span class="material-icons-outlined text-primary">terrain</span>
-                                ステージ管理
-                            </h2>
-                            <p class="text-slate-500 text-sm mt-1">顧客の進捗状況を定義する「1合目〜6合目」の各ステップを編集します。</p>
-                        </div>
-                        <button id="saveStagesBtn" class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg font-semibold transition-all shadow-sm flex items-center gap-2">
-                            <span class="material-icons-outlined text-sm">save</span>
-                            変更を保存
-                        </button>
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold flex items-center gap-2">
+                            <span class="material-icons-outlined text-primary">terrain</span>
+                            ステージ管理
+                        </h2>
+                        <p class="text-slate-500 text-sm mt-1">顧客の進捗状況を定義する「1合目〜6合目」の各ステップを編集します。</p>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         ${stagesHTML}
@@ -410,16 +370,6 @@ function renderSettings(): void {
                                 タスク管理
                             </h2>
                             <p class="text-slate-500 text-sm mt-1">4つのカテゴリーごとにスキル習得基準とYouTube動画を設定できます。</p>
-                        </div>
-                        <div class="flex gap-2">
-                            <button class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-lg font-semibold hover:bg-slate-200 transition-colors flex items-center gap-2 text-sm">
-                                <span class="material-icons-outlined text-sm">file_download</span>
-                                エクスポート
-                            </button>
-                            <button id="saveTasksBtn" class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg font-semibold transition-all shadow-sm flex items-center gap-2 text-sm">
-                                <span class="material-icons-outlined text-sm">save</span>
-                                設定を保存
-                            </button>
                         </div>
                     </div>
 
@@ -452,6 +402,13 @@ function renderSettings(): void {
                         </div>
                     </div>
                 </section>
+                <!-- Unified Save Button -->
+                <div class="flex justify-center pt-6 border-t border-slate-200 dark:border-slate-800">
+                    <button id="saveAllBtn" class="flex items-center gap-2 px-10 py-3 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold transition-all shadow-lg hover:shadow-xl">
+                        <span class="material-icons-outlined">save</span>
+                        変更を保存
+                    </button>
+                </div>
             </div>
 
             <!-- Trainer Management Sidebar -->
@@ -477,6 +434,61 @@ function renderSettings(): void {
                 </div>
             </aside>
         </div>
+
+        <!-- Trainer Add/Edit Modal -->
+        <div id="trainerModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" id="trainerModalOverlay"></div>
+            <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md p-8">
+                <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+                    <span class="material-icons-outlined text-primary">person_add</span>
+                    <span id="trainerModalTitleText">トレーナーを追加</span>
+                </h3>
+                <!-- アバター画像アップロード -->
+                <div class="flex flex-col items-center gap-1 mb-4">
+                    <div class="relative cursor-pointer group" id="avatarUploadArea">
+                        <img
+                            id="avatarPreview"
+                            src="/assets/initial-avater.png"
+                            class="w-20 h-20 rounded-full object-cover border-2 border-slate-200 dark:border-slate-700"
+                            onerror="this.onerror=null; this.src='/assets/initial-avater.png'"
+                        />
+                        <div class="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span class="material-icons-outlined text-white text-2xl">photo_camera</span>
+                        </div>
+                        <input type="file" id="trainerAvatarInput" accept="image/jpeg,image/png" class="hidden" />
+                    </div>
+                    <p class="text-xs text-slate-400">クリックして画像を選択（JPG・PNG）</p>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">名前 <span class="text-red-500">*</span></label>
+                        <input id="trainerNameInput" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm" placeholder="例：田中 美咲" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">LINE ID <span class="text-red-500">*</span></label>
+                        <input id="trainerLineIdInput" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm" placeholder="例：U1234567890abcdef" />
+                    </div>
+                </div>
+                <p id="trainerModalError" class="hidden text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-4 py-2 rounded-lg mt-4"></p>
+                <div class="flex gap-3 mt-4">
+                    <button id="trainerModalCancel" class="flex-1 px-4 py-2.5 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 rounded-xl font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">キャンセル</button>
+                    <button id="trainerModalSubmit" class="flex-1 px-4 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold transition-all shadow-sm">追加する</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trainer Context Menu Dropdown -->
+        <div id="trainerDropdown" class="hidden fixed z-40 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-1 w-36">
+            <button id="trainerDropdownEdit" class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2.5 transition-colors">
+                <span class="material-icons-outlined text-slate-400 text-base">edit</span>
+                編集
+            </button>
+            <div class="border-t border-slate-100 dark:border-slate-700 my-1"></div>
+            <button id="trainerDropdownDelete" class="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2.5 transition-colors">
+                <span class="material-icons-outlined text-base">delete_outline</span>
+                削除
+            </button>
+        </div>
     `;
 
   // イベントリスナーを設定
@@ -484,19 +496,123 @@ function renderSettings(): void {
   setupTaskEventListeners();
   setupCategoryTabs();
   setupTrainerEventListeners();
+  setupSaveButton();
 }
 
-// ステージ関連のイベントリスナーを設定
+// ============================================================
+// Toast 通知
+// ============================================================
+function showToast(
+  message: string,
+  type: "success" | "error" = "success",
+): void {
+  const existing = document.getElementById("toast");
+  if (existing) existing.remove();
+
+  const toast = document.createElement("div");
+  toast.id = "toast";
+  const colorClass =
+    type === "success" ? "bg-green-600 text-white" : "bg-red-600 text-white";
+  toast.className = `fixed bottom-6 right-6 z-[9999] flex items-center gap-2 px-5 py-3 rounded-xl shadow-2xl font-semibold text-sm ${colorClass} transition-all`;
+  toast.innerHTML = `<span class="material-icons-outlined text-base">${type === "success" ? "check_circle" : "error_outline"}</span>${message}`;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3500);
+}
+
+// ============================================================
+// 統合保存ボタン（Step 4 + 5 : ステージ・タスク一括保存）
+// ============================================================
+function setupSaveButton(): void {
+  const saveAllBtn = document.getElementById("saveAllBtn");
+  if (!saveAllBtn) return;
+
+  saveAllBtn.addEventListener("click", async () => {
+    // ボタンをローディング状態にする
+    saveAllBtn.setAttribute("disabled", "true");
+    const originalHTML = saveAllBtn.innerHTML;
+    saveAllBtn.innerHTML = `
+      <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+      </svg>
+      保存中...`;
+
+    try {
+      // --- ステージ保存（isDirty のもの） ---
+      const stagePromises = stagesData
+        .filter((s) => s.isDirty)
+        .map((s) =>
+          updateStage(s.dbId, {
+            name: s.name,
+            description: s.description,
+            level_to: s.levelThreshold,
+          }).then(() => {
+            s.isDirty = false;
+          }),
+        );
+
+      // --- タスク保存（カテゴリーIDを取得） ---
+      const catColorToId: Record<"blue" | "red" | "green" | "yellow", string> =
+        {
+          blue: categoryColorMap.blue,
+          red: categoryColorMap.red,
+          green: categoryColorMap.green,
+          yellow: categoryColorMap.yellow,
+        };
+
+      // 新規作成
+      const createPromises = tasksData
+        .filter((t) => t.isNew && !t.isDeleted)
+        .map((t) => {
+          const catId = catColorToId[t.category];
+          return createTaskMaster(catId, t.name, t.reason, t.youtubeUrl).then(
+            (newId) => {
+              t.dbId = newId;
+              t.isNew = false;
+              t.isDirty = false;
+            },
+          );
+        });
+
+      // 既存タスク更新（isDirty & !isNew & !isDeleted）
+      const updateTaskPromises = tasksData
+        .filter((t) => t.isDirty && !t.isNew && !t.isDeleted && t.dbId)
+        .map((t) =>
+          updateTaskMaster(t.dbId!, t.name, t.reason, t.youtubeUrl).then(() => {
+            t.isDirty = false;
+          }),
+        );
+
+      await Promise.all([
+        ...stagePromises,
+        ...createPromises,
+        ...updateTaskPromises,
+      ]);
+
+      showToast("設定を保存しました");
+    } catch (err) {
+      console.error("Save failed:", err);
+      showToast("保存に失敗しました。もう一度お試しください。", "error");
+    } finally {
+      saveAllBtn.removeAttribute("disabled");
+      saveAllBtn.innerHTML = originalHTML;
+    }
+  });
+}
+
+// ============================================================
+// ステージイベントリスナー（Step 3 : isDirty フラグ管理）
+// ============================================================
 function setupStageEventListeners(): void {
   // ステージ名の変更
   document.querySelectorAll(".stage-name").forEach((input) => {
     input.addEventListener("change", (event) => {
       const target = event.target as HTMLInputElement;
-      const stageId = parseInt(target.getAttribute("data-stage-id") || "0");
-      const stage = stagesData.find((s) => s.id === stageId);
+      const dbId = target.getAttribute("data-stage-id") ?? "";
+      const stage = stagesData.find((s) => s.dbId === dbId);
       if (stage) {
         stage.name = target.value;
-        console.log(`Stage ${stageId} name updated:`, stage.name);
+        stage.isDirty = true;
       }
     });
   });
@@ -505,11 +621,11 @@ function setupStageEventListeners(): void {
   document.querySelectorAll(".stage-description").forEach((textarea) => {
     textarea.addEventListener("change", (event) => {
       const target = event.target as HTMLTextAreaElement;
-      const stageId = parseInt(target.getAttribute("data-stage-id") || "0");
-      const stage = stagesData.find((s) => s.id === stageId);
+      const dbId = target.getAttribute("data-stage-id") ?? "";
+      const stage = stagesData.find((s) => s.dbId === dbId);
       if (stage) {
         stage.description = target.value;
-        console.log(`Stage ${stageId} description updated:`, stage.description);
+        stage.isDirty = true;
       }
     });
   });
@@ -518,45 +634,32 @@ function setupStageEventListeners(): void {
   document.querySelectorAll(".stage-level-threshold").forEach((input) => {
     input.addEventListener("change", (event) => {
       const target = event.target as HTMLInputElement;
-      const stageId = parseInt(target.getAttribute("data-stage-id") || "0");
-      const stage = stagesData.find((s) => s.id === stageId);
+      const dbId = target.getAttribute("data-stage-id") ?? "";
+      const stage = stagesData.find((s) => s.dbId === dbId);
       const newValue = parseInt(target.value);
       if (stage && !isNaN(newValue) && newValue >= 1) {
         stage.levelThreshold = newValue;
-        console.log(
-          `Stage ${stageId} levelThreshold updated:`,
-          stage.levelThreshold,
-        );
+        stage.isDirty = true;
       } else {
-        // 無効な値はリセット
         target.value = String(stage?.levelThreshold ?? 1);
       }
     });
   });
-
-  // ステージ保存ボタン
-  const saveStagesBtn = document.getElementById("saveStagesBtn");
-  if (saveStagesBtn) {
-    saveStagesBtn.addEventListener("click", () => {
-      console.log("Saving stages:", stagesData);
-      alert(
-        "ステージ設定を保存しました！\n\n※現在はローカルデータのみ更新されています。",
-      );
-    });
-  }
 }
 
-// タスク関連のイベントリスナーを設定
+// ============================================================
+// タスクイベントリスナー（Step 5 : isDirty / isDeleted / isNew フラグ）
+// ============================================================
 function setupTaskEventListeners(): void {
   // タスク名の変更
   document.querySelectorAll(".task-name").forEach((input) => {
     input.addEventListener("change", (event) => {
       const target = event.target as HTMLInputElement;
-      const taskId = parseInt(target.getAttribute("data-task-id") || "0");
-      const task = tasksData.find((t) => t.id === taskId);
+      const tempId = parseFloat(target.getAttribute("data-task-id") || "0");
+      const task = tasksData.find((t) => t.tempId === tempId);
       if (task) {
         task.name = target.value;
-        console.log(`Task ${taskId} name updated:`, task.name);
+        task.isDirty = true;
       }
     });
   });
@@ -565,11 +668,11 @@ function setupTaskEventListeners(): void {
   document.querySelectorAll(".task-url").forEach((input) => {
     input.addEventListener("change", (event) => {
       const target = event.target as HTMLInputElement;
-      const taskId = parseInt(target.getAttribute("data-task-id") || "0");
-      const task = tasksData.find((t) => t.id === taskId);
+      const tempId = parseFloat(target.getAttribute("data-task-id") || "0");
+      const task = tasksData.find((t) => t.tempId === tempId);
       if (task) {
         task.youtubeUrl = target.value;
-        console.log(`Task ${taskId} URL updated:`, task.youtubeUrl);
+        task.isDirty = true;
       }
     });
   });
@@ -578,28 +681,47 @@ function setupTaskEventListeners(): void {
   document.querySelectorAll(".task-reason").forEach((textarea) => {
     textarea.addEventListener("change", (event) => {
       const target = event.target as HTMLTextAreaElement;
-      const taskId = parseInt(target.getAttribute("data-task-id") || "0");
-      const task = tasksData.find((t) => t.id === taskId);
+      const tempId = parseFloat(target.getAttribute("data-task-id") || "0");
+      const task = tasksData.find((t) => t.tempId === tempId);
       if (task) {
         task.reason = target.value;
-        console.log(`Task ${taskId} reason updated:`, task.reason);
+        task.isDirty = true;
       }
     });
   });
 
-  // タスク削除
+  // タスク削除（確認後 即DB反映）
   document.querySelectorAll(".task-delete").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      const target = event.target as HTMLElement;
-      const taskId = parseInt(
-        target.closest("button")?.getAttribute("data-task-id") || "0",
-      );
-      if (confirm("このタスクを削除しますか?")) {
-        const index = tasksData.findIndex((t) => t.id === taskId);
-        if (index !== -1) {
-          tasksData.splice(index, 1);
-          console.log(`Task ${taskId} deleted`);
-          renderSettings();
+    button.addEventListener("click", async (event) => {
+      const btn = (event.target as HTMLElement).closest("button");
+      const tempId = parseFloat(btn?.getAttribute("data-task-id") || "0");
+      const idx = tasksData.findIndex((t) => t.tempId === tempId);
+      if (idx === -1) return;
+      const task = tasksData[idx];
+
+      const taskName = task.name || "（名称未設定）";
+      if (!confirm(`「${taskName}」を削除しますか？`)) return;
+
+      // カードを即 DOM から除去（楽観的UI）
+      const card = btn?.closest(".task-row") as HTMLElement | null;
+      if (card) card.remove();
+
+      if (task.isNew) {
+        // 未保存タスクはメモリから即削除（DBには存在しない）
+        tasksData.splice(idx, 1);
+        showToast(`「${taskName}」を削除しました`);
+      } else {
+        // 保存済みタスクは DB に即論理削除
+        tasksData.splice(idx, 1);
+        try {
+          await deleteTaskMaster(task.dbId!);
+          showToast(`「${taskName}」を削除しました`);
+        } catch (err) {
+          console.error("タスク削除失敗:", err);
+          showToast(
+            "削除に失敗しました。ページを再読み込みしてください。",
+            "error",
+          );
         }
       }
     });
@@ -610,26 +732,18 @@ function setupTaskEventListeners(): void {
   if (addTaskBtn) {
     addTaskBtn.addEventListener("click", () => {
       const newTask: Task = {
-        id: Date.now(),
+        dbId: null,
+        tempId: Date.now() + Math.random(),
         category: currentCategory,
         name: "",
         youtubeUrl: "",
         reason: "",
+        isNew: true,
+        isDeleted: false,
+        isDirty: false,
       };
-      tasksData.push(newTask);
-      console.log("New task added");
+      tasksData.unshift(newTask);
       renderSettings();
-    });
-  }
-
-  // タスク保存ボタン
-  const saveTasksBtn = document.getElementById("saveTasksBtn");
-  if (saveTasksBtn) {
-    saveTasksBtn.addEventListener("click", () => {
-      console.log("Saving tasks:", tasksData);
-      alert(
-        "タスク設定を保存しました！\n\n※現在はローカルデータのみ更新されています。",
-      );
     });
   }
 
@@ -639,78 +753,337 @@ function setupTaskEventListeners(): void {
   ) as HTMLInputElement;
   if (searchInput) {
     searchInput.addEventListener("input", (event) => {
-      const target = event.target as HTMLInputElement;
-      const searchTerm = target.value.toLowerCase();
-      const taskCards = document.querySelectorAll(".task-row");
-
-      taskCards.forEach((card) => {
-        const taskName = card.querySelector(".task-name") as HTMLInputElement;
-        if (taskName && taskName.value.toLowerCase().includes(searchTerm)) {
-          (card as HTMLElement).style.display = "";
-        } else {
-          (card as HTMLElement).style.display = "none";
-        }
+      const searchTerm = (event.target as HTMLInputElement).value.toLowerCase();
+      document.querySelectorAll<HTMLElement>(".task-row").forEach((card) => {
+        const name = card.querySelector<HTMLInputElement>(".task-name");
+        card.style.display =
+          !name || name.value.toLowerCase().includes(searchTerm) ? "" : "none";
       });
     });
   }
 }
 
-// カテゴリータブの設定
+// ============================================================
+// カテゴリータブ（Step 3 : 切り替え時に DB からタスク再取得）
+// ============================================================
 function setupCategoryTabs(): void {
   document.querySelectorAll(".category-tab").forEach((tab) => {
-    tab.addEventListener("click", (event) => {
+    tab.addEventListener("click", async (event) => {
       const target = event.target as HTMLElement;
       const category = target
         .closest("button")
-        ?.getAttribute("data-category") as "blue" | "red" | "green" | "yellow";
-      if (category) {
-        currentCategory = category;
-        console.log("Category changed to:", category);
-        renderSettings();
+        ?.getAttribute("data-category") as
+        | "blue"
+        | "red"
+        | "green"
+        | "yellow"
+        | null;
+      if (!category || category === currentCategory) return;
+
+      currentCategory = category;
+      // 現在のカテゴリーの categoryId を取得
+      const catId = categoryColorMap[category];
+      if (catId) {
+        try {
+          const dbTasks = await fetchTasksMaster(catId);
+          // 既存の同カテゴリーデータを差し替え（未保存の新規は保持）
+          tasksData = [
+            ...tasksData.filter((t) => t.category !== category || t.isNew),
+            ...dbTasks.map((db) => dbTaskToTask(db, category)),
+          ];
+        } catch (err) {
+          console.error("タスク取得失敗:", err);
+        }
       }
+      renderSettings();
     });
   });
 }
 
-// トレーナー関連のイベントリスナーを設定
+// ============================================================
+// トレーナーイベントリスナー（Step 6 : DB CRUD）
+// ============================================================
 function setupTrainerEventListeners(): void {
-  // トレーナー追加ボタン
-  const addTrainerBtn = document.getElementById("addTrainerBtn");
-  if (addTrainerBtn) {
-    addTrainerBtn.addEventListener("click", () => {
-      const name = prompt("トレーナー名を入力してください:");
-      if (!name) return;
+  const modal = document.getElementById("trainerModal");
+  const overlay = document.getElementById("trainerModalOverlay");
+  const cancelBtn = document.getElementById("trainerModalCancel");
+  const submitBtn = document.getElementById(
+    "trainerModalSubmit",
+  ) as HTMLButtonElement | null;
+  const titleText = document.getElementById("trainerModalTitleText");
+  const nameInput = document.getElementById(
+    "trainerNameInput",
+  ) as HTMLInputElement | null;
+  const lineIdInput = document.getElementById(
+    "trainerLineIdInput",
+  ) as HTMLInputElement | null;
+  const dropdown = document.getElementById("trainerDropdown");
+  const dropdownEdit = document.getElementById("trainerDropdownEdit");
+  const dropdownDelete = document.getElementById("trainerDropdownDelete");
+  let dropdownTargetTempId: number | null = null;
 
-      const email = prompt("メールアドレスを入力してください:");
-      if (!email) return;
+  // --- ドロップダウンの開閉 ---
+  const closeDropdown = (): void => {
+    dropdown?.classList.add("hidden");
+    dropdownTargetTempId = null;
+  };
 
-      const newTrainer: Trainer = {
-        id: Date.now(),
-        name: name,
-        email: email,
-        avatarUrl:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuAXEOg_iYS6LRYZdmYsddpvMq1b1NLpiwiBqsWwnq6fjeMuXE3I65zj6J8vL1QveMdUvcox_fMUJpAK45iRJoWmlGEt4EMAy98rqLJNY6jcytcf9FnzNVMgrVbPYcEW4PRYa31ShXRUcNw8U9OUSK9z243YfaZeoLn3NmDBWU25J9LM5H659zpPHMF0gnRgvcoo1RiOpqh7VmorM2A-kuO_Zek0Sd4zJpqZ4wMmH949oAiukXk-07aAf1tv20p4iY0D8gpkh6cI8Hk",
-        role: "Staff",
-        isOnline: false,
-      };
-
-      trainersData.push(newTrainer);
-      console.log("New trainer added:", newTrainer);
-      renderSettings();
-    });
-  }
-
-  // トレーナーメニュー
   document.querySelectorAll(".trainer-menu").forEach((button) => {
     button.addEventListener("click", (event) => {
-      const target = event.target as HTMLElement;
-      const trainerId = parseInt(
-        target.closest("button")?.getAttribute("data-trainer-id") || "0",
-      );
-      console.log("Trainer menu clicked:", trainerId);
-      // ここでメニュー表示や編集・削除機能を追加可能
-      alert("トレーナー管理メニュー（編集・削除など）は今後実装予定です。");
+      event.stopPropagation();
+      const btn = event.currentTarget as HTMLElement;
+      const tempId = parseFloat(btn.getAttribute("data-trainer-id") || "0");
+
+      if (
+        !dropdown?.classList.contains("hidden") &&
+        dropdownTargetTempId === tempId
+      ) {
+        closeDropdown();
+        return;
+      }
+
+      dropdownTargetTempId = tempId;
+      const rect = btn.getBoundingClientRect();
+      if (dropdown) {
+        dropdown.classList.remove("hidden");
+        const dropW = 144;
+        const left = Math.min(
+          rect.right - dropW,
+          window.innerWidth - dropW - 8,
+        );
+        dropdown.style.top = `${rect.bottom + 4}px`;
+        dropdown.style.left = `${left}px`;
+      }
     });
+  });
+
+  document.addEventListener("click", closeDropdown);
+
+  // --- ドロップダウン「編集」 ---
+  dropdownEdit?.addEventListener("click", () => {
+    if (dropdownTargetTempId === null) return;
+    const trainer = trainersData.find((t) => t.tempId === dropdownTargetTempId);
+    if (!trainer) return;
+
+    trainerModalMode = "edit";
+    trainerEditTargetId = trainer.tempId;
+    if (nameInput) nameInput.value = trainer.name;
+    if (lineIdInput) lineIdInput.value = trainer.lineUserId;
+    if (titleText) titleText.textContent = "トレーナーを編集";
+    if (submitBtn) submitBtn.textContent = "保存する";
+    // プレビュー画像をトレーナーの現在のアバターに設存
+    selectedAvatarFile = null;
+    const preview = document.getElementById(
+      "avatarPreview",
+    ) as HTMLImageElement | null;
+    if (preview)
+      preview.src = trainer.avatarUrl || "/assets/initial-avater.png";
+    clearModalError();
+    modal?.classList.remove("hidden");
+    closeDropdown();
+  });
+
+  // --- ドロップダウン「削除」 ---
+  dropdownDelete?.addEventListener("click", async () => {
+    if (dropdownTargetTempId === null) return;
+    const trainer = trainersData.find((t) => t.tempId === dropdownTargetTempId);
+    if (!trainer) return;
+
+    closeDropdown();
+
+    if (
+      !confirm(
+        `「${trainer.name}」を削除しますか？\n\nこの操作は元に戻せません。`,
+      )
+    )
+      return;
+
+    if (trainer.dbId) {
+      try {
+        await deactivateTrainer(trainer.dbId);
+        trainersData = trainersData.filter((t) => t.tempId !== trainer.tempId);
+        renderSettings();
+        showToast(`${trainer.name} を削除しました`);
+      } catch (err) {
+        console.error("トレーナー削除失敗:", err);
+        showToast("削除に失敗しました", "error");
+      }
+    } else {
+      // 未保存（新規）のトレーナーはメモリから除去
+      trainersData = trainersData.filter((t) => t.tempId !== trainer.tempId);
+      renderSettings();
+      showToast(`${trainer.name} を削除しました`);
+    }
+  });
+
+  // --- モーダルの開閉 ---
+  const showModalError = (msg: string): void => {
+    const el = document.getElementById("trainerModalError");
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.remove("hidden");
+  };
+
+  const clearModalError = (): void => {
+    const el = document.getElementById("trainerModalError");
+    if (!el) return;
+    el.textContent = "";
+    el.classList.add("hidden");
+  };
+
+  const openModal = (): void => {
+    if (!modal) return;
+    if (nameInput) nameInput.value = "";
+    if (lineIdInput) lineIdInput.value = "";
+    if (titleText) titleText.textContent = "トレーナーを追加";
+    if (submitBtn) submitBtn.textContent = "追加する";
+    trainerModalMode = "add";
+    trainerEditTargetId = null;
+    // アバターをデフォルトにリセット
+    selectedAvatarFile = null;
+    const preview = document.getElementById(
+      "avatarPreview",
+    ) as HTMLImageElement | null;
+    if (preview) preview.src = "/assets/initial-avater.png";
+    clearModalError();
+    modal.classList.remove("hidden");
+  };
+
+  const closeModal = (): void => {
+    selectedAvatarFile = null;
+    const preview = document.getElementById(
+      "avatarPreview",
+    ) as HTMLImageElement | null;
+    if (preview) preview.src = "/assets/initial-avater.png";
+    clearModalError();
+    modal?.classList.add("hidden");
+  };
+
+  document
+    .getElementById("addTrainerBtn")
+    ?.addEventListener("click", openModal);
+  cancelBtn?.addEventListener("click", closeModal);
+  overlay?.addEventListener("click", closeModal);
+
+  // --- アバター画像選択 ---
+  const avatarArea = document.getElementById("avatarUploadArea");
+  const avatarInput = document.getElementById(
+    "trainerAvatarInput",
+  ) as HTMLInputElement | null;
+  avatarArea?.addEventListener("click", () => avatarInput?.click());
+  avatarInput?.addEventListener("change", () => {
+    const file = avatarInput.files?.[0];
+    if (!file) return;
+    // ファイルサイズチェック（5MB上限）
+    if (file.size > 5 * 1024 * 1024) {
+      showModalError("画像は 5MB 以下にしてくださя。");
+      avatarInput.value = "";
+      return;
+    }
+    selectedAvatarFile = file;
+    const reader = new FileReader();
+    reader.onload = (e): void => {
+      const preview = document.getElementById(
+        "avatarPreview",
+      ) as HTMLImageElement | null;
+      if (preview && e.target?.result) {
+        preview.src = e.target.result as string;
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // --- モーダル 登録 / 保存 ---
+  submitBtn?.addEventListener("click", async () => {
+    const name = nameInput?.value.trim();
+    const lineUserId = lineIdInput?.value.trim();
+
+    // 必須入力チェック
+    if (!name || !lineUserId) {
+      showModalError("名前とLINE IDは必須です。");
+      return;
+    }
+
+    // LINE ID 重複チェック（編集時は自分自身を除外）
+    const isDuplicate = trainersData.some((t) => {
+      if (trainerModalMode === "edit" && t.tempId === trainerEditTargetId)
+        return false;
+      return t.lineUserId === lineUserId;
+    });
+    if (isDuplicate) {
+      showModalError("その LINE ID は既に登録されています。");
+      return;
+    }
+
+    clearModalError();
+
+    const originalText = submitBtn.textContent ?? "";
+    submitBtn.disabled = true;
+    submitBtn.textContent = "保存中...";
+
+    try {
+      if (trainerModalMode === "edit" && trainerEditTargetId !== null) {
+        const trainer = trainersData.find(
+          (t) => t.tempId === trainerEditTargetId,
+        );
+        if (trainer) {
+          let newAvatarUrl = trainer.avatarUrl;
+          // 画像が選択されている場合はアップロード
+          if (selectedAvatarFile && trainer.dbId) {
+            const uploadedUrl = await uploadTrainerAvatar(
+              trainer.dbId,
+              selectedAvatarFile,
+            );
+            if (uploadedUrl) newAvatarUrl = uploadedUrl;
+          }
+          if (trainer.dbId) {
+            await updateTrainerMaster(
+              trainer.dbId,
+              name,
+              lineUserId,
+              selectedAvatarFile ? newAvatarUrl : undefined,
+            );
+          }
+          trainer.name = name;
+          trainer.lineUserId = lineUserId;
+          trainer.avatarUrl = newAvatarUrl;
+        }
+        showToast("トレーナー情報を更新しました");
+      } else {
+        const newDbId = await createTrainerMaster(name, lineUserId);
+        let avatarUrl = "/assets/initial-avater.png";
+        // 画像が選択されている場合はアップロード（ID取得後）
+        if (selectedAvatarFile && newDbId) {
+          const uploadedUrl = await uploadTrainerAvatar(
+            newDbId,
+            selectedAvatarFile,
+          );
+          if (uploadedUrl) {
+            await updateTrainerMaster(newDbId, name, lineUserId, uploadedUrl);
+            avatarUrl = uploadedUrl;
+          }
+        }
+        const newTrainer: Trainer = {
+          dbId: newDbId,
+          tempId: Date.now() + Math.random(),
+          name,
+          lineUserId,
+          avatarUrl,
+          role: "Staff",
+          isOnline: false,
+        };
+        trainersData.unshift(newTrainer);
+        showToast("トレーナーを追加しました");
+      }
+    } catch (err) {
+      console.error("トレーナー保存失敗:", err);
+      showToast("保存に失敗しました", "error");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+      closeModal();
+      renderSettings();
+    }
   });
 }
 
@@ -771,12 +1144,60 @@ function setupMobileSidebar(): void {
   });
 }
 
-// 初期化処理
-function init(): void {
-  console.log("Initializing settings page...");
-  renderSettings();
+// ============================================================
+// 初期化（Step 3 : DB から全データを一括取得）
+// ============================================================
+async function init(): Promise<void> {
   setupDarkMode();
   setupMobileSidebar();
+
+  // ローディング表示
+  const container = document.getElementById("settingsContainer");
+  if (container) {
+    container.innerHTML = `
+      <div class="flex items-center justify-center h-64 gap-3 text-slate-400">
+        <svg class="animate-spin h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+        </svg>
+        <span class="text-lg font-medium">読み込み中...</span>
+      </div>`;
+  }
+
+  try {
+    // categories テーブルからカテゴリー一覧を取得してカラーマップを構築
+    const categories = await fetchCategories();
+    for (const cat of categories) {
+      const colorKey = CATEGORY_NAME_TO_COLOR[cat.name];
+      if (colorKey) {
+        categoryColorMap[colorKey] = cat.id;
+      }
+    }
+
+    // 初期カテゴリー（blue = マットピラティス）のタスクと、ステージ・トレーナーを並行取得
+    const initialCatId = categoryColorMap[currentCategory];
+    const [dbStages, dbTasks, dbTrainers] = await Promise.all([
+      fetchStages(),
+      initialCatId ? fetchTasksMaster(initialCatId) : Promise.resolve([]),
+      fetchTrainersMaster(),
+    ]);
+
+    stagesData = dbStages.map(dbStageToStage);
+    tasksData = dbTasks.map((db) => dbTaskToTask(db, currentCategory));
+    trainersData = dbTrainers.map(dbTrainerToTrainer);
+  } catch (err) {
+    console.error("初期データ取得失敗:", err);
+    if (container) {
+      container.innerHTML = `
+        <div class="flex items-center justify-center h-64 text-red-500 gap-2">
+          <span class="material-icons-outlined">error_outline</span>
+          <span>データの読み込みに失敗しました。ページを再読み込みしてください。</span>
+        </div>`;
+    }
+    return;
+  }
+
+  renderSettings();
 }
 
 // DOMContentLoaded時に初期化

@@ -71,8 +71,8 @@ export const CATEGORY_COLOR_MAP: Record<string, keyof ClientLevels> = {
   ムーブメントトレーニング: "yellow",
 };
 
-// プロフィール画像未設定時のデフォルトアバター（グレー人物シルエット）
-export const DEFAULT_AVATAR_URL = `data:image/svg+xml;charset=utf-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect width="40" height="40" rx="20" fill="#e2e8f0"/><circle cx="20" cy="15" r="7" fill="#94a3b8"/><path d="M6 38c0-7.732 6.268-14 14-14s14 6.268 14 14" fill="#94a3b8"/></svg>')}`;
+// プロフィール画像未設定時のデフォルトアバター
+export const DEFAULT_AVATAR_URL = "/assets/initial-avater.png";
 
 // onerror属性（HTMLテンプレート文字列内）からも参照できるようwindowに登録
 if (typeof window !== "undefined") {
