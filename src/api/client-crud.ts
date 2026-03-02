@@ -41,7 +41,7 @@ export async function fetchTrainers(): Promise<{ id: string; name: string }[]> {
   const { data, error } = await supabase
     .from("trainers")
     .select("id, display_name")
-    .eq("is_active", true)
+    .eq("delete_flg", false)
     .order("created_at", { ascending: true });
 
   if (error || !data) {

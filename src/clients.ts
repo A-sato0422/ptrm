@@ -394,7 +394,7 @@ async function populateTrainerFilter(): Promise<void> {
   const { data, error } = await supabase
     .from("trainers")
     .select("display_name")
-    .eq("is_active", true)
+    .eq("delete_flg", false)
     .order("display_name");
 
   if (error) {

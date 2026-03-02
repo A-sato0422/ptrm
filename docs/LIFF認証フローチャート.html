@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PTRM 認証フローチャート v3</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  :root {
+    --line-green: #06C755;
+    --teal: #3ECF8E;
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3347;
+    --text: #e8eaf0;
+    --muted: #7b82a0;
+    --accent: #5b8af5;
+    --warning: #f5a623;
+    --purple: #b48ee8;
+    --red: #e05555;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    padding: 36px 20px 60px;
+  }
+
+  h1 { text-align:center; font-size:19px; font-weight:700; color:#fff; margin-bottom:6px; }
+  .subtitle { text-align:center; font-size:12px; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-bottom:36px; }
+
+  /* ===== SECTION ===== */
+  .section { max-width:700px; margin:0 auto 48px; }
+
+  .sec-title {
+    display:flex; align-items:center; gap:8px; margin-bottom:16px;
+  }
+  .sec-title-line { flex:1; height:1px; background:var(--border); }
+  .sec-title-text {
+    font-size:11px; font-family:'JetBrains Mono',monospace;
+    color:var(--muted); white-space:nowrap; letter-spacing:.08em;
+  }
+
+  /* ===== NODE ===== */
+  .node {
+    width:100%; border-radius:10px; padding:11px 14px;
+    display:flex; align-items:flex-start; gap:10px;
+    border:1px solid var(--border); background:var(--surface);
+  }
+  .ni { width:28px; height:28px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; margin-top:1px; }
+  .nl { font-size:10px; font-family:'JetBrains Mono',monospace; font-weight:600; letter-spacing:.07em; margin-bottom:3px; }
+  .nt { font-size:13px; font-weight:700; line-height:1.4; }
+  .ns { font-size:11px; color:var(--muted); margin-top:3px; line-height:1.5; }
+
+  .n-start  { border-color:var(--line-green); box-shadow:0 0 16px rgba(6,199,85,.12); background:#111e14; }
+  .n-start  .ni { background:rgba(6,199,85,.2); } .n-start .nl { color:var(--line-green); }
+
+  .n-liff   { border-color:var(--accent); }
+  .n-liff   .ni { background:rgba(91,138,245,.15); } .n-liff .nl { color:var(--accent); }
+
+  .n-edge   { border-color:var(--teal); }
+  .n-edge   .ni { background:rgba(62,207,142,.15); } .n-edge .nl { color:var(--teal); }
+
+  .n-db     { border-color:var(--purple); }
+  .n-db     .ni { background:rgba(180,142,232,.15); } .n-db .nl { color:var(--purple); }
+
+  .n-client { border-color:var(--accent); box-shadow:0 0 14px rgba(91,138,245,.15); background:#131520; }
+  .n-client .ni { background:rgba(91,138,245,.2); } .n-client .nl { color:var(--accent); }
+
+  .n-id     { border-color:var(--warning); box-shadow:0 0 14px rgba(245,166,35,.12); background:#1e1810; }
+  .n-id     .ni { background:rgba(245,166,35,.2); } .n-id .nl { color:var(--warning); }
+
+  .n-trainer{ border-color:var(--teal); box-shadow:0 0 14px rgba(62,207,142,.12); background:#101e18; }
+  .n-trainer .ni { background:rgba(62,207,142,.2); } .n-trainer .nl { color:var(--teal); }
+
+  .n-deny   { border-color:var(--red); background:#1e1010; }
+  .n-deny   .ni { background:rgba(224,85,85,.2); } .n-deny .nl { color:var(--red); }
+
+  .n-browser{ border-color:var(--muted); }
+  .n-browser .ni { background:rgba(123,130,160,.15); } .n-browser .nl { color:var(--muted); }
+
+  /* ===== ARROW ===== */
+  .arr { display:flex; flex-direction:column; align-items:center; padding:2px 0; }
+  .arr-line { width:2px; height:20px; background:var(--border); }
+  .arr-head { width:0; height:0; border-left:5px solid transparent; border-right:5px solid transparent; border-top:7px solid var(--border); }
+
+  /* ===== DIAMOND ===== */
+  .diamond {
+    background:var(--surface2); border:1.5px solid var(--purple);
+    border-radius:6px; padding:9px 20px;
+    font-size:12px; font-weight:700; color:var(--purple);
+    text-align:center; box-shadow:0 0 14px rgba(180,142,232,.1);
+    width:100%;
+  }
+
+  /* ===== BRANCH SPLIT ===== */
+  .split { display:flex; gap:14px; width:100%; }
+  .split-arm { flex:1; display:flex; flex-direction:column; align-items:center; }
+
+  .badge {
+    font-size:10px; font-family:'JetBrains Mono',monospace; font-weight:700;
+    padding:2px 10px; border-radius:20px; margin-bottom:7px;
+  }
+  .b-yes    { background:rgba(180,142,232,.15); color:var(--purple);  border:1px solid rgba(180,142,232,.3); }
+  .b-no     { background:rgba(245,166,35,.15);  color:var(--warning); border:1px solid rgba(245,166,35,.3); }
+  .b-reg    { background:rgba(62,207,142,.15);  color:var(--teal);    border:1px solid rgba(62,207,142,.3); }
+  .b-unreg  { background:rgba(224,85,85,.15);   color:var(--red);     border:1px solid rgba(224,85,85,.3); }
+
+  /* ===== H-LINE (branch connector) ===== */
+  .hline-wrap { position:relative; width:100%; height:2px; margin:0; }
+  .hline-wrap::before { content:''; position:absolute; top:0; left:10%; right:10%; height:2px; background:var(--border); }
+
+  /* ===== CASE BADGE ===== */
+  .case-tag {
+    display:inline-block; font-size:10px; font-family:'JetBrains Mono',monospace;
+    font-weight:700; padding:2px 8px; border-radius:4px; margin-bottom:4px;
+    background:rgba(91,138,245,.15); color:var(--accent); border:1px solid rgba(91,138,245,.3);
+  }
+
+  /* ===== NOTE ===== */
+  .note {
+    max-width:700px; margin:0 auto 0;
+    background:var(--surface2); border:1px solid var(--border);
+    border-left:3px solid var(--muted); border-radius:6px;
+    padding:12px 16px; font-size:12px; color:var(--muted); line-height:1.9;
+  }
+  .note strong { color:var(--text); font-weight:600; }
+
+  .sp8  { height:8px; }
+  .sp4  { height:4px; }
+  .center { display:flex; flex-direction:column; align-items:center; }
+</style>
+</head>
+<body>
+
+<h1>PTRM 認証フローチャート</h1>
+<p class="subtitle">全6ケース網羅版</p>
+
+<!-- ============================================================ -->
+<!--  FLOW A : リッチメニュー「PTRMへ」経由（ケース①②③④）      -->
+<!-- ============================================================ -->
+<div class="section">
+  <div class="sec-title">
+    <div class="sec-title-line"></div>
+    <div class="sec-title-text">FLOW A — リッチメニュー「PTRMへ」ボタン（ケース①②③④）</div>
+    <div class="sec-title-line"></div>
+  </div>
+
+  <div class="center">
+
+    <div class="node n-start">
+      <div class="ni">📱</div>
+      <div>
+        <div class="nl">USER ACTION · LINE</div>
+        <div class="nt">リッチメニュー「PTRMへ」ボタンをタップ</div>
+        <div class="ns">クライアント・トレーナー共通の入口</div>
+      </div>
+    </div>
+
+    <div class="arr"><div class="arr-line"></div><div class="arr-head"></div></div>
+
+    <div class="node n-liff">
+      <div class="ni">⚙️</div>
+      <div>
+        <div class="nl">FRONTEND · LIFF SDK</div>
+        <div class="nt">liff.init() — LIFFアプリ初期化</div>
+        <div class="ns">LINEアプリ内ブラウザ（LAB）でPTRMが起動する</div>
+      </div>
+    </div>
+
+    <div class="arr"><div class="arr-line"></div><div class="arr-head"></div></div>
+
+    <div class="node n-liff">
+      <div class="ni">🪪</div>
+      <div>
+        <div class="nl">FRONTEND · LIFF SDK</div>
+        <div class="nt">liff.getIDToken() — 署名付きIDトークン取得</div>
+        <div class="ns">LINEが発行する身分証明書（JWT）を取得する</div>
+      </div>
+    </div>
+
+    <div class="arr"><div class="arr-line"></div><div class="arr-head"></div></div>
+
+    <div class="node n-edge">
+      <div class="ni">🔄</div>
+      <div>
+        <div class="nl">FRONTEND → SERVER · Edge Function</div>
+        <div class="nt">IDトークンをEdge Functionに送信・検証</div>
+        <div class="ns">LINEサーバーに問い合わせてトークンが本物か確認（なりすまし防止）</div>
+      </div>
+    </div>
+
+    <div class="arr"><div class="arr-line"></div><div class="arr-head"></div></div>
+
+    <!-- DIAMOND -->
+    <div class="diamond">clientsテーブルにLINE IDが存在するか？</div>
+    <div class="sp4"></div>
+    <div class="hline-wrap"></div>
+
+    <!-- BRANCH -->
+    <div class="split">
+
+      <!-- YES arm -->
+      <div class="split-arm">
+        <div class="arr"><div class="arr-line"></div><div class="arr-head"></div></div>
+        <div class="badge b-yes">YES（登録済み）</div>
+        <div class="node n-client">
+          <div class="ni">🌟</div>
+          <div>
+            <div class="case-tag">CASE ② ④</div>
+            <div class="nl">DESTINATION</div>
+            <div class="nt">クライアント画面へ</div>
+            <div class="ns">
+              ②登録済みクライアント<br>
+              ④テストデータ登録済みトレーナー（山下さん）
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NO arm -->
+      <div class="split-arm">
+        <div class="arr"><div class="arr-line"></div><div class="arr-head"></div></div>
+        <div class="badge b-no">NO（未登録）</div>
+        <div class="node n-id">
+          <div class="ni">📋</div>
+          <div>
+            <div class="case-tag">CASE ① ③</div>
+            <div class="nl">DESTINATION</div>
+            <div class="nt">ID確認画面へ</div>
+            <div class="ns">
+              ①未登録クライアント<br>
+              ③clientsテーブル未登録のトレーナー<br>
+              <br>
+              「まだ登録が完了していません」と表示。LINE IDをコピー or トレーナーへ送信するボタンを表示
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!--  FLOW B : 管理画面URL直打ち（ケース⑤⑥）                    -->
+<!-- ============================================================ -->
+<div class="section">
+  <div class="sec-title">
+    <div class="sec-title-line"></div>
+    <div class="sec-title-text">FLOW B — 管理画面URL直打ち（ケース⑤⑥）</div>
+    <div class="sec-title-line"></div>
+  </div>
+
+  <div class="center">
+
+    <div class="node n-browser">
+      <div class="ni">💻</div>
+      <div>
+        <div class="nl">USER ACTION · BROWSER</div>
+        <div class="nt">管理画面URLを直接入力</div>
+        <div class="ns">PCブラウザ / スマホブラウザ共通。全トレーナー共通の入口</div>
+      </div>
+    </div>
+
+    <div class="arr"><div class="arr-line"></div><div class="arr-head"></div></div>
+
+    <div class="node n-liff">
+      <div class="ni">⚙️</div>
+      <div>
+        <div class="nl">FRONTEND · LIFF SDK</div>
+        <div class="nt">liff.init() → liff.isLoggedIn() = false</div>
+        <div class="ns">LINEアプリ外からのアクセスのため未ログイン状態と判定される</div>
+      </div>
+    </div>
+
+    <div class="arr"><div class="arr-line"></div><div class="arr-head"></div></div>
+
+    <div class="node n-liff">
+      <div class="ni">🔐</div>
+      <div>
+        <div class="nl">FRONTEND · LIFF SDK</div>
+        <div class="nt">liff.login() — LINEログイン画面へリダイレクト</div>
+        <div class="ns">PCの場合：QRコードをスマホのLINEで読み取る（初回 or セッション切れ時のみ）</div>
+      </div>
+    </div>
+
+    <div class="arr"><div class="arr-line"></div><div class="arr-head"></div></div>
+
+    <div class="node n-liff">
+      <div class="ni">✅</div>
+      <div>
+        <div class="nl">LINE · 許可画面</div>
+        <div class="nt">「PTRMにプロフィール情報を提供しますか？」</div>
+        <div class="ns">初回のみ表示。「許可する」をタップすると次へ進む</div>
+      </div>
+    </div>
+
+    <div class="arr"><div class="arr-line"></div><div class="arr-head"></div></div>
+
+    <div class="node n-edge">
+      <div class="ni">🔄</div>
+      <div>
+        <div class="nl">FRONTEND → SERVER · Edge Function</div>
+        <div class="nt">IDトークン送信・検証</div>
+        <div class="ns">FLOW Aと同じ検証フローを通る</div>
+      </div>
+    </div>
+
+    <div class="arr"><div class="arr-line"></div><div class="arr-head"></div></div>
+
+    <!-- DIAMOND -->
+    <div class="diamond">trainersテーブルにLINE IDが存在するか？</div>
+    <div class="sp4"></div>
+    <div class="hline-wrap"></div>
+
+    <!-- BRANCH -->
+    <div class="split">
+
+      <!-- YES arm -->
+      <div class="split-arm">
+        <div class="arr"><div class="arr-line"></div><div class="arr-head"></div></div>
+        <div class="badge b-reg">YES（登録済みトレーナー）</div>
+        <div class="node n-trainer">
+          <div class="ni">🏋️</div>
+          <div>
+            <div class="case-tag">CASE ⑥</div>
+            <div class="nl">DESTINATION</div>
+            <div class="nt">管理画面へ</div>
+            <div class="ns">クライアント一覧・レベル管理・メモ</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NO arm -->
+      <div class="split-arm">
+        <div class="arr"><div class="arr-line"></div><div class="arr-head"></div></div>
+        <div class="badge b-unreg">NO（未登録・不正アクセス）</div>
+        <div class="node n-deny">
+          <div class="ni">🚫</div>
+          <div>
+            <div class="case-tag">CASE ⑤</div>
+            <div class="nl">DESTINATION</div>
+            <div class="nt">アクセス拒否画面へ</div>
+            <div class="ns">管理者権限がありません</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- NOTE -->
+<div class="note">
+  <strong>📌 ケース一覧まとめ</strong><br>
+  ① 未登録クライアントが「PTRMへ」→ ID確認画面（LINE IDをトレーナーへ送信）<br>
+  ② 登録済みクライアントが「PTRMへ」→ クライアント画面<br>
+  ③ clientsテーブル未登録のトレーナーが「PTRMへ」→ ID確認画面<br>
+  ④ clientsテーブル登録済み（テスト用）のトレーナーが「PTRMへ」→ クライアント画面<br>
+  ⑤ trainersテーブル未登録のユーザーがURL直打ち → アクセス拒否画面<br>
+  ⑥ trainersテーブル登録済みのトレーナーがURL直打ち → 管理画面
+</div>
+
+</body>
+</html>
