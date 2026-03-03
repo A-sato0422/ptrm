@@ -159,25 +159,25 @@ function dbTrainerToTrainer(db: {
 // カテゴリーの情報
 const categoryInfo = {
   blue: {
-    name: "Mat Pilates",
+    name: "マットピラティス",
     color: "bg-blue-600",
     textColor: "text-blue-600",
     borderColor: "border-blue-600",
   },
   red: {
-    name: "Weight Training",
+    name: "ウェイト",
     color: "bg-red-600",
     textColor: "text-red-600",
     borderColor: "border-red-600",
   },
   green: {
-    name: "Sports Training",
+    name: "スポーツ",
     color: "bg-emerald-600",
     textColor: "text-emerald-600",
     borderColor: "border-emerald-600",
   },
   yellow: {
-    name: "Movement Training",
+    name: "ムーブメント",
     color: "bg-amber-500",
     textColor: "text-amber-500",
     borderColor: "border-amber-500",

@@ -561,10 +561,10 @@ function renderClientDetail(client: Client): void {
         </div>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
-        ${createLevelSelect("blue", "Mat Pilates:", client.levels.blue, "blue")}
-        ${createLevelSelect("red", "Weight Training", client.levels.red, "red")}
-        ${createLevelSelect("green", "Sports Training", client.levels.green, "green")}
-        ${createLevelSelect("yellow", "Movement Training", client.levels.yellow, "yellow")}
+        ${createLevelSelect("blue", "マットピラティス", client.levels.blue, "blue")}
+        ${createLevelSelect("red", "ウェイト", client.levels.red, "red")}
+        ${createLevelSelect("green", "スポーツ", client.levels.green, "green")}
+        ${createLevelSelect("yellow", "ムーブメント", client.levels.yellow, "yellow")}
       </div>
       <div class="space-y-3">
         <div class="flex items-center gap-2">
