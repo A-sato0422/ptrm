@@ -60,7 +60,7 @@ CREATE TABLE trainers (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   line_user_id  TEXT NOT NULL UNIQUE,             -- LIFFから取得するLINEユーザーID
   display_name  TEXT,
-  is_active     BOOLEAN NOT NULL DEFAULT true,
+  delete_flg    BOOLEAN NOT NULL DEFAULT false,   -- false:有効 / true:削除済み
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );

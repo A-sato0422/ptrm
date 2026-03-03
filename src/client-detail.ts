@@ -1194,8 +1194,14 @@ async function init(): Promise<void> {
 
   const container = document.getElementById("clientDetailContainer");
   if (container) {
-    container.innerHTML =
-      '<p class="text-center py-12 text-slate-400">読み込み中...</p>';
+    container.innerHTML = `
+      <div class="flex items-center justify-center h-64 gap-3 text-slate-400">
+        <svg class="animate-spin h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+        </svg>
+        <span class="text-lg font-medium">読み込み中...</span>
+      </div>`;
   }
 
   const client = await getClientFromSupabase(clientId);

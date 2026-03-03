@@ -259,6 +259,9 @@ function createTaskCard(task: Task): string {
                             data-task-id="${task.tempId}"
                         />
                     </div>
+                    <button class="absolute -top-3.5 right-0 p-1 text-slate-400 hover:text-red-500 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 task-delete opacity-0 group-hover:opacity-100 transition-opacity" data-task-id="${task.tempId}">
+                        <span class="material-icons-outlined text-lg">delete_outline</span>
+                    </button>
                 </div>
             </div>
             <div>
@@ -268,14 +271,6 @@ function createTaskCard(task: Task): string {
                     rows="2"
                     data-task-id="${task.tempId}"
                 >${task.reason}</textarea>
-            </div>
-            <div class="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button class="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 cursor-move">
-                    <span class="material-icons-outlined text-lg">drag_handle</span>
-                </button>
-                <button class="p-1.5 text-slate-400 hover:text-red-500 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 task-delete" data-task-id="${task.tempId}">
-                    <span class="material-icons-outlined text-lg">delete_outline</span>
-                </button>
             </div>
         </div>
     `;
