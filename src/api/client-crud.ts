@@ -203,6 +203,36 @@ export async function deleteMemo(dbId: string): Promise<boolean> {
  * tasks テーブルに INSERT → client_tasks に割り当て INSERT。
  * @returns { dbTaskId, clientTaskId } / 失敗時 null
  */
+// ============================================================
+// タスク重複チェック
+// ============================================================
+
+/**
+ * 同カテゴリ・同タイトルのタスクが tasks テーブルに既に存在するか確認する。
+ * @returns 重複あり true / なし false
+ */
+export async function checkTaskDuplicate(
+  categoryId: string,
+  title: string,
+): Promise<boolean> {
+  const { count, error } = await supabase
+    .from("tasks")
+    .select("id", { count: "exact", head: true })
+    .eq("category_id", categoryId)
+    .eq("title", title.trim())
+    .is("deleted_at", null);
+
+  if (error) {
+    console.error("タスク重複チェックエラー:", error.message);
+    return false;
+  }
+  return (count ?? 0) > 0;
+}
+
+// ============================================================
+// タスク作成
+// ============================================================
+
 export async function createTask(
   clientId: string,
   categoryId: string,

@@ -85,7 +85,6 @@ export function mapDbClientToDisplay(dbClient: any): Client {
     avatarUrl: dbClient.profile_image_url || DEFAULT_AVATAR_URL,
     lineUserId: dbClient.line_user_id || "",
     course: dbClient.course_name || "",
-    status: "Active",
     lastUpdate: new Date(dbClient.updated_at).toLocaleDateString("ja-JP"),
     lastMemo,
     levels,

@@ -16,6 +16,7 @@ export interface Task {
   id: number; // UI 表示用連番
   dbTaskId?: string; // tasks.id (UUID) ← DB操作に使用
   clientTaskId?: string; // client_tasks.id (UUID) ← DB操作に使用
+  categoryId?: string; // categories.id (UUID) ← 新規タスク作成時に使用
   title: string;
   reason?: string;
   youtubeUrl?: string;
@@ -47,7 +48,6 @@ export interface Client {
   courseName?: string; // 契約コース名（一覧画面フィルター用）
   email?: string;
   course?: string; // 契約コース名（詳細画面表示用）
-  status?: string;
   levels: ClientLevels;
   nextGoal: string;
   previousNote: string;

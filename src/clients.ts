@@ -163,8 +163,8 @@ function createClientCard(client: Client): string {
                 <span class="font-medium">${client.lastUpdate}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-slate-500">前回メモ:</span>
-                <span class="font-medium truncate max-w-[100px]">${client.lastMemo}</span>
+                <span class="text-slate-500">コース:</span>
+                <span class="font-medium truncate max-w-[100px]">${client.courseName || "未設定"}</span>
               </div>
             </div>
             <button 

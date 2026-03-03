@@ -13,8 +13,7 @@ import {
   deleteMemo,
   createTask,
   assignExistingTask,
-  updateTask,
-  toggleTask,
+  checkTaskDuplicate,
   deleteClientTask,
 } from "./api/client-crud";
 // URLパラメータから顧客UUIDを取得
@@ -79,6 +78,9 @@ let _dbLevels: Record<string, number> = {};
 
 /** トレーナー一覧キャッシュ */
 let _trainers: { id: string; name: string }[] = [];
+
+/** カテゴリ一覧キャッシュ */
+let _categories: { id: string; name: string }[] = [];
 
 // ============================================================
 // トースト通知
@@ -148,6 +150,9 @@ function createLevelSelect(
 
 // 課題カードの生成
 function createTaskCard(task: Task): string {
+  // 新規追加（DB未登録・過去課題選択なし）の間のみ編集可能
+  const isEditable = task.isNew === true && !task.dbTaskId;
+
   const completedClass = task.completed
     ? "bg-slate-50/50 dark:bg-slate-800/20 opacity-70"
     : "bg-white dark:bg-slate-900/40";
@@ -160,35 +165,77 @@ function createTaskCard(task: Task): string {
     <span class="material-icons-outlined text-red-400 text-lg opacity-50">play_circle</span>
   `;
 
+  // 編集不可時のフィールドスタイル
+  const readonlyFieldClass = "cursor-default select-text pointer-events-none";
+  const titleInputClass = isEditable
+    ? `w-full bg-transparent border-none p-0 focus:ring-0 font-bold text-slate-800 dark:text-slate-100 placeholder-slate-300 ${lineThrough} task-title`
+    : `w-full bg-transparent border-none p-0 font-bold text-slate-800 dark:text-slate-100 ${lineThrough} ${readonlyFieldClass}`;
+  const reasonInputClass = isEditable
+    ? `w-full bg-transparent border-none p-0 focus:ring-0 text-sm text-slate-600 dark:text-slate-400 placeholder-slate-300 ${lineThrough} task-reason`
+    : `w-full bg-transparent border-none p-0 text-sm text-slate-600 dark:text-slate-400 ${lineThrough} ${readonlyFieldClass}`;
+  const urlInputClass = isEditable
+    ? `w-full bg-transparent border-none p-0 focus:ring-0 text-sm text-blue-500 dark:text-blue-400 underline placeholder-slate-300 task-url`
+    : `w-full bg-transparent border-none p-0 text-sm text-blue-500 dark:text-blue-400 underline ${readonlyFieldClass}`;
+
+  // 設定画面タスク管理へのリンク（編集不可のカードのみ表示）
+  const settingsLink = !isEditable
+    ? `<a href="settings.html" class="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-200 hover:underline mt-1 whitespace-nowrap">
+        <span class="material-icons-outlined" style="font-size:14px">open_in_new</span>タスク管理で編集
+      </a>`
+    : "";
+
+  // カテゴリ選択（編集可能な新規タスクのみ）
+  const categoryOptions = [
+    `<option value="">— カテゴリを選択 —</option>`,
+    ..._categories.map((cat) => {
+      const selected = task.categoryId === cat.id ? "selected" : "";
+      return `<option value="${cat.id}" ${selected}>${cat.name}</option>`;
+    }),
+  ].join("");
+  const categorySelectHTML = isEditable
+    ? `<div class="mb-3 space-y-1">
+        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">カテゴリ <span class="text-red-500">*</span></label>
+        <select
+          class="w-full bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-primary focus:border-primary task-category"
+          data-task-id="${task.id}"
+        >${categoryOptions}</select>
+      </div>`
+    : "";
+
   return `
     <div class="flex gap-4 p-5 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-900 ${completedClass} transition-all group items-start shadow-sm">
       <div class="pt-2">
         <input 
           ${task.completed ? "checked" : ""} 
-          class="w-5 h-5 rounded text-primary border-slate-300 dark:border-slate-700 focus:ring-primary cursor-pointer task-checkbox" 
+          disabled
+          class="w-5 h-5 rounded text-primary border-slate-300 dark:border-slate-700 opacity-60 cursor-not-allowed task-checkbox" 
           type="checkbox"
           data-task-id="${task.id}"
         />
       </div>
-      <div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="flex-1">
+      ${categorySelectHTML}
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="space-y-1">
           <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">課題名</label>
           <input 
-            class="w-full bg-transparent border-none p-0 focus:ring-0 font-bold text-slate-800 dark:text-slate-100 placeholder-slate-300 ${lineThrough} task-title" 
-            placeholder="課題名を入力" 
+            class="${titleInputClass}" 
+            ${isEditable ? 'placeholder="課題名を入力"' : ""}
             type="text" 
             value="${task.title}"
             data-task-id="${task.id}"
+            ${isEditable ? "" : "readonly"}
           />
         </div>
         <div class="space-y-1">
           <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">意義・理由</label>
           <input 
-            class="w-full bg-transparent border-none p-0 focus:ring-0 text-sm text-slate-600 dark:text-slate-400 placeholder-slate-300 ${lineThrough} task-reason" 
-            placeholder="なぜこの課題が必要か" 
+            class="${reasonInputClass}" 
+            ${isEditable ? 'placeholder="なぜこの課題が必要か"' : ""}
             type="text" 
             value="${task.reason || ""}"
             data-task-id="${task.id}"
+            ${isEditable ? "" : "readonly"}
           />
         </div>
         <div class="space-y-1">
@@ -196,14 +243,17 @@ function createTaskCard(task: Task): string {
           <div class="flex items-center gap-2">
             ${youtubeIcon}
             <input 
-              class="w-full bg-transparent border-none p-0 focus:ring-0 text-sm text-blue-500 dark:text-blue-400 underline placeholder-slate-300 task-url" 
-              placeholder="動画のリンク" 
+              class="${urlInputClass}" 
+              ${isEditable ? 'placeholder="動画のリンク"' : ""}
               type="text" 
               value="${task.youtubeUrl || ""}"
               data-task-id="${task.id}"
+              ${isEditable ? "" : "readonly"}
             />
           </div>
+          ${settingsLink}
         </div>
+      </div>
       </div>
       <div class="pt-2">
         <button 
@@ -458,7 +508,7 @@ function renderClientDetail(client: Client): void {
       .join("") || "";
 
   container.innerHTML = `
-    <form id="clientDetailForm">
+    <form id="clientDetailForm" class="space-y-3">
     <!-- Client Profile Section -->
     <section class="bg-surface-light dark:bg-surface-dark rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
       <div class="flex items-center gap-6">
@@ -472,7 +522,6 @@ function renderClientDetail(client: Client): void {
               type="text"
               value="${client.name}"
             />
-            <span class="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-semibold rounded-full uppercase tracking-wider shrink-0">${client.status || "Active"}</span>
           </div>
           <div class="mt-3 space-y-1">
             <div class="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm">
@@ -699,6 +748,18 @@ function setupTaskEventListeners(client: Client): void {
       showPastTaskModal(client);
     });
   }
+
+  // カテゴリ選択の変更
+  document.querySelectorAll(".task-category").forEach((select) => {
+    select.addEventListener("change", (event) => {
+      const target = event.target as HTMLSelectElement;
+      const taskId = parseInt(target.getAttribute("data-task-id") || "0");
+      const task = client.currentTasks.find((t) => t.id === taskId);
+      if (task) {
+        task.categoryId = target.value || undefined;
+      }
+    });
+  });
 
   // タスクの入力フィールド変更（リアルタイム保存）
   document
@@ -946,12 +1007,10 @@ function setupFormSubmit(client: Client): void {
     // ============================================================
     // 3. タスク CRUD
     // ============================================================
-    const defaultCategoryId = (await fetchCategories())[0]?.id ?? "";
-
     for (const task of client.currentTasks) {
       if (task.isNew && !task.isDeleted) {
-        // 新規追加
-        if (!task.title.trim()) continue; // 空のタスクはスキップ
+        // 空の課題はスキップ
+        if (!task.title.trim()) continue;
         if (task.dbTaskId) {
           // 過去の課題から選択：tasksマスターは既存 → client_tasksにのみ INSERT
           const clientTaskId = await assignExistingTask(
@@ -965,10 +1024,22 @@ function setupFormSubmit(client: Client): void {
             errors.push(`タスク割り当てエラー: ${task.title}`);
           }
         } else {
-          // 新規作成：tasks + client_tasks の両方 INSERT
+          // 新規作成：カテゴリ未選択はバリデーションエラー
+          if (!task.categoryId) {
+            errors.push(`カテゴリが未選択です: 「${task.title}」`);
+            continue;
+          }
+          // 同カテゴリ・同タイトルの重複チェック
+          const isDuplicate = await checkTaskDuplicate(task.categoryId, task.title);
+          if (isDuplicate) {
+            const catName = _categories.find((c) => c.id === task.categoryId)?.name ?? task.categoryId;
+            errors.push(`同じカテゴリに同名の課題が既に存在します: 「${task.title}」(${catName})`);
+            continue;
+          }
+          // tasks + client_tasks の両方 INSERT
           const result = await createTask(
             client.id,
-            defaultCategoryId,
+            task.categoryId,
             task.title,
             task.reason ?? "",
             task.youtubeUrl ?? "",
@@ -985,25 +1056,8 @@ function setupFormSubmit(client: Client): void {
         // 削除
         const ok = await deleteClientTask(task.clientTaskId);
         if (!ok) errors.push(`タスク削除エラー: ${task.title}`);
-      } else if (
-        !task.isNew &&
-        !task.isDeleted &&
-        task.dbTaskId &&
-        task.clientTaskId
-      ) {
-        // 既存タスクの更新
-        const [taskOk, toggleOk] = await Promise.all([
-          updateTask(
-            task.dbTaskId,
-            task.title,
-            task.reason ?? "",
-            task.youtubeUrl ?? "",
-          ),
-          toggleTask(task.clientTaskId, task.completed),
-        ]);
-        if (!taskOk || !toggleOk)
-          errors.push(`タスク更新エラー: ${task.title}`);
       }
+      // 既存タスクは管理画面での編集・完了状態変更を行わないためスキップ
     }
 
     // ============================================================
@@ -1050,6 +1104,8 @@ function setupFormSubmit(client: Client): void {
       showToast("顧客情報を登録しました");
       // DB値スナップショットを更新
       _dbLevels = { ...client.levels };
+      // isNew フラグが false になったタスクを編集不可で再レンダリング
+      renderClientDetail(client);
     } else {
       showToast(`一部の登録に失敗しました: ${errors.join(", ")}`, "error");
     }
@@ -1161,8 +1217,8 @@ async function init(): Promise<void> {
   // DBロード時のレベルをスナップショット（level_history 用）
   _dbLevels = { ...client.levels };
 
-  // カテゴリをプリフェッチ（新規タスク作成時に必要）
-  await fetchCategories();
+  // カテゴリ・トレーナーをプリフェッチ
+  _categories = await fetchCategories();
   _trainers = await fetchTrainers();
 
   renderClientDetail(client);
