@@ -18,10 +18,10 @@ function mapDbClientToDisplay(dbClient: any): Client {
   );
   const lastMemo = sortedMemos[0]?.content?.slice(0, 20) || "";
 
-  // タスクマッピング
+  // タスクマッピング（論理削除済み deleted_at != null を除外）
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const currentTasks = (dbClient.client_tasks || [])
-    .filter((ct: any) => ct.tasks)
+    .filter((ct: any) => ct.tasks && ct.deleted_at === null)
     .map((ct: any, idx: number) => ({
       id: idx + 1,
       title: ct.tasks.title,
@@ -100,6 +100,7 @@ async function loadClients(): Promise<void> {
       ),
       client_tasks (
         is_completed,
+        deleted_at,
         tasks (
           id,
           title
@@ -111,7 +112,8 @@ async function loadClients(): Promise<void> {
       )
     `,
     )
-    .order("updated_at", { ascending: false });
+    .order("updated_at", { ascending: false })
+    .order("assigned_at", { referencedTable: "client_tasks", ascending: true });
 
   if (error) {
     console.error("顧客一覧取得エラー:", error.message);

@@ -10,16 +10,7 @@
 </head>
 
 <body>
-    <!-- ヘッダー -->
-    <header class="app-header">
-        <div class="header-spacer"></div>
-        <h1 class="app-title">PTRM </h1>
-        <div class="points-display">
-            <span class="points-icon">⭐</span>
-            <span class="points-value" id="userPoints">1,250</span>
-            <span class="points-label">pt</span>
-        </div>
-    </header>
+    <!-- #partial:header -->
 
     <!-- メインコンテンツ -->
     <main class="main-content">
@@ -144,29 +135,7 @@
         </div>
     </main>
 
-    <!-- ナビゲーションバー -->
-    <nav class="bottom-nav">
-        <button class="nav-btn">
-            <span class="nav-icon">🏠</span>
-            <span class="nav-label">ホーム</span>
-        </button>
-        <button class="nav-btn">
-            <span class="nav-icon">🎯</span>
-            <span class="nav-label">アクション</span>
-        </button>
-        <button class="nav-btn active">
-            <span class="nav-icon">⛰️</span>
-            <span class="nav-label">ステージ</span>
-        </button>
-        <button class="nav-btn">
-            <span class="nav-icon">👤</span>
-            <span class="nav-label">プロフィール</span>
-        </button>
-        <button class="nav-btn">
-            <span class="nav-icon">📅</span>
-            <span class="nav-label">予約</span>
-        </button>
-    </nav>
+    <!-- #partial:nav:stage -->
 
     <script type="module" src="./src/main.ts"></script>
 </body>

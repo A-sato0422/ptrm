@@ -10,16 +10,7 @@
 </head>
 
 <body>
-    <!-- ヘッダー -->
-    <header class="app-header">
-        <div class="header-spacer"></div>
-        <h1 class="app-title">PTRM </h1>
-        <div class="points-display">
-            <span class="points-icon">⭐</span>
-            <span class="points-value" id="userPoints"></span>
-            <span class="points-label">pt</span>
-        </div>
-    </header>
+    <!-- #partial:header -->
 
     <!-- メインコンテンツ -->
     <main class="main-content">
@@ -31,21 +22,21 @@
             <div class="mountains-container">
                 <!-- Top Row: Blue Pilates & Red Weight -->
                 <div class="mountain-row top-row">
-                    <div class="mountain blue-mountain" data-mountain="blue" data-level="9"
-                        data-category="Blue Pilates">
+                    <div class="mountain blue-mountain" data-mountain="blue" data-level="0"
+                        data-category="">
                         <div class="mountain-icon">
                             <img src="./assets/yama01.png" alt="Blue Pilates" class="mountain-img">
                             <div class="mountain-label">
-                                <span class="level-badge">Lv.9</span>
+                                <span class="level-badge"></span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="mountain red-mountain" data-mountain="red" data-level="7" data-category="Red Weight">
+                    <div class="mountain red-mountain" data-mountain="red" data-level="0" data-category="">
                         <div class="mountain-icon">
                             <img src="./assets/yama02.png" alt="Red Weight" class="mountain-img">
                             <div class="mountain-label">
-                                <span class="level-badge">Lv.7</span>
+                                <span class="level-badge"></span>
                             </div>
                         </div>
                     </div>
@@ -55,28 +46,28 @@
                 <div class="gate-lock">
                     <div class="lock-icon">
                         🔒
-                        <p class="lock-message">3合目まであと少し</p>
+                        <p class="lock-message"></p>
                     </div>
                 </div>
 
                 <!-- Bottom Row: Green Sports & Yellow Movement -->
                 <div class="mountain-row bottom-row">
-                    <div class="mountain green-mountain" data-mountain="green" data-level="6"
-                        data-category="Green Sports">
+                    <div class="mountain green-mountain" data-mountain="green" data-level="0"
+                        data-category="">
                         <div class="mountain-icon">
                             <img src="./assets/yama03.png" alt="Sports" class="mountain-img">
                             <div class="mountain-label">
-                                <span class="level-badge">Lv.6</span>
+                                <span class="level-badge"></span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="mountain yellow-mountain" data-mountain="yellow" data-level="7"
-                        data-category="Yellow Movement">
+                    <div class="mountain yellow-mountain" data-mountain="yellow" data-level="0"
+                        data-category="">
                         <div class="mountain-icon">
                             <img src="./assets/yama04.png" alt="Movement" class="mountain-img">
                             <div class="mountain-label">
-                                <span class="level-badge">Lv.7</span>
+                                <span class="level-badge"></span>
                             </div>
                         </div>
                     </div>
@@ -87,7 +78,7 @@
             <div class="next-challenge">
                 <h3 class="challenge-title">次のチャレンジ項目</h3>
                 <div class="challenge-box">
-                    <p class="challenge-text">全項目Lv.10クリアで<br>3合目にランクアップ!</p>
+                    <p class="challenge-text"></p>
                 </div>
             </div>
 
@@ -96,18 +87,6 @@
                 <h3 class="action-title">現在のあなたの身体の宿題一覧</h3>
                 <div class="action-box">
                     <ul class="action-list-preview">
-                        <li class="action-item blue" data-action-id="task1">
-                            <span class="action-text">骨盤ニュートラル維持</span>
-                        </li>
-                        <li class="action-item red completed" data-action-id="task2">
-                            <span class="action-text">スクワット+5kg (完了)</span>
-                        </li>
-                        <li class="action-item yellow" data-action-id="task3">
-                            <span class="action-text">15分ジョグ</span>
-                        </li>
-                        <li class="action-item yellow" data-action-id="task4">
-                            <span class="action-text">肩甲骨ストレッチ</span>
-                        </li>
                     </ul>
                     <p class="action-note">※タップで編集画面へ</p>
                 </div>
@@ -132,29 +111,7 @@
         </div>
     </div>
 
-    <!-- ナビゲーションバー -->
-    <nav class="bottom-nav">
-        <button class="nav-btn active">
-            <span class="nav-icon">🏠</span>
-            <span class="nav-label">ホーム</span>
-        </button>
-        <button class="nav-btn">
-            <span class="nav-icon">🎯</span>
-            <span class="nav-label">アクション</span>
-        </button>
-        <button class="nav-btn">
-            <span class="nav-icon">⛰️</span>
-            <span class="nav-label">ステージ</span>
-        </button>
-        <button class="nav-btn">
-            <span class="nav-icon">👤</span>
-            <span class="nav-label">プロフィール</span>
-        </button>
-        <button class="nav-btn">
-            <span class="nav-icon">📅</span>
-            <span class="nav-label">予約</span>
-        </button>
-    </nav>
+    <!-- #partial:nav:index -->
 
     <script type="module" src="./src/main.ts"></script>
 </body>

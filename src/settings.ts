@@ -216,7 +216,7 @@ function createStageCard(stage: Stage): string {
                                 data-stage-id="${stage.dbId}"
                             />
                         </div>
-                        <span class="text-xs text-slate-400 whitespace-nowrap">を超えたら次へ</span>
+                        <span class="text-xs text-slate-400 whitespace-nowrap">に達したら次へ</span>
                     </div>
                 </div>
                 <div>

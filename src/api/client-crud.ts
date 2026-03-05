@@ -315,15 +315,49 @@ export async function updateTask(
 
 /**
  * client_tasks の is_completed を UPDATE する。
- * 完了時は completed_at もセットする。
+ * 完了時は completed_at と level_at_completion もセットする。
+ * level_at_completion はタスクのカテゴリに対応する client_levels.current_level を取得して保存する。
  * @returns 成功時 true / 失敗時 false
  */
 export async function toggleTask(
   clientTaskId: string,
   isCompleted: boolean,
+  clientId?: string,
 ): Promise<boolean> {
   const update: Record<string, unknown> = { is_completed: isCompleted };
-  if (isCompleted) update.completed_at = new Date().toISOString();
+  if (isCompleted) {
+    update.completed_at = new Date().toISOString();
+
+    // 完了時: タスクのカテゴリに対応する現在レベルを取得して保存
+    if (clientId) {
+      // client_tasks → tasks → category_id を取得
+      const { data: ctData } = await supabase
+        .from("client_tasks")
+        .select("tasks ( category_id )")
+        .eq("id", clientTaskId)
+        .single();
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const categoryId = (ctData as any)?.tasks?.category_id ?? null;
+
+      if (categoryId) {
+        const { data: levelData } = await supabase
+          .from("client_levels")
+          .select("current_level")
+          .eq("client_id", clientId)
+          .eq("category_id", categoryId)
+          .single();
+
+        if (levelData) {
+          update.level_at_completion = levelData.current_level;
+        }
+      }
+    }
+  } else {
+    // 未完了に戻す場合はクリア
+    update.completed_at = null;
+    update.level_at_completion = null;
+  }
 
   const { error } = await supabase
     .from("client_tasks")
@@ -335,6 +369,66 @@ export async function toggleTask(
     return false;
   }
   return true;
+}
+
+/**
+ * カテゴリ別に完了済み宿題一覧をレベルごとにまとめて取得する（山モーダル表示用）。
+ * @returns レベル番号をキーに、{taskTitle, completedAt}[] をグループ化した Map
+ */
+export async function fetchCompletedTasksByCategory(
+  clientId: string,
+  categoryId: string,
+): Promise<Map<number, { taskTitle: string; completedAt: string }[]>> {
+  const { data, error } = await supabase
+    .from("client_tasks")
+    .select("level_at_completion, completed_at, tasks ( title, category_id )")
+    .eq("client_id", clientId)
+    .eq("is_completed", true)
+    .not("level_at_completion", "is", null)
+    .order("level_at_completion", { ascending: true })
+    .order("completed_at", { ascending: true });
+
+  if (error || !data) {
+    console.error("完了タスク取得エラー:", error?.message);
+    return new Map();
+  }
+
+  const result = new Map<number, { taskTitle: string; completedAt: string }[]>();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const row of data as any[]) {
+    if (row.tasks?.category_id !== categoryId) continue;
+    const level: number = row.level_at_completion;
+    const entry = {
+      taskTitle: row.tasks?.title ?? "不明なタスク",
+      completedAt: row.completed_at
+        ? new Date(row.completed_at).toLocaleDateString("ja-JP")
+        : "",
+    };
+    if (!result.has(level)) result.set(level, []);
+    result.get(level)!.push(entry);
+  }
+
+  return result;
+}
+
+/**
+ * stagesテーブルから最大レベル（stage_noが最大のレコードのlevel_to）を取得する（山モーダル表示用）。
+ * @returns 最大レベル番号。取得失敗時は 0
+ */
+export async function fetchMaxLevel(): Promise<number> {
+  const { data, error } = await supabase
+    .from("stages")
+    .select("level_to")
+    .order("stage_no", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error || !data) {
+    console.error("最大レベル取得エラー:", error?.message);
+    return 0;
+  }
+  return data.level_to as number;
 }
 
 /**
@@ -384,13 +478,14 @@ export async function updateNextGoal(
 }
 
 /**
- * client_tasks から DELETE する（tasks マスターは削除しない）。
+ * client_tasks を論理削除する（deleted_at をセット）。tasks マスターは変更しない。
+ * 完了済みレコードは is_completed = true のまま保持され、山モーダルの履歴参照に引き続き使用できる。
  * @returns 成功時 true / 失敗時 false
  */
 export async function deleteClientTask(clientTaskId: string): Promise<boolean> {
   const { error } = await supabase
     .from("client_tasks")
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq("id", clientTaskId);
 
   if (error) {
@@ -398,4 +493,101 @@ export async function deleteClientTask(clientTaskId: string): Promise<boolean> {
     return false;
   }
   return true;
+}
+
+// ============================================================
+// 好み評価（will_matrix）
+// ============================================================
+
+/**
+ * will_matrix に UPSERT する（好き: 1 / どちでもない: 0 / 嫌い: -1）。
+ * @returns 成功時 true / 失敗時 false
+ */
+export async function upsertWillMatrix(
+  clientId: string,
+  taskId: string,
+  likeStatus: 1 | 0 | -1,
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("will_matrix")
+    .upsert(
+      { client_id: clientId, task_id: taskId, like_status: likeStatus },
+      { onConflict: "client_id,task_id" },
+    );
+
+  if (error) {
+    console.error("好み評価更新エラー:", error.message);
+    return false;
+  }
+  return true;
+}
+
+// ============================================================
+// アクション画面用：未完了タスク一覧取得
+// ============================================================
+
+/**
+ * クライアントの未完了タスクをカテゴリ情報付きで取得する。
+ */
+export async function fetchClientTasks(clientId: string): Promise<
+  Array<{
+    clientTaskId: string;
+    taskId: string;
+    title: string;
+    youtubeUrl: string | null;
+    categoryId: string;
+    categoryName: string;
+    isCompleted: boolean;
+    completedAt: string | null;
+    levelAtCompletion: number | null;
+  }>
+> {
+  const { data, error } = await supabase
+    .from("client_tasks")
+    .select("id, is_completed, completed_at, level_at_completion, tasks ( id, title, youtube_url, category_id, categories ( name ) )")
+    .eq("client_id", clientId)
+    .is("deleted_at", null)
+    .order("assigned_at", { ascending: true });
+
+  if (error || !data) {
+    console.error("タスク一覧取得エラー:", error?.message);
+    return [];
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data as any[]).map((row) => ({
+    clientTaskId: row.id,
+    taskId: row.tasks?.id ?? "",
+    title: row.tasks?.title ?? "不明なタスク",
+    youtubeUrl: row.tasks?.youtube_url ?? null,
+    categoryId: row.tasks?.category_id ?? "",
+    categoryName: row.tasks?.categories?.name ?? "",
+    isCompleted: row.is_completed,
+    completedAt: row.completed_at ?? null,
+    levelAtCompletion: row.level_at_completion ?? null,
+  }));
+}
+
+// ============================================================
+// 好み評価一覧取得
+// ============================================================
+
+/**
+ * クライアントの全好み評価を taskId → like_status のマップで返す。
+ */
+export async function fetchWillMatrix(clientId: string): Promise<Map<string, number>> {
+  const { data, error } = await supabase
+    .from("will_matrix")
+    .select("task_id, like_status")
+    .eq("client_id", clientId);
+
+  const result = new Map<string, number>();
+  if (error || !data) {
+    console.error("好み評価一覧取得エラー:", error?.message);
+    return result;
+  }
+  for (const row of data) {
+    result.set(row.task_id, row.like_status);
+  }
+  return result;
 }

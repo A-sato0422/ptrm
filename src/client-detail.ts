@@ -50,6 +50,7 @@ async function getClientFromSupabase(id: string): Promise<Client | null> {
             client_tasks (
                 id,
                 is_completed,
+                deleted_at,
                 tasks (
                     id,
                     title,
@@ -64,6 +65,7 @@ async function getClientFromSupabase(id: string): Promise<Client | null> {
         `,
     )
     .eq("id", id)
+    .order("assigned_at", { referencedTable: "client_tasks", ascending: true })
     .single();
 
   if (error || !data) {

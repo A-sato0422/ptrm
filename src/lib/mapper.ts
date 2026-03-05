@@ -45,11 +45,11 @@ export function mapDbClientToDisplay(dbClient: any): Client {
 
   const lastMemo = history[0]?.content?.slice(0, 20) || "";
 
-  // タスクマッピング
+  // タスクマッピング（論理削除済み deleted_at != null を除外）
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const currentTasks: Task[] = (dbClient.client_tasks || [])
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .filter((ct: any) => ct.tasks)
+    .filter((ct: any) => ct.tasks && ct.deleted_at === null)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .map((ct: any, idx: number) => ({
       id: idx + 1,
