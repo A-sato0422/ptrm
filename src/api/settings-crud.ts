@@ -4,6 +4,7 @@
  */
 
 import { supabase } from "../supabase";
+import { uploadAvatarToStorage } from "./storage";
 
 // ============================================================
 // ステージ
@@ -205,20 +206,7 @@ export async function uploadTrainerAvatar(
   trainerId: string,
   file: File,
 ): Promise<string | null> {
-  const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
-  const path = `${trainerId}.${ext}`;
-
-  const { error } = await supabase.storage
-    .from("trainer-avatars")
-    .upload(path, file, { upsert: true, contentType: file.type });
-
-  if (error) {
-    console.error("アバター画像アップロードエラー:", error.message);
-    return null;
-  }
-
-  const { data } = supabase.storage.from("trainer-avatars").getPublicUrl(path);
-  return data.publicUrl;
+  return uploadAvatarToStorage("trainer-avatars", trainerId, file);
 }
 
 export async function deactivateTrainer(id: string): Promise<boolean> {

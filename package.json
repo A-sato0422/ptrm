@@ -14,7 +14,8 @@
   },
   "dependencies": {
     "@line/liff": "^2.24.0",
-    "@supabase/supabase-js": "^2.94.0"
+    "@supabase/supabase-js": "^2.94.0",
+    "html5-qrcode": "^2.3.8"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

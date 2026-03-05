@@ -218,8 +218,9 @@ preferenceForm?.addEventListener("submit", async (e) => {
     taskId ? upsertWillMatrix(clientId, taskId, likeStatus) : Promise.resolve(true),
   ]);
 
-  if (!taskOk) {
-    alert("完了の保存に失敗しました");
+  if (taskOk) {
+    closePreferenceModal();
+    showErrorMessage("保存に失敗しました。しばらくたってから再度お試しください。");
     return;
   }
   if (!willOk) {
@@ -286,6 +287,14 @@ function showSuccessMessage(): void {
   if (!el) return;
   el.style.display = "block";
   setTimeout(() => { el.style.display = "none"; }, 3000);
+}
+
+function showErrorMessage(msg: string): void {
+  const el = document.getElementById("error-message");
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = "block";
+  setTimeout(() => { el.style.display = "none"; }, 4000);
 }
 
 // ============================================================

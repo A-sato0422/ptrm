@@ -15,29 +15,20 @@
     <!-- メインコンテンツ -->
     <main class="main-content">
         <div id="profile-view" class="view active">
+            <!-- 成功メッセージ -->
+            <div id="success-message" class="success-message" style="display: none;">
+                保存しました
+            </div>
+            <!-- エラーメッセージ -->
+            <div id="error-message" class="error-message" style="display: none;"></div>
+
             <!-- プロフィールヘッダー -->
             <div class="profile-header">
                 <div class="profile-avatar-container">
-                    <img src="./assets/証明写真.jpg" alt="プロフィール画像" class="profile-avatar">
+                    <img id="profile-avatar" src="/assets/initial-avater.png" alt="プロフィール画像" class="profile-avatar">
                 </div>
-                <h2 class="profile-name">山田 花子</h2>
-                <p class="profile-member-since">会員登録日: 2025年10月15日</p>
-            </div>
-
-            <!-- 統計情報 -->
-            <div class="profile-stats">
-                <div class="stat-card">
-                    <div class="stat-value">28</div>
-                    <div class="stat-label">平均レベル</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">120</div>
-                    <div class="stat-label">総セッション数</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">3</div>
-                    <div class="stat-label">宿題した宿題</div>
-                </div>
+                <h2 class="profile-name" id="profile-name">--</h2>
+                <p class="profile-member-since" id="profile-member-since">会員登録日: --</p>
             </div>
 
             <!-- 基本情報 -->
@@ -45,37 +36,110 @@
                 <h3 class="info-section-title">基本情報</h3>
                 <div class="info-list">
                     <div class="info-item">
-                        <span class="info-label">入会日</span>
-                        <span class="info-value">2025年10月15日</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">継続日数</span>
-                        <span class="info-value">109日</span>
-                    </div>
-                    <div class="info-item">
                         <span class="info-label">コース名</span>
-                        <span class="info-value">スタンダード</span>
+                        <span class="info-value" id="info-course">--</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">現在のステージ</span>
-                        <span class="info-value">Stage 5（洗練・専門期）</span>
+                        <span class="info-value" id="info-stage">--</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">継続日数</span>
+                        <span class="info-value" id="info-days">--</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">完了した宿題</span>
+                        <span class="info-value" id="info-tasks">--</span>
                     </div>
                 </div>
             </div>
 
+            <!-- ポイント履歴 -->
+            <div class="info-section">
+                <h3 class="info-section-title">ポイント履歴</h3>
+                <div id="point-history-list" class="point-history-list"></div>
+            </div>
+
             <!-- アクションボタン -->
             <div class="profile-actions">
-                <button class="profile-action-btn">
-                    <span class="action-icon">⚙️</span>
+                <button id="qr-scan-btn" class="profile-action-btn qr-btn">
+                    <span>ポイントを獲得する</span>
+                </button>
+                <button id="point-use-open-btn" class="profile-action-btn">
+                    <span>ポイントを使用する</span>
+                </button>
+                <button id="profile-action-btn" class="profile-action-btn">
                     <span>プロフィール設定</span>
                 </button>
             </div>
         </div>
     </main>
 
+    <!-- ポイント使用モーダル -->
+    <div id="point-use-modal" class="profile-modal-overlay hidden">
+        <div class="profile-modal-sheet">
+            <div class="profile-modal-header">
+                <h3>ポイントを使用する</h3>
+                <button id="point-use-close-btn" class="profile-modal-close">✕</button>
+            </div>
+            <div class="profile-modal-body">
+                <div class="modal-field">
+                    <label class="modal-field-label">使用するポイント数</label>
+                    <input type="number" id="point-use-input" class="modal-field-input" min="1" placeholder="例: 100">
+                </div>
+                <p id="point-use-error" class="point-use-modal-error" style="display:none;"></p>
+            </div>
+            <div class="profile-modal-footer">
+                <button id="point-use-cancel-btn" class="modal-btn cancel">キャンセル</button>
+                <button id="point-use-btn" class="modal-btn save">使用する</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- QRスキャナーモーダル -->
+    <div id="qr-modal" class="qr-modal-overlay hidden">
+        <div class="qr-modal-sheet">
+            <div class="qr-modal-header">
+                <h3>QRコードをスキャン</h3>
+                <button id="qr-close-btn" class="qr-modal-close">✕</button>
+            </div>
+            <div class="qr-modal-body">
+                <div id="qr-reader"></div>
+                <p class="qr-hint">カメラでQRコードを読み取ってください</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- プロフィール設定モーダル -->
+    <div id="profile-modal" class="profile-modal-overlay hidden">
+        <div class="profile-modal-sheet">
+            <div class="profile-modal-header">
+                <h3>プロフィール設定</h3>
+                <button id="modal-close-btn" class="profile-modal-close">✕</button>
+            </div>
+            <div class="profile-modal-body">
+                <div class="modal-avatar-section">
+                    <img id="modal-avatar-preview" class="modal-avatar-img" src="" alt="アバタープレビュー">
+                    <label class="modal-avatar-label" for="modal-avatar-input">
+                        画像を変更
+                        <input type="file" id="modal-avatar-input" accept="image/*" hidden>
+                    </label>
+                </div>
+                <div class="modal-field">
+                    <label class="modal-field-label">ニックネーム</label>
+                    <input type="text" id="modal-name-input" class="modal-field-input" placeholder="名前を入力" maxlength="50">
+                </div>
+            </div>
+            <div class="profile-modal-footer">
+                <button id="modal-cancel-btn" class="modal-btn cancel">キャンセル</button>
+                <button id="modal-save-btn" class="modal-btn save">保存</button>
+            </div>
+        </div>
+    </div>
+
     <!-- #partial:nav:profile -->
 
-    <script type="module" src="./src/main.ts"></script>
+    <script type="module" src="./src/profile.ts"></script>
 </body>
 
 </html>

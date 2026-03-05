@@ -66,6 +66,7 @@ export default defineConfig({
         action: './action.html',
         stage: './stage.html',
         profile: './profile.html',
+        pointAward: './point-award.html',
         clients: './clients.html',
         clientDetail: './client-detail.html',
         settings: './settings.html',
@@ -73,6 +74,7 @@ export default defineConfig({
     },
   },
   server: {
+    host: true,
     port: 3000,
     open: true,
   },
