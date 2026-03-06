@@ -70,6 +70,7 @@ export default defineConfig({
         clients: './clients.html',
         clientDetail: './client-detail.html',
         settings: './settings.html',
+        error: './error.html',
       },
     },
   },
