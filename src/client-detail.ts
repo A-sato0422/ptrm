@@ -1,152 +1,146 @@
-// このファイルをモジュールとして扱う
-export { };
-
-// 顧客データの型定義
-interface Client {
-    id: number;
-    name: string;
-    avatarUrl: string;
-    lastUpdate: string;
-    lastMemo: string;
-    email?: string;
-    course?: string;
-    status?: string;
-    levels: {
-        blue: number;
-        red: number;
-        green: number;
-        yellow: number;
-    };
-    nextGoal: string;
-    previousNote: string;
-    currentTasks: Task[];
-    preferences: {
-        likes: string;
-        dislikes: string;
-    };
-    history?: MemoHistory[];
+import { supabase } from "./supabase";
+import { Client, Task, MemoHistory } from "./shared";
+import { mapDbClientToDisplay } from "./lib/mapper";
+import {
+  fetchCategories,
+  fetchAllTasks,
+  fetchMaxLevel,
+  updateLevel,
+  updateNextGoal,
+  updateClientProfile,
+  createMemo,
+  updateMemo,
+  deleteMemo,
+  createTask,
+  assignExistingTask,
+  checkCompletedClientTask,
+  checkTaskDuplicate,
+  deleteClientTask,
+  deleteClient,
+} from "./api/client-crud";
+// URLパラメータから顧客UUIDを取得
+function getClientIdFromUrl(): string | null {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("id");
 }
 
-interface Task {
-    id: number;
-    title: string;
-    reason?: string;
-    youtubeUrl?: string;
-    completed: boolean;
+// Supabaseから顧客データを取得
+async function getClientFromSupabase(id: string): Promise<Client | null> {
+  const { data, error } = await supabase
+    .from("clients")
+    .select(
+      `
+            id,
+            display_name,
+            profile_image_url,
+            course_name,
+            line_user_id,
+            next_goal,
+            updated_at,
+            client_levels (
+                id,
+                category_id,
+                current_level,
+                categories ( name )
+            ),
+            trainer_memos (
+                id,
+                content,
+                created_at,
+                trainers ( display_name )
+            ),
+            client_tasks (
+                id,
+                is_completed,
+                deleted_at,
+                tasks (
+                    id,
+                    title,
+                    why_text,
+                    youtube_url,
+                    category_id
+                )
+            ),
+            will_matrix (
+                like_status,
+                tasks ( title )
+            )
+        `,
+    )
+    .eq("id", id)
+    .order("assigned_at", { referencedTable: "client_tasks", ascending: true })
+    .single();
+
+  if (error || !data) {
+    console.error("顧客データ取得エラー:", error?.message);
+    return null;
+  }
+  return mapDbClientToDisplay(data);
 }
 
-interface MemoHistory {
-    id: number;
-    date: string;
-    trainer: string;
-    content: string;
-}
+/** DBロード時のレベルスナップショット（level_history の before 値に使用） */
+let _dbLevels: Record<string, number> = {};
 
-// サンプル顧客データ（clients.tsと同じデータを使用）
-const clientsData: Client[] = [
-    {
-        id: 10294,
-        name: "山田 花子",
-        avatarUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuCOTmHNB0ZGcIs7hqgp3jVkx0h_A8bS9jIPtjq4JilvCwWCfrthpclirCPZIrj4PfMO3A2rNy-M1KCda_jq7iLPtk-xNVFKZqippajxl7L2xfxi8doWUcU-zk4aX93tYV02_QfZC2HwXPKswxrZ56baNNmN5NL-TZPATuQQbZb2gF4A5g8_V9T3K4MRarGpZjflvueHtTm9OMlGyV2Z1fOTeBP-g4SoHTzZhRhacx91Q-QBGpm1HJJapLAJvlTqaonOuMLfXzkByEI",
-        email: "yamada.hanako@example.com",
-        course: "スタンダード月4回コース",
-        status: "Active",
-        lastUpdate: "2026/01/08",
-        lastMemo: "スクワット+5kg",
-        levels: { blue: 7, red: 7, green: 6, yellow: 7 },
-        nextGoal: "全項目1合目クリアで2合目ゲート開放（あとGreen Sportsのみ）",
-        previousNote: "スクワット+5kg達成。膝の調子良好。次回はデッドリフトのフォーム確認。",
-        currentTasks: [
-            { id: 1, title: "骨盤ニュートラル維持", reason: "腰痛予防と体幹の安定性向上のため", youtubeUrl: "https://youtube.com/watch?v=...", completed: false },
-            { id: 2, title: "15分ジョグ", reason: "心肺機能の向上と脂肪燃焼の促進", youtubeUrl: "", completed: false },
-            { id: 3, title: "肩甲骨ストレッチ", reason: "巻き肩の改善と呼吸の質を高める", youtubeUrl: "https://youtube.com/watch?v=...", completed: true }
-        ],
-        preferences: {
-            likes: "ストレッチ、ダンス、リズムトレーニング",
-            dislikes: "高負荷ジャンプ、長距離走、バーベル種目"
-        },
-        history: [
-            { id: 1, date: "2026/01/08", trainer: "佐藤", content: "スクワット+5kg達成。膝の調子良好。次回はデッドリフトのフォーム確認。" },
-            { id: 2, date: "2025/12/25", trainer: "鈴木", content: "年末年始の自宅トレについて相談。モチベーションは安定している。" }
-        ]
-    },
-    {
-        id: 10452,
-        name: "田中 健太",
-        avatarUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuCQf2u7bWWNdS4xlN4kt82KQWQJ5HWwNsRdHMqv2QgiQTTOzR3Fr7IzR3bMrjBji7F1AO_PHeDvg4mA9vp5Rro9AjNisa2_7W7IJG_cUlEL8IE_si1Lja1Klqc3HvTuK6SGeIEfnSGqClWMZuxfy_-Zx5xV3iAlQDY9rZatwxccBRWKZe9AzCq1vMlRD2a5Tg-7TvT1mSMO3BUtwE14iD68Z65tOkO3xI0llhCMcR_mTqJS9Ds9juQP5fFNnzIzY2sUlPz-AmNCI9E",
-        email: "tanaka.kenta@example.com",
-        course: "プレミアム月8回コース",
-        status: "Active",
-        lastUpdate: "2026/01/08",
-        lastMemo: "バルクアップ順調",
-        levels: { blue: 4, red: 8, green: 3, yellow: 5 },
-        nextGoal: "重量アップ目標達成まであと少し",
-        previousNote: "ベンチプレス80kg更新。食事管理も徹底されており、体脂肪率も安定。",
-        currentTasks: [
-            { id: 1, title: "プロテイン摂取タイミング", reason: "筋肉合成の最適化", youtubeUrl: "", completed: false },
-            { id: 2, title: "ストレッチ10分", reason: "柔軟性向上とケガ予防", youtubeUrl: "", completed: true }
-        ],
-        preferences: {
-            likes: "重量挙げ、HIIT",
-            dislikes: "ヨガ、ピラティス"
-        },
-        history: [
-            { id: 1, date: "2026/01/08", trainer: "山本", content: "ベンチプレス80kg更新。食事管理も徹底されており、体脂肪率も安定。" }
-        ]
-    },
-    {
-        id: 10588,
-        name: "佐藤 美咲",
-        avatarUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuBdzUzh6YDvL-cSZWWaZQjUUF2Z4sHgv7dtZpas0u1Le5uWk53U90PKLtlumKqCmAfer6ykpgO-qsS9N3x7UGpmgk7iefAW53UjBn9hwVhgzd2GfETZKt9Q_mdaq6jpxYjeRNJyOrFvDDuHd9WwOmOmnpN_W9Hsr3B8HDN3fTiiEZmiU8wXRKBZYfFTBanCDbDpb_uqElJElVkvtG4MBMrzoRy8fSNjStH2YtD1SW_mlmn2hARqiuSa6Z_JCVq0aoYuhl8_NOB-l54",
-        email: "sato.misaki@example.com",
-        course: "ライト月2回コース",
-        status: "Active",
-        lastUpdate: "2026/01/08",
-        lastMemo: "姿勢改善が見られる",
-        levels: { blue: 9, red: 3, green: 7, yellow: 8 },
-        nextGoal: "ピラティスマスターコース挑戦",
-        previousNote: "インナーマッスルの使い方が非常に上手くなっています。呼吸法も完璧。",
-        currentTasks: [
-            { id: 1, title: "片足バランス強化", reason: "体幹安定性の向上", youtubeUrl: "", completed: false },
-            { id: 2, title: "腹横筋の意識", reason: "コアの強化", youtubeUrl: "", completed: false }
-        ],
-        preferences: {
-            likes: "マットピラティス",
-            dislikes: "重い負荷のスクワット"
-        },
-        history: [
-            { id: 1, date: "2026/01/08", trainer: "高橋", content: "インナーマッスルの使い方が非常に上手くなっています。呼吸法も完璧。" }
-        ]
-    }
-];
+/** カテゴリ一覧キャッシュ */
+let _categories: { id: string; name: string }[] = [];
 
-// URLパラメータから顧客IDを取得
-function getClientIdFromUrl(): number | null {
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get('id');
-    return id ? parseInt(id, 10) : null;
-}
+/** レベルセレクトの最大値（stages.stage_no=6 の level_to） */
+let _maxLevel: number = 30;
 
-// 顧客データを取得
-function getClientById(id: number): Client | undefined {
-    return clientsData.find(client => client.id === id);
+// ============================================================
+// トースト通知
+// ============================================================
+
+function showToast(
+  message: string,
+  type: "success" | "error" = "success",
+): void {
+  const existing = document.getElementById("toastNotification");
+  if (existing) existing.remove();
+
+  const toast = document.createElement("div");
+  toast.id = "toastNotification";
+  const colorClass =
+    type === "success" ? "bg-green-600 text-white" : "bg-red-600 text-white";
+  toast.className = `fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-lg ${colorClass} transition-all duration-300 opacity-0 translate-y-2`;
+  const icon = type === "success" ? "check_circle" : "error";
+  toast.innerHTML = `<span class="material-icons-outlined">${icon}</span><span class="font-medium">${message}</span>`;
+  document.body.appendChild(toast);
+
+  // フェードイン
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      toast.classList.remove("opacity-0", "translate-y-2");
+    });
+  });
+
+  // 3秒後にフェードアウト → 削除
+  setTimeout(() => {
+    toast.classList.add("opacity-0", "translate-y-2");
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
 }
 
 // レベルセレクトボックスの生成
-function createLevelSelect(color: string, name: string, level: number, key: string): string {
-    const colorMap: { [key: string]: string } = {
-        blue: 'bg-blue-600',
-        red: 'bg-red-600',
-        green: 'bg-emerald-600',
-        yellow: 'bg-amber-500'
-    };
+function createLevelSelect(
+  color: string,
+  name: string,
+  level: number,
+  key: string,
+): string {
+  const colorMap: { [key: string]: string } = {
+    blue: "bg-blue-600",
+    red: "bg-red-600",
+    green: "bg-emerald-600",
+    yellow: "bg-amber-500",
+  };
 
-    const options = Array.from({ length: 11 }, (_, i) => {
-        const selected = i === level ? 'selected' : '';
-        return `<option value="${i}" ${selected}>Lv.${i}</option>`;
-    }).join('');
+  const options = Array.from({ length: _maxLevel + 1 }, (_, i) => {
+    const selected = i === level ? "selected" : "";
+    return `<option value="${i}" ${selected}>Lv.${i}</option>`;
+  }).join("");
 
-    return `
+  return `
     <div class="flex items-center justify-center gap-2 ${colorMap[color]} text-white px-4 py-2 rounded-xl text-sm font-medium shadow-sm">
       <span class="mr-2">${name}:</span>
       <select 
@@ -161,61 +155,112 @@ function createLevelSelect(color: string, name: string, level: number, key: stri
 
 // 課題カードの生成
 function createTaskCard(task: Task): string {
-    const completedClass = task.completed ? 'bg-slate-50/50 dark:bg-slate-800/20 opacity-70' : 'bg-white dark:bg-slate-900/40';
-    const lineThrough = task.completed ? 'line-through' : '';
-    const youtubeIcon = task.youtubeUrl ? `
+  // 新規追加（DB未登録・過去課題選択なし）の間のみ編集可能
+  const isEditable = task.isNew === true && !task.dbTaskId;
+
+  const completedClass = task.completed
+    ? "bg-slate-50/50 dark:bg-slate-800/20 opacity-70"
+    : "bg-white dark:bg-slate-900/40";
+  const lineThrough = task.completed ? "line-through" : "";
+  const youtubeIcon = task.youtubeUrl
+    ? `
     <span class="material-icons-outlined text-red-500 text-lg">play_circle</span>
-  ` : `
+  `
+    : `
     <span class="material-icons-outlined text-red-400 text-lg opacity-50">play_circle</span>
   `;
 
-    return `
+  // 編集不可時のフィールドスタイル
+  const readonlyFieldClass = "cursor-default select-text pointer-events-none";
+  const titleInputClass = isEditable
+    ? `w-full bg-transparent border-none p-0 focus:ring-0 font-bold text-slate-800 dark:text-slate-100 placeholder-slate-300 ${lineThrough} task-title`
+    : `w-full bg-transparent border-none p-0 font-bold text-slate-800 dark:text-slate-100 ${lineThrough} ${readonlyFieldClass}`;
+  const reasonInputClass = isEditable
+    ? `w-full bg-transparent border-none p-0 focus:ring-0 text-sm text-slate-600 dark:text-slate-400 placeholder-slate-300 ${lineThrough} task-reason`
+    : `w-full bg-transparent border-none p-0 text-sm text-slate-600 dark:text-slate-400 ${lineThrough} ${readonlyFieldClass}`;
+  const urlInputClass = isEditable
+    ? `w-full bg-transparent border-none p-0 focus:ring-0 text-sm text-blue-500 dark:text-blue-400 underline placeholder-slate-300 task-url`
+    : `w-full bg-transparent border-none p-0 text-sm text-blue-500 dark:text-blue-400 underline ${readonlyFieldClass}`;
+
+  // カテゴリ名表示（編集不可のカードのみ）
+  const taskCatName = !isEditable && task.categoryId
+    ? _categories.find((c) => c.id === task.categoryId)?.name ?? ""
+    : "";
+  const categoryNameBadge = taskCatName
+    ? `<p class="text-[11px] mt-0.5 text-slate-500 dark:text-slate-400">${taskCatName}</p>`
+    : "";
+
+  // 設定画面タスク管理へのリンク（編集不可のカードのみ表示）
+  const settingsLink = !isEditable
+    ? `<a href="settings.html#task-management" class="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-200 hover:underline mt-1 whitespace-nowrap">
+        <span class="material-icons-outlined" style="font-size:14px">open_in_new</span>タスク管理で編集
+      </a>`
+    : "";
+
+  // カテゴリ選択（編集可能な新規タスクのみ）
+  const categoryOptions = [
+    `<option value="">— カテゴリを選択 —</option>`,
+    ..._categories.map((cat) => {
+      const selected = task.categoryId === cat.id ? "selected" : "";
+      return `<option value="${cat.id}" ${selected}>${cat.name}</option>`;
+    }),
+  ].join("");
+  const categorySelectHTML = isEditable
+    ? `<div class="mb-3 space-y-1">
+        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">カテゴリ <span class="text-red-500">*</span></label>
+        <select
+          class="w-full bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-primary focus:border-primary task-category"
+          data-task-id="${task.id}"
+        >${categoryOptions}</select>
+      </div>`
+    : "";
+
+  return `
     <div class="flex gap-4 p-5 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-900 ${completedClass} transition-all group items-start shadow-sm">
       <div class="pt-2">
         <input 
-          ${task.completed ? 'checked' : ''} 
-          class="w-5 h-5 rounded text-primary border-slate-300 dark:border-slate-700 focus:ring-primary cursor-pointer task-checkbox" 
+          ${task.completed ? "checked" : ""} 
+          disabled
+          class="w-5 h-5 rounded text-primary border-slate-300 dark:border-slate-700 opacity-60 cursor-not-allowed task-checkbox" 
           type="checkbox"
           data-task-id="${task.id}"
         />
       </div>
-      <div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="flex-1">
+      ${categorySelectHTML}
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="space-y-1">
           <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">課題名</label>
-          <input 
-            class="w-full bg-transparent border-none p-0 focus:ring-0 font-bold text-slate-800 dark:text-slate-100 placeholder-slate-300 ${lineThrough} task-title" 
-            placeholder="課題名を入力" 
-            type="text" 
-            value="${task.title}"
-            data-task-id="${task.id}"
-          />
+          ${isEditable
+            ? `<input class="${titleInputClass}" placeholder="課題名を入力" type="text" value="${task.title}" data-task-id="${task.id}" />`
+            : `<p class="font-bold text-slate-800 dark:text-slate-100 break-words whitespace-pre-wrap ${lineThrough}">${task.title}</p>${categoryNameBadge}`}
         </div>
         <div class="space-y-1">
           <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">意義・理由</label>
-          <input 
-            class="w-full bg-transparent border-none p-0 focus:ring-0 text-sm text-slate-600 dark:text-slate-400 placeholder-slate-300 ${lineThrough} task-reason" 
-            placeholder="なぜこの課題が必要か" 
-            type="text" 
-            value="${task.reason || ''}"
-            data-task-id="${task.id}"
-          />
+          ${isEditable
+            ? `<input class="${reasonInputClass}" placeholder="なぜこの課題が必要か" type="text" value="${task.reason || ""}" data-task-id="${task.id}" />`
+            : `<p class="text-sm text-slate-600 dark:text-slate-400 break-words whitespace-pre-wrap ${lineThrough}">${task.reason || ""}</p>`}
         </div>
         <div class="space-y-1">
           <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">YouTube URL</label>
           <div class="flex items-center gap-2">
             ${youtubeIcon}
             <input 
-              class="w-full bg-transparent border-none p-0 focus:ring-0 text-sm text-blue-500 dark:text-blue-400 underline placeholder-slate-300 task-url" 
-              placeholder="動画のリンク" 
+              class="${urlInputClass}" 
+              ${isEditable ? 'placeholder="動画のリンク"' : ""}
               type="text" 
-              value="${task.youtubeUrl || ''}"
+              value="${task.youtubeUrl || ""}"
               data-task-id="${task.id}"
+              ${isEditable ? "" : "readonly"}
             />
           </div>
+          ${settingsLink}
         </div>
+      </div>
       </div>
       <div class="pt-2">
         <button 
+          type="button"
           class="p-2 text-slate-300 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-all task-delete" 
           title="削除"
           data-task-id="${task.id}"
@@ -229,38 +274,27 @@ function createTaskCard(task: Task): string {
 
 // メモ履歴の生成
 function createMemoHistoryItem(memo: MemoHistory, isLatest: boolean): string {
-    const dotColor = isLatest ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-700';
-    const opacityClass = isLatest ? '' : 'opacity-70';
-    const isNewMemo = !memo.date || !memo.content;
+  const dotColor = isLatest ? "bg-primary" : "bg-slate-300 dark:bg-slate-700";
+  const opacityClass = isLatest ? "" : "opacity-70";
+  const isNewMemo = !memo.date || !memo.content;
 
-    return `
+  return `
     <div class="relative pl-8 border-l-2 border-slate-100 dark:border-slate-800 ml-2" data-memo-id="${memo.id}">
       <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full ${dotColor} border-4 border-white dark:border-slate-900 shadow-sm"></div>
-      <div class="bg-slate-50 dark:bg-slate-800/30 p-5 rounded-xl ${opacityClass} border ${isNewMemo ? 'border-primary ring-2 ring-primary/20' : 'border-transparent hover:border-slate-200 dark:hover:border-slate-700'} transition-all group">
+      <div class="bg-slate-50 dark:bg-slate-800/30 p-5 rounded-xl ${opacityClass} border ${isNewMemo ? "border-primary ring-2 ring-primary/20" : "border-transparent hover:border-slate-200 dark:hover:border-slate-700"} transition-all group">
         <div class="flex justify-between items-start gap-4 mb-3">
           <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
             <div class="space-y-1">
               <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">日付</label>
-              <input 
-                class="w-full bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-900 dark:text-slate-100 placeholder-slate-300 focus:ring-2 focus:ring-primary focus:border-primary memo-date" 
-                placeholder="2026/01/08" 
-                type="text" 
-                value="${memo.date || ''}"
-                data-memo-id="${memo.id}"
-              />
+              <p class="px-3 py-1.5 text-sm font-medium text-slate-900 dark:text-slate-100">${memo.date || "—"}</p>
             </div>
             <div class="space-y-1">
               <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">担当者</label>
-              <input 
-                class="w-full bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 placeholder-slate-300 focus:ring-2 focus:ring-primary focus:border-primary memo-trainer" 
-                placeholder="担当者名" 
-                type="text" 
-                value="${memo.trainer || ''}"
-                data-memo-id="${memo.id}"
-              />
+              <p class="px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400">${memo.trainer || "不明"}</p>
             </div>
           </div>
           <button 
+            type="button"
             class="p-2 text-slate-300 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-all memo-delete" 
             title="削除"
             data-memo-id="${memo.id}"
@@ -275,58 +309,231 @@ function createMemoHistoryItem(memo: MemoHistory, isLatest: boolean): string {
             placeholder="メモ内容を入力してください..." 
             rows="3"
             data-memo-id="${memo.id}"
-          >${memo.content || ''}</textarea>
+          >${memo.content || ""}</textarea>
         </div>
       </div>
     </div>
   `;
 }
 
+// 過去の課題選択モーダルを表示
+async function showPastTaskModal(client: Client): Promise<void> {
+  // 既に割り当て済みのタスクID（削除フラグが立っているものは再追加可能）
+  const assignedTaskIds = new Set(
+    client.currentTasks
+      .filter((t) => !t.isDeleted && t.dbTaskId)
+      .map((t) => t.dbTaskId as string),
+  );
+
+  const allTasks = await fetchAllTasks();
+  const availableTasks = allTasks.filter((t) => !assignedTaskIds.has(t.id));
+
+  // カテゴリ別にグループ化
+  const grouped = availableTasks.reduce(
+    (acc, task) => {
+      const key = task.categoryName || "その他";
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(task);
+      return acc;
+    },
+    {} as Record<string, typeof availableTasks>,
+  );
+
+  const categoryColorClass: Record<string, string> = {
+    マットピラティス:
+      "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+    ウェイトトレーニング:
+      "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+    スポーツトレーニング:
+      "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+    ムーブメントトレーニング:
+      "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  };
+
+  const tasksHTML =
+    availableTasks.length === 0
+      ? `<p class="text-center text-slate-400 py-8">追加できる課題がありません</p>`
+      : (["マットピラティス", "ウェイトトレーニング", "スポーツトレーニング", "ムーブメントトレーニング"] as const)
+          .filter((name) => grouped[name]?.length)
+          .map(
+            (categoryName) => {
+              const tasks = grouped[categoryName];
+              return `
+                <div class="mb-4">
+                  <span class="inline-block px-2 py-0.5 text-xs font-bold rounded-full mb-2 ${categoryColorClass[categoryName] || "bg-slate-100 text-slate-600"}">${categoryName}</span>
+                  <div class="space-y-1">
+                    ${tasks
+                      .map(
+                        (task) => `
+                          <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors">
+                            <input type="checkbox" class="past-task-checkbox mt-0.5 w-4 h-4 rounded text-primary border-slate-300 focus:ring-primary cursor-pointer" data-task-id="${task.id}" data-title="${task.title.replace(/"/g, "&quot;")}" data-why="${(task.whyText ?? "").replace(/"/g, "&quot;")}" data-url="${(task.youtubeUrl ?? "").replace(/"/g, "&quot;")}" data-category-id="${task.categoryId}" />
+                            <div>
+                              <p class="text-sm font-medium text-slate-800 dark:text-slate-100">${task.title}</p>
+                              ${task.whyText ? `<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">${task.whyText}</p>` : ""}
+                            </div>
+                          </label>
+                        `,
+                      )
+                      .join("")}
+                  </div>
+                </div>
+              `;
+            },
+          )
+          .join("");
+
+  // モーダルを挿入
+  const existing = document.getElementById("pastTaskModal");
+  if (existing) existing.remove();
+
+  const modal = document.createElement("div");
+  modal.id = "pastTaskModal";
+  modal.className =
+    "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm";
+  modal.innerHTML = `
+    <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
+      <div class="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
+        <h3 class="text-lg font-bold flex items-center gap-2">
+          <span class="material-icons-outlined text-primary">history</span>
+          過去の課題を追加
+        </h3>
+        <button id="pastTaskModalClose" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+          <span class="material-icons-outlined">close</span>
+        </button>
+      </div>
+      <div class="overflow-y-auto flex-1 p-6">
+        ${tasksHTML}
+      </div>
+      <div class="p-6 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
+        <button id="pastTaskModalCancel" type="button" class="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors font-medium">
+          キャンセル
+        </button>
+        <button id="pastTaskModalConfirm" type="button" disabled class="px-5 py-2.5 rounded-xl bg-primary text-white hover:bg-blue-700 transition-colors font-bold disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-primary">
+          追加する
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const closeModal = (): void => modal.remove();
+
+  document
+    .getElementById("pastTaskModalClose")
+    ?.addEventListener("click", closeModal);
+  document
+    .getElementById("pastTaskModalCancel")
+    ?.addEventListener("click", closeModal);
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  // チェックボックスの変更に応じてボタンの活性/非活性を切り替え
+  const confirmBtn = document.getElementById(
+    "pastTaskModalConfirm",
+  ) as HTMLButtonElement | null;
+  modal.addEventListener("change", () => {
+    const anyChecked =
+      modal.querySelectorAll<HTMLInputElement>(".past-task-checkbox:checked")
+        .length > 0;
+    if (confirmBtn) confirmBtn.disabled = !anyChecked;
+  });
+
+  document
+    .getElementById("pastTaskModalConfirm")
+    ?.addEventListener("click", () => {
+      const checked = modal.querySelectorAll<HTMLInputElement>(
+        ".past-task-checkbox:checked",
+      );
+      checked.forEach((checkbox) => {
+        const newTask: import("./shared").Task = {
+          id: Date.now() + Math.random(),
+          dbTaskId: checkbox.dataset.taskId,
+          title: checkbox.dataset.title ?? "",
+          reason: checkbox.dataset.why ?? "",
+          youtubeUrl: checkbox.dataset.url ?? "",
+          categoryId: checkbox.dataset.categoryId ?? undefined,
+          completed: false,
+          isNew: true,
+        };
+        client.currentTasks.push(newTask);
+      });
+
+      closeModal();
+      if (checked.length > 0) {
+        renderClientDetail(client);
+      }
+    });
+}
+
 // 詳細画面のコンテンツを生成
 function renderClientDetail(client: Client): void {
-    const container = document.getElementById('clientDetailContainer');
-    if (!container) return;
+  const container = document.getElementById("clientDetailContainer");
+  if (!container) return;
 
-    // ページタイトルを更新
-    const pageTitle = document.getElementById('pageTitle');
-    if (pageTitle) {
-        pageTitle.textContent = `顧客詳細: ${client.name}`;
-    }
+  // ページタイトルを更新
+  const pageTitle = document.getElementById("pageTitle");
+  if (pageTitle) {
+    pageTitle.textContent = `顧客詳細: ${client.name}`;
+  }
 
-    const tasksHTML = client.currentTasks.map(task => createTaskCard(task)).join('');
-    const historyHTML = client.history?.map((memo, index) => createMemoHistoryItem(memo, index === 0)).join('') || '';
+  const tasksHTML = client.currentTasks
+    .filter((task) => !task.isDeleted)
+    .map((task) => createTaskCard(task))
+    .join("");
+  const historyHTML =
+    client.history
+      ?.filter((memo) => !memo.isDeleted)
+      .map((memo, index) => createMemoHistoryItem(memo, index === 0))
+      .join("") || "";
 
-    container.innerHTML = `
-    <form id="clientDetailForm">
+  container.innerHTML = `
+    <form id="clientDetailForm" class="space-y-3">
     <!-- Client Profile Section -->
     <section class="bg-surface-light dark:bg-surface-dark rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
       <div class="flex items-center gap-6">
-        <img alt="${client.name}" class="w-24 h-24 rounded-2xl object-cover ring-4 ring-blue-50 dark:ring-blue-900/20" src="${client.avatarUrl}" />
+        <img alt="${client.name}" class="w-24 h-24 rounded-2xl object-cover ring-4 ring-blue-50 dark:ring-blue-900/20" src="${client.avatarUrl}" onerror="this.onerror=null; this.src=window.DEFAULT_AVATAR_URL" />
         <div>
           <div class="flex items-center gap-3">
-            <h2 class="text-2xl font-bold">${client.name}</h2>
-            <span class="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-semibold rounded-full uppercase tracking-wider">${client.status || 'Active'}</span>
+            <input
+              id="profileNameInput"
+              class="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-1 text-2xl font-bold text-slate-800 dark:text-slate-100 placeholder-slate-300 focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+              placeholder="名前を入力"
+              type="text"
+              value="${client.name}"
+            />
           </div>
           <div class="mt-3 space-y-1">
             <div class="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm">
-              <span class="material-icons-outlined text-base">fitness_center</span>
-              <span>コース: ${client.course || '未設定'}</span>
+              <span class="material-icons-outlined text-base shrink-0">fitness_center</span>
+              <span class="text-slate-400 shrink-0">コース:</span>
+              <input
+                id="profileCourseInput"
+                class="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-2 py-1 text-sm text-slate-600 dark:text-slate-300 placeholder-slate-300 focus:ring-2 focus:ring-primary focus:border-primary transition-colors flex-1"
+                placeholder="未設定"
+                type="text"
+                value="${client.course || ""}"
+              />
             </div>
             <div class="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm">
-              <span class="material-icons-outlined text-base">mail</span>
-              <span>${client.email || '未設定'}</span>
+              <span class="material-icons-outlined text-base shrink-0">chat</span>
+              <span class="text-slate-400 shrink-0">LINE ID:</span>
+
+              <input
+                id="profileLineIdInput"
+                class="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-2 py-1 text-sm text-slate-600 dark:text-slate-300 placeholder-slate-300 focus:ring-2 focus:ring-primary focus:border-primary transition-colors flex-1"
+                placeholder="LINEユーザーID"
+                type="text"
+                value="${client.lineUserId || ""}"
+              />
             </div>
           </div>
         </div>
       </div>
-      <button class="flex items-center gap-2 px-5 py-2.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors font-medium text-sm">
-        <span class="material-icons-outlined text-lg">edit</span>
-        編集
-      </button>
     </section>
 
     <!-- Progress Section -->
-    <section class="bg-surface-light dark:bg-surface-dark rounded-2xl p-6 shadow-sm border-2 border-primary ring-4 ring-primary/10">
+    <section class="bg-surface-light dark:bg-surface-dark rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
       <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-2">
           <span class="material-icons-outlined text-primary">trending_up</span>
@@ -334,14 +541,14 @@ function renderClientDetail(client: Client): void {
         </div>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
-        ${createLevelSelect('blue', 'Mat Pilates:', client.levels.blue, 'blue')}
-        ${createLevelSelect('red', 'Weight Training', client.levels.red, 'red')}
-        ${createLevelSelect('green', 'Sports Training', client.levels.green, 'green')}
-        ${createLevelSelect('yellow', 'Movement Training', client.levels.yellow, 'yellow')}
+        ${createLevelSelect("blue", "マットピラティス", client.levels.blue, "blue")}
+        ${createLevelSelect("red", "ウェイト", client.levels.red, "red")}
+        ${createLevelSelect("green", "スポーツ", client.levels.green, "green")}
+        ${createLevelSelect("yellow", "ムーブメント", client.levels.yellow, "yellow")}
       </div>
       <div class="space-y-3">
         <div class="flex items-center gap-2">
-          <span class="text-sm font-bold text-slate-600 dark:text-slate-400">Next Goal</span>
+          <span class="text-sm font-bold text-slate-600 dark:text-slate-400">チャレンジ項目</span>
         </div>
         <div class="relative group">
           <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -377,7 +584,7 @@ function renderClientDetail(client: Client): void {
           <span class="material-icons-outlined">add_circle</span>
           + 新規課題を追加
         </button>
-        <button class="flex items-center justify-center gap-2 py-3.5 border-2 border-dashed border-slate-200 dark:border-slate-700 text-slate-500 hover:text-primary hover:border-primary dark:hover:border-primary/50 transition-all rounded-xl font-bold bg-white dark:bg-transparent">
+        <button id="addPastTaskBtn" type="button" class="flex items-center justify-center gap-2 py-3.5 border-2 border-dashed border-slate-200 dark:border-slate-700 text-slate-500 hover:text-primary hover:border-primary dark:hover:border-primary/50 transition-all rounded-xl font-bold bg-white dark:bg-transparent">
           <span class="material-icons-outlined">history</span>
           + 過去の課題を追加
         </button>
@@ -389,7 +596,7 @@ function renderClientDetail(client: Client): void {
       <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-2">
           <span class="material-icons-outlined text-primary">history_edu</span>
-          <h3 class="text-lg font-bold">前回のメモ管理</h3>
+          <h3 class="text-lg font-bold">メモ管理</h3>
         </div>
       </div>
       <div class="space-y-6" id="memoHistoryContainer">
@@ -403,39 +610,72 @@ function renderClientDetail(client: Client): void {
 
     <!-- Preferences Section -->
     <section class="bg-surface-light dark:bg-surface-dark rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-      <div class="flex items-center justify-between mb-8">
+      <div class="flex items-center justify-between mb-6">
         <h3 class="text-lg font-bold">やりたい・やりたくない確認</h3>
-        <button class="px-5 py-2 text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl hover:bg-slate-200 transition-colors">内容を編集</button>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-        <div class="flex items-start gap-5">
-          <div class="w-14 h-14 flex items-center justify-center bg-green-100 dark:bg-green-900/30 rounded-2xl text-green-600 shrink-0 shadow-sm">
-            <span class="material-icons-outlined text-3xl">thumb_up</span>
-          </div>
-          <div>
-            <h4 class="font-bold text-xs text-green-700 dark:text-green-400 uppercase tracking-widest mb-2 flex items-center gap-1">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="flex flex-col gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 flex items-center justify-center bg-green-100 dark:bg-green-900/30 rounded-xl text-green-600 shrink-0">
+              <span class="material-icons-outlined text-xl">thumb_up</span>
+            </div>
+            <h4 class="font-bold text-sm text-green-700 dark:text-green-400 flex items-center gap-1">
               <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span> やりたい
+              <span class="ml-1 text-xs font-normal text-slate-400">(${client.preferences.likes.length})</span>
             </h4>
-            <p class="text-slate-700 dark:text-slate-200 text-lg font-medium leading-relaxed">${client.preferences.likes}</p>
           </div>
+          <ul class="overflow-y-auto max-h-48 space-y-1 pr-1">
+            ${client.preferences.likes.length === 0
+              ? `<li class="text-sm text-slate-400 italic">なし</li>`
+              : client.preferences.likes.map((item) => `<li class="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200"><span class="mt-1.5 w-1.5 h-1.5 bg-green-500 rounded-full shrink-0"></span>${item}</li>`).join("")}
+          </ul>
         </div>
-        <div class="flex items-start gap-5">
-          <div class="w-14 h-14 flex items-center justify-center bg-red-100 dark:bg-red-900/30 rounded-2xl text-red-600 shrink-0 shadow-sm">
-            <span class="material-icons-outlined text-3xl">thumb_down</span>
-          </div>
-          <div>
-            <h4 class="font-bold text-xs text-red-700 dark:text-red-400 uppercase tracking-widest mb-2 flex items-center gap-1">
+        <div class="flex flex-col gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 flex items-center justify-center bg-red-100 dark:bg-red-900/30 rounded-xl text-red-600 shrink-0">
+              <span class="material-icons-outlined text-xl">thumb_down</span>
+            </div>
+            <h4 class="font-bold text-sm text-red-700 dark:text-red-400 flex items-center gap-1">
               <span class="w-1.5 h-1.5 bg-red-500 rounded-full"></span> やりたくない
+              <span class="ml-1 text-xs font-normal text-slate-400">(${client.preferences.dislikes.length})</span>
             </h4>
-            <p class="text-slate-700 dark:text-slate-200 text-lg font-medium leading-relaxed">${client.preferences.dislikes}</p>
           </div>
+          <ul class="overflow-y-auto max-h-48 space-y-1 pr-1">
+            ${client.preferences.dislikes.length === 0
+              ? `<li class="text-sm text-slate-400 italic">なし</li>`
+              : client.preferences.dislikes.map((item) => `<li class="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200"><span class="mt-1.5 w-1.5 h-1.5 bg-red-500 rounded-full shrink-0"></span>${item}</li>`).join("")}
+          </ul>
+        </div>
+        <div class="flex flex-col gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-500 shrink-0">
+              <span class="material-icons-outlined text-xl">remove_circle_outline</span>
+            </div>
+            <h4 class="font-bold text-sm text-slate-600 dark:text-slate-400 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 bg-slate-400 rounded-full"></span> どちらでもない
+              <span class="ml-1 text-xs font-normal text-slate-400">(${client.preferences.neutral.length})</span>
+            </h4>
+          </div>
+          <ul class="overflow-y-auto max-h-48 space-y-1 pr-1">
+            ${client.preferences.neutral.length === 0
+              ? `<li class="text-sm text-slate-400 italic">なし</li>`
+              : client.preferences.neutral.map((item) => `<li class="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200"><span class="mt-1.5 w-1.5 h-1.5 bg-slate-400 rounded-full shrink-0"></span>${item}</li>`).join("")}
+          </ul>
         </div>
       </div>
     </section>
 
     <!-- Submit Button Section -->
-    <div class="flex justify-center">
-        <button type="submit" class="flex items-center gap-2 mt-10 px-8 py-3 bg-primary text-white rounded-xl hover:bg-blue-700 transition-all font-bold shadow-lg hover:shadow-xl">
+    <div class="flex justify-between items-center mt-10">
+        <button
+          type="button"
+          id="deleteClientBtn"
+          class="flex items-center gap-2 px-6 py-3 border-2 border-red-400 text-red-500 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-600 hover:text-red-600 transition-all font-bold"
+        >
+            <span class="material-icons-outlined">delete_forever</span>
+            このクライアントを削除
+        </button>
+        <button type="submit" class="flex items-center gap-2 px-8 py-3 bg-primary text-white rounded-xl hover:bg-blue-700 transition-all font-bold shadow-lg hover:shadow-xl">
             <span class="material-icons-outlined">save</span>
             登録する
         </button>
@@ -443,303 +683,554 @@ function renderClientDetail(client: Client): void {
     </form>
   `;
 
-    // イベントリスナーを設定
-    setupTaskEventListeners(client);
-    setupLevelSelects(client);
-    setupMemoCreation(client);
-    setupMemoEventListeners(client);
-    setupFormSubmit(client);
+  // イベントリスナーを設定
+  setupTaskEventListeners(client);
+  setupLevelSelects(client);
+  setupMemoCreation(client);
+  setupMemoEventListeners(client);
+  setupFormSubmit(client);
+  setupDeleteButton(client);
 }
 
 // タスク関連のイベントリスナーを設定
 function setupTaskEventListeners(client: Client): void {
-    // チェックボックスの変更
-    document.querySelectorAll('.task-checkbox').forEach((checkbox) => {
-        checkbox.addEventListener('change', (event) => {
-            const target = event.target as HTMLInputElement;
-            const taskId = parseInt(target.getAttribute('data-task-id') || '0');
-            const task = client.currentTasks.find(t => t.id === taskId);
-            if (task) {
-                task.completed = target.checked;
-                console.log(`Task ${taskId} completed:`, task.completed);
-                // ここでAPIへの保存処理を追加可能
-                // 見た目を更新
-                renderClientDetail(client);
-            }
-        });
+  // チェックボックスの変更
+  document.querySelectorAll(".task-checkbox").forEach((checkbox) => {
+    checkbox.addEventListener("change", (event) => {
+      const target = event.target as HTMLInputElement;
+      const taskId = parseInt(target.getAttribute("data-task-id") || "0");
+      const task = client.currentTasks.find((t) => t.id === taskId);
+      if (task) {
+        task.completed = target.checked;
+        console.log(`Task ${taskId} completed:`, task.completed);
+        // ここでAPIへの保存処理を追加可能
+        // 見た目を更新
+        renderClientDetail(client);
+      }
+    });
+  });
+
+  // 削除ボタン
+  document.querySelectorAll(".task-delete").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      const target = event.target as HTMLElement;
+      const taskId = parseInt(
+        target.closest("button")?.getAttribute("data-task-id") || "0",
+      );
+      if (confirm("この課題を削除しますか?")) {
+        const task = client.currentTasks.find((t) => t.id === taskId);
+        if (task) {
+          if (task.isNew) {
+            // まだDB未登録の新規タスクは即座に配列から削除
+            const index = client.currentTasks.indexOf(task);
+            client.currentTasks.splice(index, 1);
+          } else {
+            // 既存タスクはフラグを立てて登録時にDELETE
+            task.isDeleted = true;
+          }
+          renderClientDetail(client);
+          // 削除確定後にフォームを自動送信して登録を完了
+          const form = document.getElementById(
+            "clientDetailForm",
+          ) as HTMLFormElement;
+          form?.requestSubmit();
+        }
+      }
+    });
+  });
+
+  // 新規課題追加
+  const addNewTaskBtn = document.getElementById("addNewTaskBtn");
+  if (addNewTaskBtn) {
+    addNewTaskBtn.addEventListener("click", () => {
+      const newTask: Task = {
+        id: Date.now(),
+        title: "",
+        reason: "",
+        youtubeUrl: "",
+        completed: false,
+        isNew: true, // DB未登録フラグ
+      };
+      client.currentTasks.push(newTask);
+      renderClientDetail(client);
+    });
+  }
+
+  // 過去の課題追加
+  const addPastTaskBtn = document.getElementById("addPastTaskBtn");
+  if (addPastTaskBtn) {
+    addPastTaskBtn.addEventListener("click", () => {
+      showPastTaskModal(client);
+    });
+  }
+
+  // カテゴリ選択の変更
+  document.querySelectorAll(".task-category").forEach((select) => {
+    select.addEventListener("change", (event) => {
+      const target = event.target as HTMLSelectElement;
+      const taskId = parseInt(target.getAttribute("data-task-id") || "0");
+      const task = client.currentTasks.find((t) => t.id === taskId);
+      if (task) {
+        task.categoryId = target.value || undefined;
+      }
+    });
+  });
+
+  // タスクの入力フィールド変更（リアルタイム保存）
+  document
+    .querySelectorAll(".task-title, .task-reason, .task-url")
+    .forEach((input) => {
+      input.addEventListener("change", (event) => {
+        const target = event.target as HTMLInputElement;
+        const taskId = parseInt(target.getAttribute("data-task-id") || "0");
+        const task = client.currentTasks.find((t) => t.id === taskId);
+        if (task) {
+          if (target.classList.contains("task-title")) {
+            task.title = target.value;
+          } else if (target.classList.contains("task-reason")) {
+            task.reason = target.value;
+          } else if (target.classList.contains("task-url")) {
+            task.youtubeUrl = target.value;
+          }
+          console.log(`Task ${taskId} updated:`, task);
+          // ここでAPIへの保存処理を追加可能
+        }
+      });
     });
 
-    // 削除ボタン
-    document.querySelectorAll('.task-delete').forEach((button) => {
-        button.addEventListener('click', (event) => {
-            const target = event.target as HTMLElement;
-            const taskId = parseInt(target.closest('button')?.getAttribute('data-task-id') || '0');
-            if (confirm('この課題を削除しますか?')) {
-                const index = client.currentTasks.findIndex(t => t.id === taskId);
-                if (index !== -1) {
-                    client.currentTasks.splice(index, 1);
-                    console.log(`Task ${taskId} deleted`);
-                    // ここでAPIへの保存処理を追加可能
-                    renderClientDetail(client);
-                }
-            }
-        });
+  // 名前・コース名・LINE IDの変更
+  const profileNameInput = document.getElementById(
+    "profileNameInput",
+  ) as HTMLInputElement;
+  if (profileNameInput) {
+    profileNameInput.addEventListener("change", (event) => {
+      client.name = (event.target as HTMLInputElement).value;
     });
-
-    // 新規課題追加
-    const addNewTaskBtn = document.getElementById('addNewTaskBtn');
-    if (addNewTaskBtn) {
-        addNewTaskBtn.addEventListener('click', () => {
-            const newTask: Task = {
-                id: Date.now(), // 仮のID
-                title: '',
-                reason: '',
-                youtubeUrl: '',
-                completed: false
-            };
-            client.currentTasks.push(newTask);
-            console.log('New task added');
-            renderClientDetail(client);
-        });
-    }
-
-    // タスクの入力フィールド変更（リアルタイム保存）
-    document.querySelectorAll('.task-title, .task-reason, .task-url').forEach((input) => {
-        input.addEventListener('change', (event) => {
-            const target = event.target as HTMLInputElement;
-            const taskId = parseInt(target.getAttribute('data-task-id') || '0');
-            const task = client.currentTasks.find(t => t.id === taskId);
-            if (task) {
-                if (target.classList.contains('task-title')) {
-                    task.title = target.value;
-                } else if (target.classList.contains('task-reason')) {
-                    task.reason = target.value;
-                } else if (target.classList.contains('task-url')) {
-                    task.youtubeUrl = target.value;
-                }
-                console.log(`Task ${taskId} updated:`, task);
-                // ここでAPIへの保存処理を追加可能
-            }
-        });
+  }
+  const profileCourseInput = document.getElementById(
+    "profileCourseInput",
+  ) as HTMLInputElement;
+  if (profileCourseInput) {
+    profileCourseInput.addEventListener("change", (event) => {
+      client.course = (event.target as HTMLInputElement).value;
     });
+  }
+  const profileLineIdInput = document.getElementById(
+    "profileLineIdInput",
+  ) as HTMLInputElement;
+  if (profileLineIdInput) {
+    profileLineIdInput.addEventListener("change", (event) => {
+      client.lineUserId = (event.target as HTMLInputElement).value;
+    });
+  }
 
-    // Next Goal の変更
-    const nextGoalInput = document.getElementById('nextGoalInput') as HTMLInputElement;
-    if (nextGoalInput) {
-        nextGoalInput.addEventListener('change', (event) => {
-            const target = event.target as HTMLInputElement;
-            client.nextGoal = target.value;
-            console.log('Next Goal updated:', client.nextGoal);
-            // ここでAPIへの保存処理を追加可能
-        });
-    }
+  // チャレンジ項目 の変更
+  const nextGoalInput = document.getElementById(
+    "nextGoalInput",
+  ) as HTMLInputElement;
+  if (nextGoalInput) {
+    nextGoalInput.addEventListener("change", (event) => {
+      const target = event.target as HTMLInputElement;
+      client.nextGoal = target.value;
+      console.log("チャレンジ項目 updated:", client.nextGoal);
+      // ここでAPIへの保存処理を追加可能
+    });
+  }
 }
 
 // レベルセレクトボックスのイベントリスナーを設定
 function setupLevelSelects(client: Client): void {
-    document.querySelectorAll('.level-select').forEach((select) => {
-        select.addEventListener('change', (event) => {
-            const target = event.target as HTMLSelectElement;
-            const levelKey = target.getAttribute('data-level-key') as 'blue' | 'red' | 'green' | 'yellow';
-            const newLevel = parseInt(target.value, 10);
+  document.querySelectorAll(".level-select").forEach((select) => {
+    select.addEventListener("change", (event) => {
+      const target = event.target as HTMLSelectElement;
+      const levelKey = target.getAttribute("data-level-key") as
+        | "blue"
+        | "red"
+        | "green"
+        | "yellow";
+      const newLevel = parseInt(target.value, 10);
 
-            if (levelKey && client.levels[levelKey] !== undefined) {
-                client.levels[levelKey] = newLevel;
-                console.log(`Level ${levelKey} updated to:`, newLevel);
-                // ここでAPIへの保存処理を追加可能
-                // UI を更新（クリアバッジを反映）
-                renderClientDetail(client);
-            }
-        });
+      if (levelKey && client.levels[levelKey] !== undefined) {
+        client.levels[levelKey] = newLevel;
+        console.log(`Level ${levelKey} updated to:`, newLevel);
+        // ここでAPIへの保存処理を追加可能
+        // UI を更新（クリアバッジを反映）
+        renderClientDetail(client);
+      }
     });
+  });
 }
 
 // メモ作成機能のイベントリスナーを設定
 function setupMemoCreation(client: Client): void {
-    const addMemoBtn = document.getElementById('addMemoBtn');
-    if (!addMemoBtn) return;
+  const addMemoBtn = document.getElementById("addMemoBtn");
+  if (!addMemoBtn) return;
 
-    addMemoBtn.addEventListener('click', () => {
-        // 新しい空のメモを作成
-        const newMemo: MemoHistory = {
-            id: Date.now(),
-            date: new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '/'),
-            trainer: '',
-            content: ''
-        };
+  addMemoBtn.addEventListener("click", () => {
+    // 新しい空のメモを作成
+    const newMemo: MemoHistory = {
+      id: Date.now(),
+      date: new Date()
+        .toLocaleDateString("ja-JP", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        })
+        .replace(/\//g, "/"),
+      trainer: "",
+      content: "",
+      isNew: true, // DB未登録フラグ
+    };
 
-        // メモ履歴の先頭に追加
-        if (!client.history) {
-            client.history = [];
-        }
-        client.history.unshift(newMemo);
+    // メモ履歴の先頭に追加
+    if (!client.history) {
+      client.history = [];
+    }
+    client.history.unshift(newMemo);
 
-        console.log('New memo added:', newMemo);
-        // UI を更新
-        renderClientDetail(client);
-    });
+    // UI を更新
+    renderClientDetail(client);
+  });
 }
 
 // メモ関連のイベントリスナーを設定
 function setupMemoEventListeners(client: Client): void {
-    // メモの削除
-    document.querySelectorAll('.memo-delete').forEach((button) => {
-        button.addEventListener('click', (event) => {
-            const target = event.target as HTMLElement;
-            const memoId = parseInt(target.closest('button')?.getAttribute('data-memo-id') || '0');
-            if (confirm('このメモを削除しますか?')) {
-                const index = client.history?.findIndex(m => m.id === memoId) ?? -1;
-                if (index !== -1 && client.history) {
-                    client.history.splice(index, 1);
-                    console.log(`Memo ${memoId} deleted`);
-                    // ここでAPIへの保存処理を追加可能
-                    renderClientDetail(client);
-                }
-            }
-        });
+  // メモの削除
+  document.querySelectorAll(".memo-delete").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      const target = event.target as HTMLElement;
+      const memoId = parseInt(
+        target.closest("button")?.getAttribute("data-memo-id") || "0",
+      );
+      if (confirm("このメモを削除しますか?")) {
+        const memo = client.history?.find((m) => m.id === memoId);
+        if (memo && client.history) {
+          if (memo.isNew) {
+            // まだDB未登録の新規メモは即座に配列から削除
+            const index = client.history.indexOf(memo);
+            client.history.splice(index, 1);
+          } else {
+            // 既存メモはフラグを立てて登録時にDELETE
+            memo.isDeleted = true;
+          }
+          renderClientDetail(client);
+          // 削除確定後にフォームを自動送信して登録を完了
+          const form = document.getElementById(
+            "clientDetailForm",
+          ) as HTMLFormElement;
+          form?.requestSubmit();
+        }
+      }
     });
+  });
 
-    // メモの日付変更
-    document.querySelectorAll('.memo-date').forEach((input) => {
-        input.addEventListener('change', (event) => {
-            const target = event.target as HTMLInputElement;
-            const memoId = parseInt(target.getAttribute('data-memo-id') || '0');
-            const memo = client.history?.find(m => m.id === memoId);
-            if (memo) {
-                memo.date = target.value;
-                console.log(`Memo ${memoId} date updated:`, memo.date);
-                // ここでAPIへの保存処理を追加可能
-            }
-        });
+  // メモの日付変更
+  document.querySelectorAll(".memo-date").forEach((input) => {
+    input.addEventListener("change", (event) => {
+      const target = event.target as HTMLInputElement;
+      const memoId = parseInt(target.getAttribute("data-memo-id") || "0");
+      const memo = client.history?.find((m) => m.id === memoId);
+      if (memo) {
+        memo.date = target.value;
+        console.log(`Memo ${memoId} date updated:`, memo.date);
+        // ここでAPIへの保存処理を追加可能
+      }
     });
+  });
 
-    // メモの担当者変更
-    document.querySelectorAll('.memo-trainer').forEach((input) => {
-        input.addEventListener('change', (event) => {
-            const target = event.target as HTMLInputElement;
-            const memoId = parseInt(target.getAttribute('data-memo-id') || '0');
-            const memo = client.history?.find(m => m.id === memoId);
-            if (memo) {
-                memo.trainer = target.value;
-                console.log(`Memo ${memoId} trainer updated:`, memo.trainer);
-                // ここでAPIへの保存処理を追加可能
-            }
-        });
+  // メモの担当者変更
+  document.querySelectorAll(".memo-trainer").forEach((input) => {
+    input.addEventListener("change", (event) => {
+      const target = event.target as HTMLSelectElement;
+      const memoId = parseInt(target.getAttribute("data-memo-id") || "0");
+      const memo = client.history?.find((m) => m.id === memoId);
+      if (memo) {
+        memo.trainer = target.value;
+        console.log(`Memo ${memoId} trainer updated:`, memo.trainer);
+        // ここでAPIへの保存処理を追加可能
+      }
     });
+  });
 
-    // メモの内容変更
-    document.querySelectorAll('.memo-content').forEach((textarea) => {
-        textarea.addEventListener('change', (event) => {
-            const target = event.target as HTMLTextAreaElement;
-            const memoId = parseInt(target.getAttribute('data-memo-id') || '0');
-            const memo = client.history?.find(m => m.id === memoId);
-            if (memo) {
-                memo.content = target.value;
-                console.log(`Memo ${memoId} content updated:`, memo.content);
-                // ここでAPIへの保存処理を追加可能
-            }
-        });
+  // メモの内容変更
+  document.querySelectorAll(".memo-content").forEach((textarea) => {
+    textarea.addEventListener("change", (event) => {
+      const target = event.target as HTMLTextAreaElement;
+      const memoId = parseInt(target.getAttribute("data-memo-id") || "0");
+      const memo = client.history?.find((m) => m.id === memoId);
+      if (memo) {
+        memo.content = target.value;
+        console.log(`Memo ${memoId} content updated:`, memo.content);
+        // ここでAPIへの保存処理を追加可能
+      }
     });
+  });
 }
 
 // フォーム送信のイベントリスナーを設定
 function setupFormSubmit(client: Client): void {
-    const form = document.getElementById('clientDetailForm') as HTMLFormElement;
-    if (!form) return;
+  const form = document.getElementById("clientDetailForm") as HTMLFormElement;
+  if (!form) return;
 
-    form.addEventListener('submit', (event) => {
-        event.preventDefault();
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
 
-        // フォームデータを収集
-        const formData = {
-            clientId: client.id,
-            name: client.name,
-            email: client.email,
-            course: client.course,
-            status: client.status,
-            levels: client.levels,
-            nextGoal: client.nextGoal,
-            currentTasks: client.currentTasks,
-            preferences: client.preferences,
-            history: client.history
-        };
+    // 登録ボタンをローディング状態に
+    const submitBtn = form.querySelector(
+      'button[type="submit"]',
+    ) as HTMLButtonElement;
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML =
+        '<span class="material-icons-outlined animate-spin">sync</span> 登録中...';
+    }
 
-        console.log('Form submitted with data:', formData);
+    const errors: string[] = [];
 
-        // ここでAPIへのPOST/PUT処理を追加
-        // 例: fetch('/api/clients/' + client.id, { method: 'PUT', body: JSON.stringify(formData) })
+    // ============================================================
+    // 1. プロフィール更新（名前・コース名・LINE ID）
+    // ============================================================
+    const profileOk = await updateClientProfile(
+      client.id,
+      client.name,
+      client.course ?? "",
+      client.lineUserId ?? "",
+    );
+    if (!profileOk) errors.push("プロフィール更新エラー");
 
-        // 成功メッセージを表示
-        alert('顧客情報を登録しました！\n\n※現在はローカルデータのみ更新されています。\nDB連携は今後実装予定です。');
-    });
+    // ============================================================
+    // 2. レベル更新
+    // ============================================================
+    const colorKeys = ["blue", "red", "green", "yellow"] as const;
+    for (const colorKey of colorKeys) {
+      const levelId = client.levelIdMap?.[colorKey];
+      const categoryId = client.categoryIdMap?.[colorKey];
+      if (!levelId || !categoryId) continue;
+
+      const newLevel = client.levels[colorKey];
+      const prevLevel = _dbLevels[colorKey] ?? 0;
+      const ok = await updateLevel(
+        client.id,
+        levelId,
+        categoryId,
+        newLevel,
+        prevLevel,
+      );
+      if (!ok) errors.push(`レベル更新エラー (${colorKey})`);
+    }
+
+    // ============================================================
+    // 3. タスク CRUD
+    // ============================================================
+    for (const task of client.currentTasks) {
+      if (task.isNew && !task.isDeleted) {
+        // 空の課題はスキップ
+        if (!task.title.trim()) continue;
+        if (task.dbTaskId) {
+          // 完了済み確認（一意制約違反を事前に防ぐ）
+          const isCompleted = await checkCompletedClientTask(client.id, task.dbTaskId);
+          if (isCompleted) {
+            errors.push(`過去に完了済みのタスクです：${task.title}`);
+            continue;
+          }
+          // 過去の課題から選択：tasksマスターは既存 → client_tasksにのみ INSERT
+          const clientTaskId = await assignExistingTask(
+            client.id,
+            task.dbTaskId,
+          );
+          if (clientTaskId) {
+            task.clientTaskId = clientTaskId;
+            task.isNew = false;
+          } else {
+            errors.push(`タスク割り当てエラー：${task.title}`);
+          }
+        } else {
+          // 新規作成：カテゴリ未選択はバリデーションエラー
+          if (!task.categoryId) {
+            errors.push(`カテゴリが未選択です: 「${task.title}」`);
+            continue;
+          }
+          // 同カテゴリ・同タイトルの重複チェック
+          const isDuplicate = await checkTaskDuplicate(task.categoryId, task.title);
+          if (isDuplicate) {
+            const catName = _categories.find((c) => c.id === task.categoryId)?.name ?? task.categoryId;
+            errors.push(`同じカテゴリに同名の課題が既に存在します: 「${task.title}」(${catName})`);
+            continue;
+          }
+          // tasks + client_tasks の両方 INSERT
+          const result = await createTask(
+            client.id,
+            task.categoryId,
+            task.title,
+            task.reason ?? "",
+            task.youtubeUrl ?? "",
+          );
+          if (result) {
+            task.dbTaskId = result.dbTaskId;
+            task.clientTaskId = result.clientTaskId;
+            task.isNew = false;
+          } else {
+            errors.push(`タスク作成エラー: ${task.title}`);
+          }
+        }
+      } else if (task.isDeleted && task.clientTaskId) {
+        // 削除
+        const ok = await deleteClientTask(task.clientTaskId);
+        if (!ok) errors.push(`タスク削除エラー: ${task.title}`);
+      }
+      // 既存タスクは管理画面での編集・完了状態変更を行わないためスキップ
+    }
+
+    // ============================================================
+    // 4. メモ CRUD
+    // ============================================================
+    for (const memo of client.history ?? []) {
+      if (memo.isNew && !memo.isDeleted) {
+        // 新規作成
+        if (!memo.content.trim()) continue; // 空メモはスキップ
+        const dbId = await createMemo(client.id, memo.content);
+        if (dbId) {
+          memo.dbId = dbId;
+          memo.isNew = false;
+        } else {
+          errors.push("メモ作成エラー");
+        }
+      } else if (memo.isDeleted && memo.dbId) {
+        // 削除
+        const ok = await deleteMemo(memo.dbId);
+        if (!ok) errors.push("メモ削除エラー");
+      } else if (!memo.isNew && !memo.isDeleted && memo.dbId) {
+        // 既存メモの更新
+        const ok = await updateMemo(memo.dbId, memo.content);
+        if (!ok) errors.push("メモ更新エラー");
+      }
+    }
+
+    // ============================================================
+    // 5. チャレンジ項目 更新
+    // ============================================================
+    const goalOk = await updateNextGoal(client.id, client.nextGoal);
+    if (!goalOk) errors.push("チャレンジ項目 更新エラー");
+
+    // ============================================================
+    // 6. 登録結果をトーストで通知
+    // ============================================================
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML =
+        '<span class="material-icons-outlined">save</span> 登録する';
+    }
+
+    if (errors.length === 0) {
+      showToast("顧客情報を登録しました");
+      // DB値スナップショットを更新
+      _dbLevels = { ...client.levels };
+      // isNew フラグが false になったタスクを編集不可で再レンダリング
+      renderClientDetail(client);
+    } else {
+      showToast(`一部の登録に失敗しました: ${errors.join(", ")}`, "error");
+    }
+  });
+}
+
+// クライアント削除ボタンのイベントリスナーを設定
+function setupDeleteButton(client: Client): void {
+  const btn = document.getElementById("deleteClientBtn");
+  if (!btn) return;
+
+  btn.addEventListener("click", async () => {
+    const confirmed = confirm(
+      `「${client.name}」を削除します。\n\nこの操作は取り消せません。\n紐づくレベル・課題・メモ・履歴もすべて削除されます。\n\n本当に削除しますか？`,
+    );
+    if (!confirmed) return;
+
+    btn.setAttribute("disabled", "true");
+    (btn as HTMLButtonElement).innerHTML =
+      '<span class="material-icons-outlined animate-spin">sync</span> 削除中...';
+
+    const ok = await deleteClient(client.id);
+    if (ok) {
+      showToast(`「${client.name}」を削除しました`);
+      setTimeout(() => {
+        window.location.href = "clients.html";
+      }, 1500);
+    } else {
+      showToast("削除に失敗しました", "error");
+      btn.removeAttribute("disabled");
+      (btn as HTMLButtonElement).innerHTML =
+        '<span class="material-icons-outlined">delete_forever</span> このクライアントを削除';
+    }
+  });
 }
 
 // ダークモードの切り替え
 function setupDarkMode(): void {
-    const darkModeToggle = document.getElementById('darkModeToggle');
-    if (!darkModeToggle) return;
+  const darkModeToggle = document.getElementById("darkModeToggle");
+  if (!darkModeToggle) return;
 
-    // ローカルストレージから設定を読み込む
-    const isDarkMode = localStorage.getItem('darkMode') === 'true';
-    if (isDarkMode) {
-        document.documentElement.classList.add('dark');
-    }
+  // ローカルストレージから設定を読み込む
+  const isDarkMode = localStorage.getItem("darkMode") === "true";
+  if (isDarkMode) {
+    document.documentElement.classList.add("dark");
+  }
 
-    darkModeToggle.addEventListener('click', () => {
-        const isDark = document.documentElement.classList.toggle('dark');
-        localStorage.setItem('darkMode', isDark.toString());
-    });
+  darkModeToggle.addEventListener("click", () => {
+    const isDark = document.documentElement.classList.toggle("dark");
+    localStorage.setItem("darkMode", isDark.toString());
+  });
 }
 
 // モバイルサイドバーの開閉
 function setupMobileSidebar(): void {
-    const menuButton = document.getElementById('mobileMenuButton');
-    const sidebar = document.getElementById('mobileSidebar');
-    const closeButton = document.getElementById('mobileSidebarClose');
-    const overlay = document.getElementById('mobileSidebarOverlay');
+  const menuButton = document.getElementById("mobileMenuButton");
+  const sidebar = document.getElementById("mobileSidebar");
+  const closeButton = document.getElementById("mobileSidebarClose");
+  const overlay = document.getElementById("mobileSidebarOverlay");
 
-    if (!menuButton || !sidebar || !closeButton || !overlay) return;
+  if (!menuButton || !sidebar || !closeButton || !overlay) return;
 
-    const openSidebar = (): void => {
-        sidebar.classList.remove('-translate-x-full');
-        overlay.classList.remove('hidden');
-        document.body.classList.add('overflow-hidden');
-    };
+  const openSidebar = (): void => {
+    sidebar.classList.remove("-translate-x-full");
+    overlay.classList.remove("hidden");
+    document.body.classList.add("overflow-hidden");
+  };
 
-    const closeSidebar = (): void => {
-        sidebar.classList.add('-translate-x-full');
-        overlay.classList.add('hidden');
-        document.body.classList.remove('overflow-hidden');
-    };
+  const closeSidebar = (): void => {
+    sidebar.classList.add("-translate-x-full");
+    overlay.classList.add("hidden");
+    document.body.classList.remove("overflow-hidden");
+  };
 
-    menuButton.addEventListener('click', openSidebar);
-    closeButton.addEventListener('click', closeSidebar);
-    overlay.addEventListener('click', closeSidebar);
+  menuButton.addEventListener("click", openSidebar);
+  closeButton.addEventListener("click", closeSidebar);
+  overlay.addEventListener("click", closeSidebar);
 
-    // ナビゲーションリンクをクリックしたら閉じる
-    const navLinks = sidebar.querySelectorAll('a[href]');
-    navLinks.forEach((link) => {
-        link.addEventListener('click', closeSidebar);
-    });
+  // ナビゲーションリンクをクリックしたら閉じる
+  const navLinks = sidebar.querySelectorAll("a[href]");
+  navLinks.forEach((link) => {
+    link.addEventListener("click", closeSidebar);
+  });
 
-    // 画面サイズが変わったら調整
-    window.addEventListener('resize', () => {
-        if (window.innerWidth >= 1024) {
-            overlay.classList.add('hidden');
-            document.body.classList.remove('overflow-hidden');
-        }
-    });
+  // 画面サイズが変わったら調整
+  window.addEventListener("resize", () => {
+    if (window.innerWidth >= 1024) {
+      overlay.classList.add("hidden");
+      document.body.classList.remove("overflow-hidden");
+    }
+  });
 }
 
 // 初期化処理
-function init(): void {
-    console.log('Initializing client detail page...');
+async function init(): Promise<void> {
+  console.log("Initializing client detail page...");
+  setupDarkMode();
+  setupMobileSidebar();
 
-    const clientId = getClientIdFromUrl();
-    if (!clientId) {
-        const container = document.getElementById('clientDetailContainer');
-        if (container) {
-            container.innerHTML = `
+  const clientId = getClientIdFromUrl();
+  if (!clientId) {
+    const container = document.getElementById("clientDetailContainer");
+    if (container) {
+      container.innerHTML = `
         <div class="flex flex-col items-center justify-center h-64">
           <span class="material-icons-outlined text-6xl text-slate-300 dark:text-slate-700 mb-4">error</span>
           <p class="text-lg text-slate-500">顧客IDが指定されていません</p>
@@ -748,35 +1239,53 @@ function init(): void {
           </a>
         </div>
       `;
-        }
-        return;
     }
+    return;
+  }
 
-    const client = getClientById(clientId);
-    if (!client) {
-        const container = document.getElementById('clientDetailContainer');
-        if (container) {
-            container.innerHTML = `
+  const container = document.getElementById("clientDetailContainer");
+  if (container) {
+    container.innerHTML = `
+      <div class="flex items-center justify-center h-64 gap-3 text-slate-400">
+        <svg class="animate-spin h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+        </svg>
+        <span class="text-lg font-medium">読み込み中...</span>
+      </div>`;
+  }
+
+  const client = await getClientFromSupabase(clientId);
+  if (!client) {
+    if (container) {
+      container.innerHTML = `
         <div class="flex flex-col items-center justify-center h-64">
           <span class="material-icons-outlined text-6xl text-slate-300 dark:text-slate-700 mb-4">person_off</span>
-          <p class="text-lg text-slate-500">顧客が見つかりませんでした (ID: ${clientId})</p>
+          <p class="text-lg text-slate-500">顧客が見つかりませんでした</p>
           <a href="clients.html" class="mt-4 px-6 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors">
             顧客一覧に戻る
           </a>
         </div>
       `;
-        }
-        return;
     }
+    return;
+  }
 
-    renderClientDetail(client);
-    setupDarkMode();
-    setupMobileSidebar();
+  // DBロード時のレベルをスナップショット（level_history 用）
+  _dbLevels = { ...client.levels };
+
+  // カテゴリ・トレーナー・最大レベルをプリフェッチ
+  [_categories, _maxLevel] = await Promise.all([
+    fetchCategories(),
+    fetchMaxLevel(),
+  ]);
+
+  renderClientDetail(client);
 }
 
 // DOMContentLoaded時に初期化
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
 } else {
-    init();
+  init();
 }

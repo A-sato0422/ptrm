@@ -76,28 +76,27 @@
     color: var(--color-text-light);
 }
 
-.video-link {
-    background: linear-gradient(135deg, var(--color-red) 0%, #d17c7c 100%);
-    color: var(--color-white);
-    padding: var(--spacing-sm) var(--spacing-md);
-    border-radius: var(--radius-md);
-    text-decoration: none;
-    font-size: 12px;
-    font-weight: bold;
+/* ========================================
+   動画ボタン
+   ======================================== */
+.task-actions {
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
+    flex-shrink: 0;
+}
+
+.video-btn {
+    padding: var(--spacing-xs) var(--spacing-md);
+    background-color: var(--color-red);
+    color: var(--color-white);
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: var(--shadow-sm);
-}
-
-.video-link:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-}
-
-.video-icon {
-    font-size: 16px;
+    white-space: nowrap;
 }
 
 /* ========================================
@@ -138,6 +137,13 @@
     opacity: 0.5;
 }
 
+.task-empty-msg {
+    font-size: 13px;
+    color: var(--color-text-light);
+    padding: var(--spacing-md) 0;
+    text-align: center;
+}
+
 /* 完了・編集ボタン */
 .complete-btn {
     padding: var(--spacing-xs) var(--spacing-md);
@@ -150,11 +156,6 @@
     cursor: pointer;
     transition: all 0.3s ease;
     white-space: nowrap;
-}
-
-.complete-btn:hover {
-    background-color: #4A90C4;
-    transform: translateY(-1px);
 }
 
 .task-item.completed .complete-btn {
@@ -318,6 +319,24 @@
         opacity: 1;
         transform: translateX(-50%) translateY(0);
     }
+}
+
+.error-message {
+    position: fixed;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #E74C3C;
+    color: var(--color-white);
+    padding: var(--spacing-md) var(--spacing-xl);
+    border-radius: var(--radius-md);
+    text-align: center;
+    font-weight: bold;
+    z-index: 999;
+    box-shadow: var(--shadow-lg);
+    animation: slideDown 0.3s ease-out;
+    max-width: 90%;
+    width: 65%;
 }
 
 /* ========================================

@@ -10,19 +10,114 @@
 </head>
 
 <body>
-    <!-- ヘッダー -->
-    <header class="app-header">
-        <div class="header-spacer"></div>
-        <h1 class="app-title">PTRM </h1>
-        <div class="points-display">
-            <span class="points-icon">⭐</span>
-            <span class="points-value" id="userPoints">1,250</span>
-            <span class="points-label">pt</span>
+    <!-- スプラッシュオーバーレイ（初回のみ表示） -->
+    <div id="splash-overlay" style="position:fixed;inset:0;z-index:10000;background:#E8F6F8;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Hiragino Kaku Gothic ProN','ヒラギノ角ゴ ProN W3','Meiryo',sans-serif;">
+        <p id="splash-title" aria-label="PTRM" style="font-size:52px;font-weight:800;letter-spacing:0.18em;color:#2C3E50;line-height:1;margin-bottom:12px;min-height:1.2em;"></p>
+        <p id="splash-subtitle" style="font-size:13px;color:#7F8C8D;letter-spacing:0.08em;opacity:0;transform:translateY(10px);transition:opacity 0.5s ease,transform 0.5s ease;">パーソナル・トレーニング・ロードマップ</p>
+        <div style="position:fixed;bottom:0;left:0;width:100%;height:3px;background:rgba(0,0,0,0.06);">
+            <div id="splash-progress" style="height:100%;width:0%;background:linear-gradient(90deg,#A8D8EA,#87CEEB);border-radius:0 2px 2px 0;transition:width 2s linear;"></div>
         </div>
-    </header>
+    </div>
+    <style>
+        @keyframes charReveal {
+            0%   { opacity:0; filter:blur(10px) brightness(0%); transform:translateY(8px); }
+            100% { opacity:1; filter:blur(0px)  brightness(100%); transform:translateY(0); }
+        }
+        @keyframes charExit {
+            0%   { opacity:1; filter:blur(0px)  brightness(100%); transform:translateY(0); }
+            100% { opacity:0; filter:blur(10px) brightness(0%); transform:translateY(-30px); }
+        }
+        #splash-overlay .char { display:inline-block; opacity:0; animation:charReveal 0.4s forwards; }
+        #splash-overlay .char.exiting { animation:charExit 0.4s forwards; }
+        #splash-overlay.fading { opacity:0; transition:opacity 0.4s ease; }
+        @keyframes spin { to { transform:rotate(360deg) } }
+    </style>
+    <script>
+        (function () {
+            const overlay = document.getElementById('splash-overlay');
+            const isFirstVisit = !sessionStorage.getItem('ptrm_visited');
+            sessionStorage.setItem('ptrm_visited', '1');
+
+            if (!isFirstVisit) {
+                // 2回目以降：スプラッシュをスキップして即座に非表示
+                overlay.style.display = 'none';
+                return;
+            }
+
+            // 初回：スプラッシュアニメーションを再生
+            const TITLE_TEXT = 'PTRM';
+            const STAGGER  = 0.08;
+            const HOLD_MS  = 2000;
+
+            const titleEl = document.getElementById('splash-title');
+            const chars = TITLE_TEXT.split('').map(function (ch, i) {
+                const span = document.createElement('span');
+                span.className = 'char';
+                span.textContent = ch;
+                span.style.animationDelay = (0.3 + i * STAGGER) + 's';
+                titleEl.appendChild(span);
+                return span;
+            });
+
+            // サブタイトル表示
+            const subtitleDelay = 0.3 + (TITLE_TEXT.length - 1) * STAGGER + 0.4;
+            const subtitleEl = document.getElementById('splash-subtitle');
+            setTimeout(function () {
+                subtitleEl.style.opacity = '1';
+                subtitleEl.style.transform = 'translateY(0)';
+            }, subtitleDelay * 1000);
+
+            // プログレスバー起動
+            requestAnimationFrame(function () {
+                document.getElementById('splash-progress').style.width = '100%';
+            });
+
+            // HOLD_MS 後に exit アニメーション → overlay をフェードアウトして消す
+            setTimeout(function () {
+                // サブタイトルをフェードアウト
+                var subtitleEl2 = document.getElementById('splash-subtitle');
+                subtitleEl2.style.opacity = '0';
+                subtitleEl2.style.transform = 'translateY(-20px)';
+
+                chars.forEach(function (span, i) {
+                    // 現在の状態を固定してから exit を付与
+                    span.style.animation = 'none';
+                    span.style.opacity = '1';
+                    span.style.filter = 'blur(0px) brightness(100%)';
+                    span.style.transform = 'translateY(0)';
+                    requestAnimationFrame(function () {
+                        requestAnimationFrame(function () {
+                            span.style.animation = '';
+                            span.classList.add('exiting');
+                            span.style.animationDelay = (i * STAGGER) + 's';
+                        });
+                    });
+                });
+
+                // exit アニメーション途中からオーバーレイのフェードアウトを開始（オーバーラップ）
+                setTimeout(function () {
+                    overlay.classList.add('fading');
+                    setTimeout(function () {
+                        overlay.style.display = 'none';
+                    }, 400);
+                }, 600);
+            }, HOLD_MS);
+        })();
+    </script>
+
+    <!-- ローディングオーバーレイ（認証チェック完了まで表示） -->
+    <div id="loading-overlay" style="position:fixed;inset:0;z-index:999;background:#E8F6F8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="animation:spin 1s linear infinite">
+            <circle cx="12" cy="12" r="10" stroke="#A8D8EA" stroke-width="4" opacity="0.3"/>
+            <path d="M4 12a8 8 0 018-8" stroke="#A8D8EA" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+        <p style="color:#7F8C8D;font-size:14px;font-family:'Hiragino Kaku Gothic ProN',sans-serif;">読み込み中...</p>
+    </div>
+
+    <!-- #partial:header -->
 
     <!-- メインコンテンツ -->
-    <main class="main-content">
+    <main class="main-content" id="main-content" style="visibility:hidden;">
         <!-- ダッシュボード画面 -->
         <div id="dashboard-view" class="view active">
             <h2 class="section-title">現在の進捗状況</h2>
@@ -31,21 +126,21 @@
             <div class="mountains-container">
                 <!-- Top Row: Blue Pilates & Red Weight -->
                 <div class="mountain-row top-row">
-                    <div class="mountain blue-mountain" data-mountain="blue" data-level="9"
-                        data-category="Blue Pilates">
+                    <div class="mountain blue-mountain" data-mountain="blue" data-level="0"
+                        data-category="">
                         <div class="mountain-icon">
                             <img src="./assets/yama01.png" alt="Blue Pilates" class="mountain-img">
                             <div class="mountain-label">
-                                <span class="level-badge">Lv.9</span>
+                                <span class="level-badge"></span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="mountain red-mountain" data-mountain="red" data-level="7" data-category="Red Weight">
+                    <div class="mountain red-mountain" data-mountain="red" data-level="0" data-category="">
                         <div class="mountain-icon">
                             <img src="./assets/yama02.png" alt="Red Weight" class="mountain-img">
                             <div class="mountain-label">
-                                <span class="level-badge">Lv.7</span>
+                                <span class="level-badge"></span>
                             </div>
                         </div>
                     </div>
@@ -55,28 +150,28 @@
                 <div class="gate-lock">
                     <div class="lock-icon">
                         🔒
-                        <p class="lock-message">3合目まであと少し</p>
+                        <p class="lock-message"></p>
                     </div>
                 </div>
 
                 <!-- Bottom Row: Green Sports & Yellow Movement -->
                 <div class="mountain-row bottom-row">
-                    <div class="mountain green-mountain" data-mountain="green" data-level="6"
-                        data-category="Green Sports">
+                    <div class="mountain green-mountain" data-mountain="green" data-level="0"
+                        data-category="">
                         <div class="mountain-icon">
                             <img src="./assets/yama03.png" alt="Sports" class="mountain-img">
                             <div class="mountain-label">
-                                <span class="level-badge">Lv.6</span>
+                                <span class="level-badge"></span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="mountain yellow-mountain" data-mountain="yellow" data-level="7"
-                        data-category="Yellow Movement">
+                    <div class="mountain yellow-mountain" data-mountain="yellow" data-level="0"
+                        data-category="">
                         <div class="mountain-icon">
                             <img src="./assets/yama04.png" alt="Movement" class="mountain-img">
                             <div class="mountain-label">
-                                <span class="level-badge">Lv.7</span>
+                                <span class="level-badge"></span>
                             </div>
                         </div>
                     </div>
@@ -87,7 +182,7 @@
             <div class="next-challenge">
                 <h3 class="challenge-title">次のチャレンジ項目</h3>
                 <div class="challenge-box">
-                    <p class="challenge-text">全項目Lv.10クリアで<br>3合目にランクアップ!</p>
+                    <p class="challenge-text"></p>
                 </div>
             </div>
 
@@ -96,18 +191,6 @@
                 <h3 class="action-title">現在のあなたの身体の宿題一覧</h3>
                 <div class="action-box">
                     <ul class="action-list-preview">
-                        <li class="action-item blue" data-action-id="task1">
-                            <span class="action-text">骨盤ニュートラル維持</span>
-                        </li>
-                        <li class="action-item red completed" data-action-id="task2">
-                            <span class="action-text">スクワット+5kg (完了)</span>
-                        </li>
-                        <li class="action-item yellow" data-action-id="task3">
-                            <span class="action-text">15分ジョグ</span>
-                        </li>
-                        <li class="action-item yellow" data-action-id="task4">
-                            <span class="action-text">肩甲骨ストレッチ</span>
-                        </li>
                     </ul>
                     <p class="action-note">※タップで編集画面へ</p>
                 </div>
@@ -132,29 +215,7 @@
         </div>
     </div>
 
-    <!-- ナビゲーションバー -->
-    <nav class="bottom-nav">
-        <button class="nav-btn active">
-            <span class="nav-icon">🏠</span>
-            <span class="nav-label">ホーム</span>
-        </button>
-        <button class="nav-btn">
-            <span class="nav-icon">🎯</span>
-            <span class="nav-label">アクション</span>
-        </button>
-        <button class="nav-btn">
-            <span class="nav-icon">⛰️</span>
-            <span class="nav-label">ステージ</span>
-        </button>
-        <button class="nav-btn">
-            <span class="nav-icon">👤</span>
-            <span class="nav-label">プロフィール</span>
-        </button>
-        <button class="nav-btn">
-            <span class="nav-icon">📅</span>
-            <span class="nav-label">予約</span>
-        </button>
-    </nav>
+    <!-- #partial:nav:index -->
 
     <script type="module" src="./src/main.ts"></script>
 </body>

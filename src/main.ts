@@ -1,127 +1,268 @@
 // メインTypeScriptファイル
 // ナビゲーション、画面遷移、イベントハンドリングを管理
 
-console.log('PTRM System Initialized');
+import { supabase } from "./supabase";
+import { fetchCompletedTasksByCategory, fetchMaxLevel } from "./api/client-crud";
+import { initLayout, checkClientAuth } from "./page-init";
 
-// ポイント管理システム
-interface UserPoints {
-  total: number;
-  history: PointHistory[];
+// 共通ヘッダー・ナビゲーションバーを注入
+initLayout();
+
+console.log("PTRM System Initialized");
+
+/** ダッシュボードで取得したクライアントID（モーダルのDB取得に使用） */
+let _dashboardClientId: string | null = null;
+
+// ============================================================
+// ダッシュボードデータ取得・表示
+// ============================================================
+
+/** DBカテゴリ名（日本語）から mountain の color キーへ変換 */
+function categoryNameToColor(name: string): string {
+  if (name.includes("ピラティス")) return "blue";
+  if (name.includes("ウェイト") || name.includes("ウエイト")) return "red";
+  if (name.includes("スポーツ")) return "green";
+  if (name.includes("ムーブメント")) return "yellow";
+  return "";
 }
 
-interface PointHistory {
-  date: string;
-  amount: number;
-  reason: string;
+/** ① 4カテゴリのレベルをDBから取得して山のバッジに反映 */
+function updateLevelDisplay(
+  levels: Array<{ current_level: number; category_id: string; categories: { name: string } | null }>,
+): void {
+  const mountains = document.querySelectorAll<HTMLElement>(".mountain");
+  mountains.forEach((mountain) => {
+    // data-mountain の値（"blue" / "red" / "green" / "yellow"）で照合
+    const colorKey = mountain.getAttribute("data-mountain") || "";
+    const levelData = levels.find((l) => {
+      if (!l.categories?.name) return false;
+      return categoryNameToColor(l.categories.name) === colorKey;
+    });
+    if (!levelData) return;
+
+    const level = levelData.current_level;
+    mountain.setAttribute("data-level", String(level));
+    // data-category をDBの日本語カテゴリ名で上書き（モーダルタイトルに使用）
+    if (levelData.categories?.name) {
+      mountain.setAttribute("data-category", levelData.categories.name);
+    }
+    // data-category-id をセット（モーダルのDB取得に使用）
+    mountain.setAttribute("data-category-id", levelData.category_id);
+    const badge = mountain.querySelector(".level-badge");
+    if (badge) badge.textContent = `Lv.${level}`;
+  });
 }
 
-// ユーザーポイントの初期データ
-let userPoints: UserPoints = {
-  total: 1250,
-  history: [
-    { date: '2026-02-15', amount: 100, reason: 'パーソナルトレーニング実施' },
-    { date: '2026-02-10', amount: 100, reason: 'パーソナルトレーニング実施' },
-    { date: '2026-02-05', amount: 50, reason: '目標達成ボーナス' }
-  ]
-};
+/** ② 平均レベルと stages.level_to を比較してロックメッセージを更新 */
+function updateLockMessage(
+  levels: Array<{ current_level: number; categories: { name: string } | null }>,
+  stages: Array<{ stage_no: number; level_to: number }>,
+): void {
+  const lockMsgEl = document.querySelector<HTMLElement>(".lock-message");
+  if (!lockMsgEl) return;
 
-// ポイント表示を更新する関数
-function updatePointsDisplay(): void {
-  const pointsValueElement = document.getElementById('userPoints');
-  if (pointsValueElement) {
-    // 3桁ごとにカンマを追加
-    pointsValueElement.textContent = userPoints.total.toLocaleString();
+  if (levels.length === 0) return;
+  const avgLevel = levels.reduce((sum, l) => sum + l.current_level, 0) / levels.length;
+
+  // 昇順に並び替えて、平均レベルが level_to を超えていない最初のステージを探す
+  const sorted = [...stages].sort((a, b) => a.stage_no - b.stage_no);
+  const nextStage = sorted.find((s) => avgLevel < s.level_to);
+
+  if (nextStage) {
+    lockMsgEl.textContent = `${nextStage.stage_no + 1}合目まであと少し`;
+  } else {
+    lockMsgEl.textContent = "全ステージ制覇！";
   }
 }
 
-// ポイントを追加する関数（将来のトレーニング実施時に使用予定）
-function addPoints(amount: number, reason: string): void {
-  userPoints.total += amount;
-  userPoints.history.unshift({
-    date: new Date().toISOString().split('T')[0],
-    amount: amount,
-    reason: reason
-  });
-  updatePointsDisplay();
-  console.log(`ポイント追加: +${amount}pt (${reason})`);
+/** ③ clients.next_goal を「次のチャレンジ項目」に反映 */
+function updateNextChallenge(nextGoal: string | null): void {
+  const challengeTextEl = document.querySelector<HTMLElement>(".challenge-text");
+  if (!challengeTextEl) return;
+  challengeTextEl.textContent = nextGoal || "トレーナーから目標が設定されると表示されます";
 }
 
-// 外部からアクセス可能にする（将来のAPI連携用）
-(window as any).addPoints = addPoints;
+/** ④ client_tasks から宿題一覧を生成して反映 */
+function updateTasksList(
+  tasks: Array<{
+    id: string;
+    is_completed: boolean;
+    tasks: { title: string; categories: { name: string } | null } | null;
+  }>,
+): void {
+  const listEl = document.querySelector<HTMLElement>(".action-list-preview");
+  if (!listEl) return;
 
-// 初期化時にポイント表示を更新
-updatePointsDisplay();
+  listEl.innerHTML = "";
 
-// DOM要素の取得
-const navButtons = document.querySelectorAll('.nav-btn');
-
-// ナビゲーションイベントリスナー
-navButtons.forEach((button, index) => {
-  button.addEventListener('click', () => {
-    handleNavigation(index);
-  });
-});
-
-// ナビゲーションハンドラー
-function handleNavigation(index: number) {
-  const pages = ['index.html', 'action.html', 'stage.html', 'profile.html'];
-
-  // 予約ボタン（index 4）の場合は外部サイトへ遷移
-  if (index === 4) {
-    window.open('https://azzist.jp/schedule/60', '_blank');
+  if (tasks.length === 0) {
+    listEl.innerHTML = '<li class="action-item"><span class="action-text">宿題はまだ割り当てられていません</span></li>';
     return;
   }
 
-  // ページ遷移
-  if (index >= 0 && index < pages.length) {
-    window.location.href = pages[index];
+  tasks.forEach((ct) => {
+    const title = ct.tasks?.title ?? "不明なタスク";
+    const categoryName = ct.tasks?.categories?.name ?? "";
+    const color = categoryNameToColor(categoryName);
+    const completedClass = ct.is_completed ? " completed" : "";
+    const tagHtml = categoryName
+      ? `<span class="action-category-tag">${categoryName}</span>`
+      : "";
+
+    const li = document.createElement("li");
+    li.className = `action-item ${color}${completedClass}`;
+    li.innerHTML = `${tagHtml}<span class="action-text">${title}</span>`;
+    li.addEventListener("click", () => {
+      window.location.href = ct.id ? `action.html#task-${ct.id}` : "action.html";
+    });
+    listEl.appendChild(li);
+  });
+}
+
+/** ダッシュボード全データを取得して表示 */
+async function loadDashboardData(): Promise<void> {
+  // 認証チェック（未登録なら error.html へリダイレクト）
+  const clientId = await checkClientAuth();
+  if (!clientId) return;
+
+  _dashboardClientId = clientId;
+
+  // ① レベル・② ステージ・④ 宿題・next_goal を並列取得
+  const [levelsResult, stagesResult, tasksResult, nextGoalResult] = await Promise.all([
+    supabase
+      .from("client_levels")
+      .select("current_level, category_id, categories(name)")
+      .eq("client_id", clientId),
+    supabase
+      .from("stages")
+      .select("stage_no, level_to")
+      .order("stage_no", { ascending: true }),
+    supabase
+      .from("client_tasks")
+      .select("id, is_completed, tasks(title, categories(name))")
+      .eq("client_id", clientId)
+      .is("deleted_at", null)
+      .order("assigned_at", { ascending: true }),
+    supabase
+      .from("clients")
+      .select("next_goal")
+      .eq("id", clientId)
+      .single(),
+  ]);
+
+  // ① カテゴリレベルを山のバッジに反映
+  if (levelsResult.error) {
+    console.error("レベル取得エラー:", levelsResult.error.message);
+  } else if (levelsResult.data) {
+    // Supabaseのリレーション結果はネスト配列で返るため unknown 経由でキャスト後に正規化
+    type RawLevel = { current_level: number; category_id: string; categories: { name: string }[] };
+    const rawLevels = levelsResult.data as unknown as RawLevel[];
+    const levels = rawLevels.map((l) => ({
+      current_level: l.current_level,
+      category_id: l.category_id,
+      categories: Array.isArray(l.categories) ? (l.categories[0] ?? null) : l.categories,
+    })) as Array<{ current_level: number; category_id: string; categories: { name: string } | null }>;
+
+    updateLevelDisplay(levels);
+    console.log("レベル取得成功:", levels);
+
+    // ② ロックメッセージ
+    if (stagesResult.error) {
+      console.error("ステージ取得エラー:", stagesResult.error.message);
+    } else if (stagesResult.data) {
+      updateLockMessage(levels, stagesResult.data as Array<{ stage_no: number; level_to: number }>);
+    }
+  }
+
+  // ③ 次のチャレンジ項目
+  const nextGoal = nextGoalResult.data?.next_goal ?? null;
+  updateNextChallenge(nextGoal);
+  console.log("次のチャレンジ項目:", nextGoal);
+
+  // ④ 宿題一覧
+  if (tasksResult.error) {
+    console.error("宿題取得エラー:", tasksResult.error.message);
+  } else if (tasksResult.data) {
+    type RawTask = {
+      id: string;
+      is_completed: boolean;
+      tasks: { title: string; categories: { name: string }[] }[];
+    };
+    const rawTasks = tasksResult.data as unknown as RawTask[];
+    const tasks = rawTasks.map((ct) => {
+      const taskObj = Array.isArray(ct.tasks) ? (ct.tasks[0] ?? null) : ct.tasks;
+      return {
+        id: ct.id,
+        is_completed: ct.is_completed,
+        tasks: taskObj
+          ? {
+              title: taskObj.title,
+              categories: Array.isArray(taskObj.categories)
+                ? (taskObj.categories[0] ?? null)
+                : taskObj.categories,
+            }
+          : null,
+      };
+    }) as Array<{
+      id: string;
+      is_completed: boolean;
+      tasks: { title: string; categories: { name: string } | null } | null;
+    }>;
+    updateTasksList(tasks);
+    console.log("宿題取得成功:", tasks);
   }
 }
 
-
-
-
+// ダッシュボードデータ読み込み
+loadDashboardData();
 
 // アクションアイテムのクリックイベントリスナー（action.htmlへ遷移）
-const actionItems = document.querySelectorAll('.action-item');
+const actionItems = document.querySelectorAll(".action-item");
 actionItems.forEach((item) => {
-  item.addEventListener('click', () => {
-    const actionId = item.getAttribute('data-action-id');
-    console.log('Action item clicked:', actionId);
+  item.addEventListener("click", () => {
+    const actionId = item.getAttribute("data-action-id");
+    console.log("Action item clicked:", actionId);
     // action.htmlへ遷移
-    window.location.href = 'action.html';
+    window.location.href = "action.html";
   });
 });
 
 // 山のクリックイベントリスナー（詳細モーダルを表示）
-const mountains = document.querySelectorAll('.mountain');
+const mountains = document.querySelectorAll(".mountain");
 mountains.forEach((mountain) => {
-  mountain.addEventListener('click', () => {
-    const mountainType = mountain.getAttribute('data-mountain');
-    const currentLevel = parseInt(mountain.getAttribute('data-level') || '0');
-    const category = mountain.getAttribute('data-category');
+  mountain.addEventListener("click", () => {
+    const mountainType = mountain.getAttribute("data-mountain");
+    const currentLevel = parseInt(mountain.getAttribute("data-level") || "0");
+    const category = mountain.getAttribute("data-category");
+    const categoryId = mountain.getAttribute("data-category-id") ?? "";
 
-    openMountainDetailModal(mountainType!, currentLevel, category!);
+    openMountainDetailModal(mountainType!, currentLevel, category!, categoryId);
   });
 });
 
 // 山の詳細モーダルを開く関数
-function openMountainDetailModal(mountainType: string, currentLevel: number, category: string) {
-  const modal = document.getElementById('mountain-detail-modal');
-  const modalTitle = document.getElementById('modal-category-title');
-  const modalTasksList = document.getElementById('modal-tasks-list');
-  const modalContent = document.querySelector('.mountain-modal-content') as HTMLElement;
+async function openMountainDetailModal(
+  mountainType: string,
+  currentLevel: number,
+  category: string,
+  categoryId: string,
+) {
+  const modal = document.getElementById("mountain-detail-modal");
+  const modalTitle = document.getElementById("modal-category-title");
+  const modalTasksList = document.getElementById("modal-tasks-list");
+  const modalContent = document.querySelector(
+    ".mountain-modal-content",
+  ) as HTMLElement;
 
   if (!modal || !modalTitle || !modalTasksList || !modalContent) return;
 
   // 山の種類に応じた背景画像を設定
   const mountainImages: { [key: string]: string } = {
-    blue: './assets/yama01.png',
-    red: './assets/yama02.png',
-    green: './assets/yama03.png',
-    yellow: './assets/yama04.png'
+    blue: "./assets/yama01.png",
+    red: "./assets/yama02.png",
+    green: "./assets/yama03.png",
+    yellow: "./assets/yama04.png",
   };
-
   const backgroundImage = mountainImages[mountainType];
   if (backgroundImage) {
     modalContent.style.backgroundImage = `url('${backgroundImage}')`;
@@ -130,296 +271,115 @@ function openMountainDetailModal(mountainType: string, currentLevel: number, cat
   // タイトルを設定
   modalTitle.textContent = category;
 
-  // ダミーデータを生成
-  const tasksData = generateDummyTasks(mountainType, currentLevel);
+  // タスクリストをクリア・ローディング表示
+  modalTasksList.innerHTML = '<p class="modal-loading">読み込み中...</p>';
 
-  // タスクリストをクリア
-  modalTasksList.innerHTML = '';
+  // モーダルを先に表示
+  modal.style.display = "flex";
+  modal.classList.remove("closing");
 
-  // タスクリストを生成
-  tasksData.forEach((levelData) => {
-    const levelSection = document.createElement('div');
+  // DBから完了済みタスクを取得
+  let completedByLevel = new Map<number, { taskTitle: string; completedAt: string }[]>();
+  if (_dashboardClientId && categoryId) {
+    completedByLevel = await fetchCompletedTasksByCategory(_dashboardClientId, categoryId);
+  }
 
-    if (levelData.isLocked) {
-      levelSection.className = 'modal-level-section locked';
+  // タスクリストをクリアして再描画
+  modalTasksList.innerHTML = "";
+
+  for (let level = 1; level <= currentLevel; level++) {
+    const tasks = completedByLevel.get(level) ?? [];
+    const levelSection = document.createElement("div");
+
+    if (tasks.length === 0) {
+      // 完了記録がないレベルは未開放として表示
+      levelSection.className = "modal-level-section locked";
       levelSection.innerHTML = `
         <div class="modal-level-header">
-          <div class="modal-level-title">
-            🔒 Lv.${levelData.level}
-          </div>
+          <div class="modal-level-title">🔒 Lv.${level}</div>
           <span class="modal-level-status locked">未開放</span>
         </div>
         <p class="modal-locked-message">このレベルはまだ秘密です</p>
       `;
     } else {
-      levelSection.className = 'modal-level-section completed';
+      levelSection.className = "modal-level-section completed";
+      const taskRows = tasks
+        .map(
+          (t) => `
+          <div class="modal-task-info">
+            <div class="modal-task-name">${t.taskTitle}</div>
+            <div class="modal-task-date">達成日: ${t.completedAt}</div>
+          </div>`,
+        )
+        .join("");
       levelSection.innerHTML = `
         <div class="modal-level-header">
-          <div class="modal-level-title">
-            ✓ Lv.${levelData.level}
-          </div>
+          <div class="modal-level-title">✓ Lv.${level}</div>
           <span class="modal-level-status completed">達成</span>
         </div>
-        <div class="modal-task-info">
-          <div class="modal-task-name">${levelData.taskName}</div>
-          <div class="modal-task-date">達成日: ${levelData.completedDate}</div>
-        </div>
+        ${taskRows}
       `;
     }
-
     modalTasksList.appendChild(levelSection);
-  });
+  }
 
-  // モーダルを表示
-  modal.style.display = 'flex';
-
-  // closing クラスを削除（前回の閉じるアニメーションをリセット）
-  modal.classList.remove('closing');
+  // 現在レベルより上は未開放（最大レベルまで全て表示）
+  const maxLevel = await fetchMaxLevel();
+  const upperBound = maxLevel > currentLevel ? maxLevel : currentLevel + 1;
+  for (let level = currentLevel + 1; level <= upperBound; level++) {
+    const lockedSection = document.createElement("div");
+    lockedSection.className = "modal-level-section locked";
+    lockedSection.innerHTML = `
+      <div class="modal-level-header">
+        <div class="modal-level-title">🔒 Lv.${level}</div>
+        <span class="modal-level-status locked">未開放</span>
+      </div>
+      <p class="modal-locked-message">このレベルはまだ秘密です</p>
+    `;
+    modalTasksList.appendChild(lockedSection);
+  }
 }
 
 // 山の詳細モーダルを閉じる関数
 function closeMountainDetailModal() {
-  const modal = document.getElementById('mountain-detail-modal');
+  const modal = document.getElementById("mountain-detail-modal");
   if (!modal) return;
 
   // closing クラスを追加してアニメーション開始
-  modal.classList.add('closing');
+  modal.classList.add("closing");
 
   // アニメーション完了後にモーダルを非表示
   setTimeout(() => {
-    modal.style.display = 'none';
-    modal.classList.remove('closing');
+    modal.style.display = "none";
+    modal.classList.remove("closing");
   }, 300);
 }
 
-// ダミーデータを生成する関数
-function generateDummyTasks(mountainType: string, currentLevel: number) {
-  const taskNames: { [key: string]: string[] } = {
-    blue: [
-      '基本姿勢の習得',
-      '骨盤ニュートラル維持',
-      '呼吸法のマスター',
-      'コアの安定性向上',
-      '体幹バランス強化',
-      '柔軟性の向上',
-      '動作の正確性',
-      '応用動作の習得',
-      '高度な動作連携',
-      '完全習熟',
-      'プランク30秒キープ',
-      'サイドプランク左右各20秒',
-      'バードドッグ左右各10回',
-      'デッドバグ10回',
-      'ブリッジキープ30秒',
-      'シングルレッグブリッジ左右各8回',
-      'プランクローテーション左右各5回',
-      'マウンテンクライマー20回',
-      'プランク45秒キープ',
-      'ABロールアウト10回',
-      'ハンギングニーレイズ8回',
-      'L字キープ20秒',
-      'ドラゴンフラッグ5回',
-      'フロントレバー進行形',
-      'プランク60秒キープ',
-      'RKCプランク30秒',
-      'ホロウボディホールド30秒',
-      'アーチボディホールド30秒',
-      'バックレバー進行形',
-      'ヒューマンフラッグ進行形',
-      'プランシェ進行形',
-      'アドバンスコアワーク',
-      'マッスルアップ5回',
-      'フロントレバープルアップ3回',
-      'L字腕立て伏せ10回',
-      'プランシェプッシュアップ5回',
-      'ドラゴンフラッグ＋ツイスト5回',
-      'インバーテッドハング30秒',
-      'アドバンスプランシェ',
-      'エキスパートレベル完全習得'
-    ],
-    red: [
-      'フォームの基礎',
-      'スクワット基礎',
-      'ベンチプレス導入',
-      'デッドリフト基礎',
-      '負荷の段階的増加',
-      '筋力向上プログラム',
-      '複合トレーニング',
-      '高負荷トレーニング',
-      'パワー開発',
-      '最大筋力到達',
-      'スクワット60kg 5回',
-      'ベンチプレス50kg 5回',
-      'デッドリフト70kg 5回',
-      'オーバーヘッドプレス30kg 5回',
-      'バーベルロウ50kg 5回',
-      'スクワット80kg 5回',
-      'ベンチプレス60kg 5回',
-      'デッドリフト90kg 5回',
-      'フロントスクワット60kg 5回',
-      'インクラインベンチ50kg 5回',
-      'スクワット100kg 5回',
-      'ベンチプレス70kg 5回',
-      'デッドリフト110kg 5回',
-      'オーバーヘッドプレス40kg 5回',
-      'ペンドレイロウ60kg 5回',
-      'スクワット120kg 3回',
-      'ベンチプレス80kg 3回',
-      'デッドリフト130kg 3回',
-      'パワークリーン70kg 3回',
-      'プッシュプレス60kg 5回',
-      'スクワット140kg 1回',
-      'ベンチプレス90kg 1回',
-      'デッドリフト150kg 1回',
-      'フルスナッチ60kg 3回',
-      'クリーン＆ジャーク80kg 1回',
-      'スクワット体重×2倍',
-      'ベンチプレス体重×1.5倍',
-      'デッドリフト体重×2.5倍',
-      'パワーリフティング大会出場',
-      'エリートレベル到達'
-    ],
-    green: [
-      '基礎体力づくり',
-      '有酸素運動の基本',
-      '持久力向上',
-      'スポーツ動作導入',
-      'アジリティ強化',
-      'スピード向上',
-      '実践的スポーツ動作',
-      '競技レベル向上',
-      '高度なスポーツ技術',
-      'アスリートレベル',
-      'ランニング3km完走',
-      '5km 30分以内',
-      'インターバル走導入',
-      'テンポラン20分',
-      'ヒルスプリント10本',
-      '10km 60分以内',
-      'ファルトレク30分',
-      'プライオメトリクス基礎',
-      'アジリティドリル',
-      'スピードラダー',
-      'ハーフマラソン完走',
-      '10km 50分以内',
-      'スプリントトレーニング',
-      'コーンドリル',
-      '400m×5本 インターバル',
-      'フルマラソン完走',
-      '5km 22分以内',
-      'VO2maxトレーニング',
-      '長距離持久力',
-      'トライアスロン挑戦',
-      'フルマラソン4時間切り',
-      '10km 45分以内',
-      'ウルトラマラソン準備',
-      'クロストレーニング',
-      'スポーツ特化トレーニング',
-      'フルマラソン3時間30分',
-      'ハーフマラソン1時間30分',
-      '競技レベルスピード',
-      'アスリート持久力',
-      'エリートアスリートレベル'
-    ],
-    yellow: [
-      '基本的な動作パターン',
-      '日常動作の改善',
-      '可動域の拡大',
-      '動作の効率化',
-      '姿勢改善',
-      '機能的動作の習得',
-      '複雑な動作連鎖',
-      '動作の最適化',
-      '高度な身体操作',
-      '動作マスター',
-      'ヒップヒンジパターン',
-      'スクワットパターン',
-      'ランジパターン',
-      'プッシュパターン',
-      'プルパターン',
-      'ローテーションパターン',
-      'キャリーパターン',
-      '歩行動作改善',
-      '階段昇降の最適化',
-      '立ち座り動作',
-      'ジャンプ着地動作',
-      '方向転換動作',
-      '投球動作基礎',
-      'スイング動作基礎',
-      '片足立ちバランス60秒',
-      'ターキッシュゲットアップ',
-      'ケトルベルスイング20回',
-      'ハローホールド',
-      'ウィンドミル左右',
-      'ボトムアップキープ',
-      'アームバーストレッチ',
-      'スナッチグリップデッドリフト',
-      'オーバーヘッドスクワット',
-      'ピストルスクワット左右各5回',
-      'シングルアームプレス',
-      'ダブルケトルベルフロントスクワット',
-      'ジャーク動作',
-      'ウォーキングランジ20歩',
-      'コンプレックス動作',
-      '機能的動作スペシャリスト'
-    ]
-  };
-
-  const tasks = [];
-  const maxLevel = 40;
-
-  for (let level = 1; level <= maxLevel; level++) {
-    if (level <= currentLevel) {
-      // 達成済みのレベル
-      const daysAgo = (currentLevel - level) * 7 + Math.floor(Math.random() * 5);
-      const completedDate = new Date();
-      completedDate.setDate(completedDate.getDate() - daysAgo);
-
-      tasks.push({
-        level,
-        taskName: taskNames[mountainType]?.[level - 1] || `タスク ${level}`,
-        completedDate: completedDate.toLocaleDateString('ja-JP'),
-        isLocked: false
-      });
-    } else {
-      // 未開放のレベル
-      tasks.push({
-        level,
-        taskName: '???',
-        completedDate: '',
-        isLocked: true
-      });
-    }
-  }
-
-  return tasks;
-}
-
 // モーダルの閉じるボタン
-const mountainModalCloseBtn = document.querySelector('.mountain-modal-close');
-mountainModalCloseBtn?.addEventListener('click', closeMountainDetailModal);
+const mountainModalCloseBtn = document.querySelector(".mountain-modal-close");
+mountainModalCloseBtn?.addEventListener("click", closeMountainDetailModal);
 
 // モーダル背景クリックで閉じる
-const mountainModalOverlay = document.querySelector('.mountain-modal-overlay');
-mountainModalOverlay?.addEventListener('click', closeMountainDetailModal);
+const mountainModalOverlay = document.querySelector(".mountain-modal-overlay");
+mountainModalOverlay?.addEventListener("click", closeMountainDetailModal);
 
 // チェックボックスのイベントリスナー（その他のチェックボックス用）
-const checkboxes = document.querySelectorAll('.task-checkbox');
+const checkboxes = document.querySelectorAll(".task-checkbox");
 checkboxes.forEach((checkbox) => {
-  checkbox.addEventListener('change', (e) => {
+  checkbox.addEventListener("change", (e) => {
     const target = e.target as HTMLInputElement;
-    const taskItem = target.closest('.task-item');
+    const taskItem = target.closest(".task-item");
 
     if (taskItem) {
       if (target.checked) {
-        taskItem.classList.add('completed');
+        taskItem.classList.add("completed");
       } else {
-        taskItem.classList.remove('completed');
+        taskItem.classList.remove("completed");
       }
     }
 
     // TODO: Supabaseにデータを保存
-    console.log('Task status changed:', {
+    console.log("Task status changed:", {
       checked: target.checked,
       taskId: target.id,
     });
@@ -427,36 +387,36 @@ checkboxes.forEach((checkbox) => {
 });
 
 // 好み評価ボタンのイベントリスナー
-const preferenceButtons = document.querySelectorAll('.preference-btn');
+const preferenceButtons = document.querySelectorAll(".preference-btn");
 preferenceButtons.forEach((button) => {
-  button.addEventListener('click', (e) => {
+  button.addEventListener("click", (e) => {
     const target = e.currentTarget as HTMLElement;
-    const parentSection = target.closest('.preference-section');
+    const parentSection = target.closest(".preference-section");
 
     if (parentSection) {
       // 同じグループ内の他のボタンの active クラスを削除
-      const siblingButtons = parentSection.querySelectorAll('.preference-btn');
-      siblingButtons.forEach((btn) => btn.classList.remove('active'));
+      const siblingButtons = parentSection.querySelectorAll(".preference-btn");
+      siblingButtons.forEach((btn) => btn.classList.remove("active"));
 
       // クリックされたボタンに active クラスを追加
-      target.classList.add('active');
+      target.classList.add("active");
     }
 
     // TODO: Supabaseにデータを保存
-    console.log('Preference changed:', {
+    console.log("Preference changed:", {
       preference: target.textContent?.trim(),
     });
   });
 });
 
 // 完了ボタンのイベントリスナー
-const completeButtons = document.querySelectorAll('.complete-btn');
+const completeButtons = document.querySelectorAll(".complete-btn");
 completeButtons.forEach((button) => {
-  button.addEventListener('click', (e) => {
+  button.addEventListener("click", (e) => {
     const target = e.currentTarget as HTMLElement;
-    const taskItem = target.closest('.task-item') as HTMLElement;
-    const taskId = taskItem?.getAttribute('data-task-id');
-    const isCompleted = taskItem?.getAttribute('data-completed') === 'true';
+    const taskItem = target.closest(".task-item") as HTMLElement;
+    const taskId = taskItem?.getAttribute("data-task-id");
+    const isCompleted = taskItem?.getAttribute("data-completed") === "true";
 
     if (isCompleted) {
       // 編集ボタンの場合、モーダルを開く
@@ -470,63 +430,67 @@ completeButtons.forEach((button) => {
 
 // モーダルを開く関数
 function openPreferenceModal(taskId: string) {
-  const modal = document.getElementById('preference-modal');
-  const formTaskIdInput = document.getElementById('form-task-id') as HTMLInputElement;
+  const modal = document.getElementById("preference-modal");
+  const formTaskIdInput = document.getElementById(
+    "form-task-id",
+  ) as HTMLInputElement;
 
   if (modal && formTaskIdInput) {
     formTaskIdInput.value = taskId;
-    modal.style.display = 'flex';
+    modal.style.display = "flex";
 
     // モーダル内の好み評価ボタンをリセット
-    const modalPreferenceButtons = modal.querySelectorAll('.preference-btn');
-    modalPreferenceButtons.forEach((btn) => btn.classList.remove('active'));
+    const modalPreferenceButtons = modal.querySelectorAll(".preference-btn");
+    modalPreferenceButtons.forEach((btn) => btn.classList.remove("active"));
   }
 }
 
 // モーダルを閉じる関数
 function closePreferenceModal() {
-  const modal = document.getElementById('preference-modal');
+  const modal = document.getElementById("preference-modal");
   if (modal) {
-    modal.style.display = 'none';
+    modal.style.display = "none";
   }
 }
 
 // モーダルの閉じるボタン
-const modalCloseBtn = document.querySelector('.modal-close');
-modalCloseBtn?.addEventListener('click', closePreferenceModal);
+const modalCloseBtn = document.querySelector(".modal-close");
+modalCloseBtn?.addEventListener("click", closePreferenceModal);
 
 // モーダル背景クリックで閉じる
-const modal = document.getElementById('preference-modal');
-modal?.addEventListener('click', (e) => {
+const modal = document.getElementById("preference-modal");
+modal?.addEventListener("click", (e) => {
   if (e.target === modal) {
     closePreferenceModal();
   }
 });
 
 // 好み評価フォームの送信
-const preferenceForm = document.getElementById('preference-form');
-preferenceForm?.addEventListener('submit', (e) => {
+const preferenceForm = document.getElementById("preference-form");
+preferenceForm?.addEventListener("submit", (e) => {
   e.preventDefault();
 
   const formData = new FormData(e.target as HTMLFormElement);
-  const taskId = formData.get('taskId') as string;
-  const activeBtn = document.querySelector('.modal .preference-btn.active');
-  const preference = activeBtn?.getAttribute('data-value');
+  const taskId = formData.get("taskId") as string;
+  const activeBtn = document.querySelector(".modal .preference-btn.active");
+  const preference = activeBtn?.getAttribute("data-value");
 
   if (!preference) {
-    alert('好み評価を選択してください');
+    alert("好み評価を選択してください");
     return;
   }
 
   // タスクを完了状態に更新
-  const taskItem = document.querySelector(`[data-task-id="${taskId}"]`) as HTMLElement;
+  const taskItem = document.querySelector(
+    `[data-task-id="${taskId}"]`,
+  ) as HTMLElement;
   if (taskItem) {
-    taskItem.setAttribute('data-completed', 'true');
-    taskItem.classList.add('completed');
+    taskItem.setAttribute("data-completed", "true");
+    taskItem.classList.add("completed");
 
-    const completeBtn = taskItem.querySelector('.complete-btn') as HTMLElement;
+    const completeBtn = taskItem.querySelector(".complete-btn") as HTMLElement;
     if (completeBtn) {
-      completeBtn.textContent = '編集';
+      completeBtn.textContent = "編集";
     }
   }
 
@@ -537,7 +501,7 @@ preferenceForm?.addEventListener('submit', (e) => {
   showSuccessMessage();
 
   // TODO: Supabaseにデータを保存
-  console.log('Task completed:', {
+  console.log("Task completed:", {
     taskId,
     preference,
   });
@@ -545,52 +509,54 @@ preferenceForm?.addEventListener('submit', (e) => {
 
 // 成功メッセージを表示する関数
 function showSuccessMessage() {
-  const successMessage = document.getElementById('success-message');
+  const successMessage = document.getElementById("success-message");
   if (successMessage) {
-    successMessage.style.display = 'block';
+    successMessage.style.display = "block";
 
     // 3秒後に自動で非表示
     setTimeout(() => {
-      successMessage.style.display = 'none';
+      successMessage.style.display = "none";
     }, 3000);
   }
 }
 
 // 予約ボタンのイベントリスナー
-const reservationButtons = document.querySelectorAll('.reservation-btn, .view-detail-btn');
+const reservationButtons = document.querySelectorAll(
+  ".reservation-btn, .view-detail-btn",
+);
 reservationButtons.forEach((button) => {
-  button.addEventListener('click', () => {
+  button.addEventListener("click", () => {
     // 外部予約システム（Azzist）へ遷移
-    window.open('https://azzist.jp/schedule/60', '_blank');
+    window.open("https://azzist.jp/schedule/60", "_blank");
   });
 });
 
 // 動画リンクのイベントリスナー
-const videoLinks = document.querySelectorAll('.video-link');
+const videoLinks = document.querySelectorAll(".video-link");
 videoLinks.forEach((link) => {
-  link.addEventListener('click', (e) => {
+  link.addEventListener("click", (e) => {
     e.preventDefault();
     // TODO: 動画ページの実装
-    alert('動画ページは今後実装予定です');
+    alert("動画ページは今後実装予定です");
   });
 });
 
 // プロフィールアクションボタン
-const profileActionButtons = document.querySelectorAll('.profile-action-btn');
+const profileActionButtons = document.querySelectorAll(".profile-action-btn");
 profileActionButtons.forEach((button) => {
-  button.addEventListener('click', () => {
+  button.addEventListener("click", () => {
     const buttonText = button.textContent?.trim();
-    console.log('Profile action clicked:', buttonText);
+    console.log("Profile action clicked:", buttonText);
     // TODO: 各機能の実装
     alert(`${buttonText}は今後実装予定です`);
   });
 });
 
 // PWA対応の準備
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
     // TODO: Service Workerの登録
-    console.log('Service Worker support detected');
+    console.log("Service Worker support detected");
   });
 }
 
@@ -602,7 +568,7 @@ async function initializeLIFF() {
     // TODO: LIFF IDを環境変数から取得
     const liffId = import.meta.env.VITE_LIFF_ID;
 
-    if (typeof liff !== 'undefined' && liffId) {
+    if (typeof liff !== "undefined" && liffId) {
       await liff.init({ liffId });
 
       if (!liff.isLoggedIn()) {
@@ -610,12 +576,12 @@ async function initializeLIFF() {
       } else {
         // ユーザー情報の取得
         const profile = await liff.getProfile();
-        console.log('User profile:', profile);
+        console.log("User profile:", profile);
         // TODO: Supabaseにユーザー情報を保存
       }
     }
   } catch (error) {
-    console.error('LIFF initialization failed:', error);
+    console.error("LIFF initialization failed:", error);
   }
 }
 
@@ -625,4 +591,4 @@ if (import.meta.env.PROD) {
 }
 
 // エクスポート
-export { handleNavigation, initializeLIFF };
+export { initializeLIFF };

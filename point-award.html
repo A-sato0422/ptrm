@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ポイント付与 - PTRM</title>
+    <link rel="stylesheet" href="./src/styles/main.css">
+    <link rel="stylesheet" href="./src/styles/point-award.css">
+</head>
+
+<body>
+    <main class="award-page">
+        <div id="award-loading" class="award-card">
+            <div class="award-spinner"></div>
+            <p class="award-message">確認中...</p>
+        </div>
+
+        <div id="award-success" class="award-card hidden">
+            <div class="award-icon success">🎉</div>
+            <h1 class="award-title">ポイント獲得！</h1>
+            <p class="award-point">＋100pt</p>
+            <p class="award-message">ポイントを付与しました。</p>
+            <a href="./profile.html" class="award-back-btn">PTRMに戻る</a>
+        </div>
+
+        <div id="award-already" class="award-card hidden">
+            <div class="award-icon already">📅</div>
+            <h1 class="award-title">本日は付与済みです</h1>
+            <p class="award-message">ポイントの付与は1日1回です。<br>また明日お試しください。</p>
+            <a href="./profile.html" class="award-back-btn">PTRMに戻る</a>
+        </div>
+
+        <div id="award-error" class="award-card hidden">
+            <div class="award-icon error">⚠️</div>
+            <h1 class="award-title">エラーが発生しました</h1>
+            <p class="award-message">しばらくたってから再度お試しください。</p>
+            <a href="./profile.html" class="award-back-btn">PTRMに戻る</a>
+        </div>
+    </main>
+
+    <script type="module" src="./src/point-award.ts"></script>
+</body>
+
+</html>

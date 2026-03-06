@@ -7,6 +7,57 @@
 }
 
 /* ========================================
+   成功メッセージ
+   ======================================== */
+
+.success-message {
+    position: fixed;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #4CAF50;
+    color: var(--color-white);
+    padding: var(--spacing-md) var(--spacing-xl);
+    border-radius: var(--radius-md);
+    text-align: center;
+    font-weight: bold;
+    z-index: 1200;
+    box-shadow: var(--shadow-lg);
+    animation: successFadeIn 0.3s ease-out;
+    max-width: 90%;
+    width: 65%;
+}
+
+.error-message {
+    position: fixed;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #E74C3C;
+    color: var(--color-white);
+    padding: var(--spacing-md) var(--spacing-xl);
+    border-radius: var(--radius-md);
+    text-align: center;
+    font-weight: bold;
+    z-index: 1200;
+    box-shadow: var(--shadow-lg);
+    animation: successFadeIn 0.3s ease-out;
+    max-width: 90%;
+    width: 65%;
+}
+
+@keyframes successFadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* ========================================
    プロフィールヘッダー
    ======================================== */
 
@@ -42,37 +93,6 @@
 .profile-member-since {
     font-size: 14px;
     opacity: 0.9;
-}
-
-/* ========================================
-   統計情報
-   ======================================== */
-
-.profile-stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-xl);
-}
-
-.stat-card {
-    background-color: var(--color-white);
-    padding: var(--spacing-md);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
-    text-align: center;
-}
-
-.stat-value {
-    font-size: 24px;
-    font-weight: bold;
-    color: var(--color-primary);
-    margin-bottom: var(--spacing-xs);
-}
-
-.stat-label {
-    font-size: 12px;
-    color: var(--color-text-light);
 }
 
 /* ========================================
@@ -195,4 +215,328 @@
         margin-left: auto;
         margin-right: auto;
     }
+}
+
+/* ========================================
+   QRスキャナーボタン
+   ======================================== */
+
+.qr-btn {
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    border-color: var(--color-primary);
+    font-weight: bold;
+}
+
+.qr-btn:hover {
+    background-color: #3a9abf;
+    border-color: #3a9abf;
+    color: var(--color-white);
+}
+
+/* ========================================
+   QRスキャナーモーダル
+   ======================================== */
+
+.qr-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 1100;
+    display: flex;
+    align-items: flex-end;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.qr-modal-overlay.hidden {
+    display: none;
+}
+
+.qr-modal-sheet {
+    background-color: var(--color-white);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    width: 100%;
+    padding-bottom: env(safe-area-inset-bottom);
+    animation: slideUp 0.3s ease-out;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.qr-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.qr-modal-header h3 {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--color-text-dark);
+}
+
+.qr-modal-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: var(--color-text-light);
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.qr-modal-body {
+    padding: var(--spacing-lg);
+}
+
+/* html5-qrcode が生成するビデオ要素を画面幅に合わせる */
+#qr-reader {
+    width: 100%;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+#qr-reader video {
+    width: 100% !important;
+    border-radius: var(--radius-md);
+}
+
+.qr-hint {
+    text-align: center;
+    font-size: 13px;
+    color: var(--color-text-light);
+    margin-top: var(--spacing-sm);
+}
+
+/* ========================================
+   ポイント履歴
+   ======================================== */
+
+.point-use-modal-error {
+    font-size: 13px;
+    color: #E74C3C;
+    margin-top: var(--spacing-xs);
+}
+
+.point-history-list {
+    display: flex;
+    flex-direction: column;
+    margin-top: var(--spacing-md);
+}
+
+.point-history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid var(--color-bg);
+    font-size: 14px;
+}
+
+.point-history-item:last-child {
+    border-bottom: none;
+}
+
+.point-history-date {
+    color: var(--color-text-light);
+}
+
+.point-history-point {
+    font-weight: bold;
+}
+
+.point-history-point.positive {
+    color: #4CAF50;
+}
+
+.point-history-point.negative {
+    color: #E74C3C;
+}
+
+.point-history-empty {
+    font-size: 14px;
+    color: var(--color-text-light);
+    text-align: center;
+    padding: var(--spacing-md) 0;
+}
+
+/* ========================================
+   プロフィール設定モーダル
+   ======================================== */
+
+.profile-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 1100;
+    display: flex;
+    align-items: flex-end;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.profile-modal-overlay.hidden {
+    display: none;
+}
+
+.profile-modal-sheet {
+    background-color: var(--color-white);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease-out;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.profile-modal-overlay.closing {
+    animation: fadeOut 0.3s ease-out forwards;
+}
+
+.profile-modal-overlay.closing .profile-modal-sheet {
+    animation: slideDown 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+}
+
+@keyframes slideDown {
+    from { transform: translateY(0); }
+    to   { transform: translateY(100%); }
+}
+
+.profile-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.profile-modal-header h3 {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--color-text-dark);
+}
+
+.profile-modal-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: var(--color-text-light);
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.profile-modal-body {
+    padding: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.modal-avatar-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.modal-avatar-img {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--color-border);
+}
+
+.modal-avatar-label {
+    display: inline-block;
+    cursor: pointer;
+    padding: 6px var(--spacing-md);
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    color: var(--color-text-dark);
+    font-weight: 500;
+}
+
+.modal-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.modal-field-label {
+    font-size: 13px;
+    color: var(--color-text-light);
+    font-weight: 500;
+}
+
+.modal-field-input {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 10px var(--spacing-md);
+    font-size: 15px;
+    color: var(--color-text-dark);
+    background-color: var(--color-white);
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.modal-field-input:focus {
+    border-color: var(--color-primary);
+}
+
+.profile-modal-footer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md) var(--spacing-lg) var(--spacing-lg);
+    border-top: 1px solid var(--color-border);
+}
+
+.modal-btn {
+    padding: 12px;
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+    transition: opacity 0.2s;
+}
+
+.modal-btn.cancel {
+    background-color: var(--color-bg);
+    color: var(--color-text-dark);
+}
+
+.modal-btn.save {
+    background-color: var(--color-primary);
+    color: var(--color-white);
+}
+
+.modal-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
 }
