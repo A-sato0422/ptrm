@@ -53,8 +53,9 @@ export interface Client {
   previousNote: string;
   currentTasks: Task[];
   preferences: {
-    likes: string;
-    dislikes: string;
+    likes: string[];
+    dislikes: string[];
+    neutral: string[];
   };
   history?: MemoHistory[];
   /** 色キー → categories.id のマッピング（レベル更新に使用） */

@@ -33,14 +33,13 @@ function mapDbClientToDisplay(dbClient: any): Client {
   const likes = (dbClient.will_matrix || [])
     .filter((w: any) => w.like_status === 1)
     .map((w: any) => w.tasks?.title)
-    .filter(Boolean)
-    .join("、");
+    .filter(Boolean) as string[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const dislikes = (dbClient.will_matrix || [])
     .filter((w: any) => w.like_status === -1)
     .map((w: any) => w.tasks?.title)
-    .filter(Boolean)
-    .join("、");
+    .filter(Boolean) as string[];
+  const neutral: string[] = [];
 
   return {
     id: dbClient.id,
@@ -54,7 +53,7 @@ function mapDbClientToDisplay(dbClient: any): Client {
     nextGoal: "",
     previousNote: sortedMemos[0]?.content || "",
     currentTasks,
-    preferences: { likes, dislikes },
+    preferences: { likes, dislikes, neutral },
   };
 }
 
@@ -208,7 +207,7 @@ function createClientCard(client: Client): string {
               <div>
                 <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">前回のメモ</h4>
                 <p class="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
-                  ${client.previousNote}
+                  ${client.previousNote.length > 120 ? client.previousNote.slice(0, 120) + "..." : client.previousNote}
                 </p>
               </div>
               <div>
@@ -228,14 +227,14 @@ function createClientCard(client: Client): string {
                 <span class="material-icons-outlined text-green-500 text-lg">thumb_up</span>
                 <div>
                   <p class="text-xs font-bold text-slate-500">やりたい</p>
-                  <p class="text-xs font-medium">${client.preferences.likes}</p>
+                  <p class="text-xs font-medium">${(() => { const t = client.preferences.likes.join("、"); return t.length > 90 ? t.slice(0, 90) + "..." : t; })()}</p>
                 </div>
               </div>
               <div class="flex items-start gap-3">
                 <span class="material-icons-outlined text-red-400 text-lg">thumb_down</span>
                 <div>
                   <p class="text-xs font-bold text-slate-500">やりたくない</p>
-                  <p class="text-xs font-medium">${client.preferences.dislikes}</p>
+                  <p class="text-xs font-medium">${(() => { const t = client.preferences.dislikes.join("、"); return t.length > 90 ? t.slice(0, 90) + "..." : t; })()}</p>
                 </div>
               </div>
             </div>

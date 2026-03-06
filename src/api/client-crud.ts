@@ -274,6 +274,24 @@ export async function createTask(
  * 既存の tasks マスターを client_tasks に割り当てる（タスクは新規作成しない）。
  * @returns 生成された client_tasks.id / 失敗時 null
  */
+/**
+ * client_tasks に既存レコード（完了済み含む）があるかを確認する。
+ * 再割り当て前に完了済みチェックとして使用する。
+ * @returns 完了済みレコードが存在する場合 true
+ */
+export async function checkCompletedClientTask(
+  clientId: string,
+  taskId: string,
+): Promise<boolean> {
+  const { data } = await supabase
+    .from("client_tasks")
+    .select("is_completed")
+    .eq("client_id", clientId)
+    .eq("task_id", taskId)
+    .maybeSingle();
+  return !!data && (data as { is_completed: boolean }).is_completed === true;
+}
+
 export async function assignExistingTask(
   clientId: string,
   taskId: string,

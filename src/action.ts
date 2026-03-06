@@ -218,7 +218,7 @@ preferenceForm?.addEventListener("submit", async (e) => {
     taskId ? upsertWillMatrix(clientId, taskId, likeStatus) : Promise.resolve(true),
   ]);
 
-  if (taskOk) {
+  if (!taskOk) {
     closePreferenceModal();
     showErrorMessage("保存に失敗しました。しばらくたってから再度お試しください。");
     return;

@@ -5,6 +5,7 @@ import {
   fetchCategories,
   fetchTrainers,
   fetchAllTasks,
+  fetchMaxLevel,
   updateLevel,
   updateNextGoal,
   updateClientProfile,
@@ -13,6 +14,7 @@ import {
   deleteMemo,
   createTask,
   assignExistingTask,
+  checkCompletedClientTask,
   checkTaskDuplicate,
   deleteClientTask,
 } from "./api/client-crud";
@@ -84,6 +86,9 @@ let _trainers: { id: string; name: string }[] = [];
 /** カテゴリ一覧キャッシュ */
 let _categories: { id: string; name: string }[] = [];
 
+/** レベルセレクトの最大値（stages.stage_no=6 の level_to） */
+let _maxLevel: number = 30;
+
 // ============================================================
 // トースト通知
 // ============================================================
@@ -132,7 +137,7 @@ function createLevelSelect(
     yellow: "bg-amber-500",
   };
 
-  const options = Array.from({ length: 11 }, (_, i) => {
+  const options = Array.from({ length: _maxLevel + 1 }, (_, i) => {
     const selected = i === level ? "selected" : "";
     return `<option value="${i}" ${selected}>Lv.${i}</option>`;
   }).join("");
@@ -220,25 +225,15 @@ function createTaskCard(task: Task): string {
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="space-y-1">
           <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">課題名</label>
-          <input 
-            class="${titleInputClass}" 
-            ${isEditable ? 'placeholder="課題名を入力"' : ""}
-            type="text" 
-            value="${task.title}"
-            data-task-id="${task.id}"
-            ${isEditable ? "" : "readonly"}
-          />
+          ${isEditable
+            ? `<input class="${titleInputClass}" placeholder="課題名を入力" type="text" value="${task.title}" data-task-id="${task.id}" />`
+            : `<p class="font-bold text-slate-800 dark:text-slate-100 break-words whitespace-pre-wrap ${lineThrough}">${task.title}</p>`}
         </div>
         <div class="space-y-1">
           <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">意義・理由</label>
-          <input 
-            class="${reasonInputClass}" 
-            ${isEditable ? 'placeholder="なぜこの課題が必要か"' : ""}
-            type="text" 
-            value="${task.reason || ""}"
-            data-task-id="${task.id}"
-            ${isEditable ? "" : "readonly"}
-          />
+          ${isEditable
+            ? `<input class="${reasonInputClass}" placeholder="なぜこの課題が必要か" type="text" value="${task.reason || ""}" data-task-id="${task.id}" />`
+            : `<p class="text-sm text-slate-600 dark:text-slate-400 break-words whitespace-pre-wrap ${lineThrough}">${task.reason || ""}</p>`}
         </div>
         <div class="space-y-1">
           <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">YouTube URL</label>
@@ -632,31 +627,57 @@ function renderClientDetail(client: Client): void {
 
     <!-- Preferences Section -->
     <section class="bg-surface-light dark:bg-surface-dark rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-      <div class="flex items-center justify-between mb-8">
+      <div class="flex items-center justify-between mb-6">
         <h3 class="text-lg font-bold">やりたい・やりたくない確認</h3>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-        <div class="flex items-start gap-5">
-          <div class="w-14 h-14 flex items-center justify-center bg-green-100 dark:bg-green-900/30 rounded-2xl text-green-600 shrink-0 shadow-sm">
-            <span class="material-icons-outlined text-3xl">thumb_up</span>
-          </div>
-          <div>
-            <h4 class="font-bold text-xs text-green-700 dark:text-green-400 uppercase tracking-widest mb-2 flex items-center gap-1">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="flex flex-col gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 flex items-center justify-center bg-green-100 dark:bg-green-900/30 rounded-xl text-green-600 shrink-0">
+              <span class="material-icons-outlined text-xl">thumb_up</span>
+            </div>
+            <h4 class="font-bold text-sm text-green-700 dark:text-green-400 flex items-center gap-1">
               <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span> やりたい
+              <span class="ml-1 text-xs font-normal text-slate-400">(${client.preferences.likes.length})</span>
             </h4>
-            <p class="text-slate-700 dark:text-slate-200 text-lg font-medium leading-relaxed">${client.preferences.likes}</p>
           </div>
+          <ul class="overflow-y-auto max-h-48 space-y-1 pr-1">
+            ${client.preferences.likes.length === 0
+              ? `<li class="text-sm text-slate-400 italic">なし</li>`
+              : client.preferences.likes.map((item) => `<li class="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200"><span class="mt-1.5 w-1.5 h-1.5 bg-green-500 rounded-full shrink-0"></span>${item}</li>`).join("")}
+          </ul>
         </div>
-        <div class="flex items-start gap-5">
-          <div class="w-14 h-14 flex items-center justify-center bg-red-100 dark:bg-red-900/30 rounded-2xl text-red-600 shrink-0 shadow-sm">
-            <span class="material-icons-outlined text-3xl">thumb_down</span>
-          </div>
-          <div>
-            <h4 class="font-bold text-xs text-red-700 dark:text-red-400 uppercase tracking-widest mb-2 flex items-center gap-1">
+        <div class="flex flex-col gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 flex items-center justify-center bg-red-100 dark:bg-red-900/30 rounded-xl text-red-600 shrink-0">
+              <span class="material-icons-outlined text-xl">thumb_down</span>
+            </div>
+            <h4 class="font-bold text-sm text-red-700 dark:text-red-400 flex items-center gap-1">
               <span class="w-1.5 h-1.5 bg-red-500 rounded-full"></span> やりたくない
+              <span class="ml-1 text-xs font-normal text-slate-400">(${client.preferences.dislikes.length})</span>
             </h4>
-            <p class="text-slate-700 dark:text-slate-200 text-lg font-medium leading-relaxed">${client.preferences.dislikes}</p>
           </div>
+          <ul class="overflow-y-auto max-h-48 space-y-1 pr-1">
+            ${client.preferences.dislikes.length === 0
+              ? `<li class="text-sm text-slate-400 italic">なし</li>`
+              : client.preferences.dislikes.map((item) => `<li class="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200"><span class="mt-1.5 w-1.5 h-1.5 bg-red-500 rounded-full shrink-0"></span>${item}</li>`).join("")}
+          </ul>
+        </div>
+        <div class="flex flex-col gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-500 shrink-0">
+              <span class="material-icons-outlined text-xl">remove_circle_outline</span>
+            </div>
+            <h4 class="font-bold text-sm text-slate-600 dark:text-slate-400 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 bg-slate-400 rounded-full"></span> どちらでもない
+              <span class="ml-1 text-xs font-normal text-slate-400">(${client.preferences.neutral.length})</span>
+            </h4>
+          </div>
+          <ul class="overflow-y-auto max-h-48 space-y-1 pr-1">
+            ${client.preferences.neutral.length === 0
+              ? `<li class="text-sm text-slate-400 italic">なし</li>`
+              : client.preferences.neutral.map((item) => `<li class="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200"><span class="mt-1.5 w-1.5 h-1.5 bg-slate-400 rounded-full shrink-0"></span>${item}</li>`).join("")}
+          </ul>
         </div>
       </div>
     </section>
@@ -1014,6 +1035,12 @@ function setupFormSubmit(client: Client): void {
         // 空の課題はスキップ
         if (!task.title.trim()) continue;
         if (task.dbTaskId) {
+          // 完了済み確認（一意制約違反を事前に防ぐ）
+          const isCompleted = await checkCompletedClientTask(client.id, task.dbTaskId);
+          if (isCompleted) {
+            errors.push(`過去に完了済みのタスクです：${task.title}`);
+            continue;
+          }
           // 過去の課題から選択：tasksマスターは既存 → client_tasksにのみ INSERT
           const clientTaskId = await assignExistingTask(
             client.id,
@@ -1023,7 +1050,7 @@ function setupFormSubmit(client: Client): void {
             task.clientTaskId = clientTaskId;
             task.isNew = false;
           } else {
-            errors.push(`タスク割り当てエラー: ${task.title}`);
+            errors.push(`タスク割り当てエラー：${task.title}`);
           }
         } else {
           // 新規作成：カテゴリ未選択はバリデーションエラー
@@ -1225,9 +1252,12 @@ async function init(): Promise<void> {
   // DBロード時のレベルをスナップショット（level_history 用）
   _dbLevels = { ...client.levels };
 
-  // カテゴリ・トレーナーをプリフェッチ
-  _categories = await fetchCategories();
-  _trainers = await fetchTrainers();
+  // カテゴリ・トレーナー・最大レベルをプリフェッチ
+  [_categories, _trainers, _maxLevel] = await Promise.all([
+    fetchCategories(),
+    fetchTrainers(),
+    fetchMaxLevel(),
+  ]);
 
   renderClientDetail(client);
 }

@@ -68,16 +68,21 @@ export function mapDbClientToDisplay(dbClient: any): Client {
     .filter((w: any) => w.like_status === 1)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .map((w: any) => w.tasks?.title)
-    .filter(Boolean)
-    .join("、");
+    .filter(Boolean) as string[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const dislikes = (dbClient.will_matrix || [])
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .filter((w: any) => w.like_status === -1)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .map((w: any) => w.tasks?.title)
-    .filter(Boolean)
-    .join("、");
+    .filter(Boolean) as string[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const neutral = (dbClient.will_matrix || [])
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .filter((w: any) => w.like_status === 0)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .map((w: any) => w.tasks?.title)
+    .filter(Boolean) as string[];
 
   return {
     id: dbClient.id,
@@ -91,7 +96,7 @@ export function mapDbClientToDisplay(dbClient: any): Client {
     nextGoal: dbClient.next_goal || "",
     previousNote: history[0]?.content || "",
     currentTasks,
-    preferences: { likes, dislikes },
+    preferences: { likes, dislikes, neutral },
     history,
     categoryIdMap,
     levelIdMap,
