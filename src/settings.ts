@@ -357,7 +357,7 @@ function renderSettings(): void {
                 </section>
 
                 <!-- Task Management Section -->
-                <section class="border-t border-slate-200 dark:border-slate-800 pt-10">
+                <section id="taskManagementSection" class="border-t border-slate-200 dark:border-slate-800 pt-10">
                     <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
                         <div>
                             <h2 class="text-2xl font-bold flex items-center gap-2">
@@ -1193,6 +1193,14 @@ async function init(): Promise<void> {
   }
 
   renderSettings();
+
+  // ハッシュ指定時にタスク管理セクションへスクロール
+  if (location.hash === "#task-management") {
+    const section = document.getElementById("taskManagementSection");
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth" });
+    }
+  }
 }
 
 // DOMContentLoaded時に初期化

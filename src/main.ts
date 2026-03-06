@@ -79,12 +79,13 @@ function updateLockMessage(
 function updateNextChallenge(nextGoal: string | null): void {
   const challengeTextEl = document.querySelector<HTMLElement>(".challenge-text");
   if (!challengeTextEl) return;
-  challengeTextEl.textContent = nextGoal ?? "トレーナーから目標が設定されると表示されます";
+  challengeTextEl.textContent = nextGoal || "トレーナーから目標が設定されると表示されます";
 }
 
 /** ④ client_tasks から宿題一覧を生成して反映 */
 function updateTasksList(
   tasks: Array<{
+    id: string;
     is_completed: boolean;
     tasks: { title: string; categories: { name: string } | null } | null;
   }>,
@@ -112,7 +113,7 @@ function updateTasksList(
     li.className = `action-item ${color}${completedClass}`;
     li.innerHTML = `${tagHtml}<span class="action-text">${title}</span>`;
     li.addEventListener("click", () => {
-      window.location.href = "action.html";
+      window.location.href = ct.id ? `action.html#task-${ct.id}` : "action.html";
     });
     listEl.appendChild(li);
   });
@@ -138,7 +139,7 @@ async function loadDashboardData(): Promise<void> {
       .order("stage_no", { ascending: true }),
     supabase
       .from("client_tasks")
-      .select("is_completed, tasks(title, categories(name))")
+      .select("id, is_completed, tasks(title, categories(name))")
       .eq("client_id", clientId)
       .is("deleted_at", null)
       .order("assigned_at", { ascending: true }),
@@ -183,6 +184,7 @@ async function loadDashboardData(): Promise<void> {
     console.error("宿題取得エラー:", tasksResult.error.message);
   } else if (tasksResult.data) {
     type RawTask = {
+      id: string;
       is_completed: boolean;
       tasks: { title: string; categories: { name: string }[] }[];
     };
@@ -190,6 +192,7 @@ async function loadDashboardData(): Promise<void> {
     const tasks = rawTasks.map((ct) => {
       const taskObj = Array.isArray(ct.tasks) ? (ct.tasks[0] ?? null) : ct.tasks;
       return {
+        id: ct.id,
         is_completed: ct.is_completed,
         tasks: taskObj
           ? {
@@ -201,6 +204,7 @@ async function loadDashboardData(): Promise<void> {
           : null,
       };
     }) as Array<{
+      id: string;
       is_completed: boolean;
       tasks: { title: string; categories: { name: string } | null } | null;
     }>;

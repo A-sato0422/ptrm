@@ -96,6 +96,7 @@ function renderTasks(tasks: TaskRow[]): void {
 
     for (const row of rows) {
       const li = document.createElement("li");
+      li.id = `task-${row.clientTaskId}`;
       li.className = `task-item${row.isCompleted ? " completed" : ""}`;
       li.setAttribute("data-client-task-id", row.clientTaskId);
       li.setAttribute("data-task-id", row.taskId);
@@ -320,5 +321,15 @@ loadCategoryNames();
   const clientId = await checkClientAuth();
   if (!clientId) return;
   _clientId = clientId; // resolveClientId() のキャッシュに事先設定
-  loadActionTasks();
+  await loadActionTasks();
+
+  // ダッシュボードからハッシュ付きで遷移してきた場合、該当カードの上辺までスクロール
+  const hash = window.location.hash;
+  if (hash.startsWith("#task-")) {
+    const taskEl = document.querySelector<HTMLElement>(hash);
+    const cardEl = taskEl?.closest<HTMLElement>(".category-card") ?? taskEl;
+    if (cardEl) {
+      cardEl.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
 })();

@@ -50,7 +50,7 @@ function mapDbClientToDisplay(dbClient: any): Client {
     trainerName: (sortedMemos[0] as any)?.trainers?.display_name || "",
     courseName: dbClient.course_name || "",
     levels,
-    nextGoal: "",
+    nextGoal: dbClient.next_goal || "",
     previousNote: sortedMemos[0]?.content || "",
     currentTasks,
     preferences: { likes, dislikes, neutral },
@@ -87,6 +87,7 @@ async function loadClients(): Promise<void> {
       display_name,
       profile_image_url,
       course_name,
+      next_goal,
       updated_at,
       client_levels (
         current_level,
@@ -201,11 +202,11 @@ function createClientCard(client: Client): string {
                   Movement Training: LV.${client.levels.yellow}
                 </span>
               </div>
-              <p class="text-xs text-slate-500 mt-2">Next: ${client.nextGoal}</p>
+              <p class="text-xs text-slate-500 mt-2">チャレンジ項目: ${client.nextGoal}</p>
             </div>
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">前回のメモ</h4>
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">前回のメモ${client.trainerName ? `（${client.trainerName}）` : ""}</h4>
                 <p class="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
                   ${client.previousNote.length > 120 ? client.previousNote.slice(0, 120) + "..." : client.previousNote}
                 </p>

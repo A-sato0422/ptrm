@@ -3,7 +3,6 @@ import { Client, Task, MemoHistory } from "./shared";
 import { mapDbClientToDisplay } from "./lib/mapper";
 import {
   fetchCategories,
-  fetchTrainers,
   fetchAllTasks,
   fetchMaxLevel,
   updateLevel,
@@ -58,7 +57,8 @@ async function getClientFromSupabase(id: string): Promise<Client | null> {
                     id,
                     title,
                     why_text,
-                    youtube_url
+                    youtube_url,
+                    category_id
                 )
             ),
             will_matrix (
@@ -80,9 +80,6 @@ async function getClientFromSupabase(id: string): Promise<Client | null> {
 
 /** DBロード時のレベルスナップショット（level_history の before 値に使用） */
 let _dbLevels: Record<string, number> = {};
-
-/** トレーナー一覧キャッシュ */
-let _trainers: { id: string; name: string }[] = [];
 
 /** カテゴリ一覧キャッシュ */
 let _categories: { id: string; name: string }[] = [];
@@ -185,9 +182,17 @@ function createTaskCard(task: Task): string {
     ? `w-full bg-transparent border-none p-0 focus:ring-0 text-sm text-blue-500 dark:text-blue-400 underline placeholder-slate-300 task-url`
     : `w-full bg-transparent border-none p-0 text-sm text-blue-500 dark:text-blue-400 underline ${readonlyFieldClass}`;
 
+  // カテゴリ名表示（編集不可のカードのみ）
+  const taskCatName = !isEditable && task.categoryId
+    ? _categories.find((c) => c.id === task.categoryId)?.name ?? ""
+    : "";
+  const categoryNameBadge = taskCatName
+    ? `<p class="text-[11px] mt-0.5 text-slate-500 dark:text-slate-400">${taskCatName}</p>`
+    : "";
+
   // 設定画面タスク管理へのリンク（編集不可のカードのみ表示）
   const settingsLink = !isEditable
-    ? `<a href="settings.html" class="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-200 hover:underline mt-1 whitespace-nowrap">
+    ? `<a href="settings.html#task-management" class="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-200 hover:underline mt-1 whitespace-nowrap">
         <span class="material-icons-outlined" style="font-size:14px">open_in_new</span>タスク管理で編集
       </a>`
     : "";
@@ -228,7 +233,7 @@ function createTaskCard(task: Task): string {
           <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">課題名</label>
           ${isEditable
             ? `<input class="${titleInputClass}" placeholder="課題名を入力" type="text" value="${task.title}" data-task-id="${task.id}" />`
-            : `<p class="font-bold text-slate-800 dark:text-slate-100 break-words whitespace-pre-wrap ${lineThrough}">${task.title}</p>`}
+            : `<p class="font-bold text-slate-800 dark:text-slate-100 break-words whitespace-pre-wrap ${lineThrough}">${task.title}</p>${categoryNameBadge}`}
         </div>
         <div class="space-y-1">
           <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">意義・理由</label>
@@ -273,23 +278,6 @@ function createMemoHistoryItem(memo: MemoHistory, isLatest: boolean): string {
   const opacityClass = isLatest ? "" : "opacity-70";
   const isNewMemo = !memo.date || !memo.content;
 
-  const trainerInList = _trainers.some((t) => t.name === memo.trainer);
-  const extraOption =
-    memo.trainer && !trainerInList
-      ? `<option value="${memo.trainer}" selected>${memo.trainer}</option>`
-      : "";
-
-  const trainerSelectOptions = [
-    `<option value="">—未選択—</option>`,
-    extraOption,
-    ..._trainers.map((t) => {
-      const selected = memo.trainer === t.name ? "selected" : "";
-      return `<option value="${t.name}" ${selected}>${t.name}</option>`;
-    }),
-  ]
-    .filter(Boolean)
-    .join("");
-
   return `
     <div class="relative pl-8 border-l-2 border-slate-100 dark:border-slate-800 ml-2" data-memo-id="${memo.id}">
       <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full ${dotColor} border-4 border-white dark:border-slate-900 shadow-sm"></div>
@@ -298,22 +286,11 @@ function createMemoHistoryItem(memo: MemoHistory, isLatest: boolean): string {
           <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
             <div class="space-y-1">
               <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">日付</label>
-              <input 
-                class="w-full bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-900 dark:text-slate-100 placeholder-slate-300 focus:ring-2 focus:ring-primary focus:border-primary memo-date" 
-                placeholder="2026/01/08" 
-                type="text" 
-                value="${memo.date || ""}"
-                data-memo-id="${memo.id}"
-              />
+              <p class="px-3 py-1.5 text-sm font-medium text-slate-900 dark:text-slate-100">${memo.date || "—"}</p>
             </div>
             <div class="space-y-1">
               <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">担当者</label>
-              <select
-                class="w-full bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 focus:ring-2 focus:ring-primary focus:border-primary memo-trainer"
-                data-memo-id="${memo.id}"
-              >
-                ${trainerSelectOptions}
-              </select>
+              <p class="px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400">${memo.trainer || "不明"}</p>
             </div>
           </div>
           <button 
@@ -376,28 +353,32 @@ async function showPastTaskModal(client: Client): Promise<void> {
   const tasksHTML =
     availableTasks.length === 0
       ? `<p class="text-center text-slate-400 py-8">追加できる課題がありません</p>`
-      : Object.entries(grouped)
+      : (["マットピラティス", "ウェイトトレーニング", "スポーツトレーニング", "ムーブメントトレーニング"] as const)
+          .filter((name) => grouped[name]?.length)
           .map(
-            ([categoryName, tasks]) => `
-          <div class="mb-4">
-            <span class="inline-block px-2 py-0.5 text-xs font-bold rounded-full mb-2 ${categoryColorClass[categoryName] || "bg-slate-100 text-slate-600"}">${categoryName}</span>
-            <div class="space-y-1">
-              ${tasks
-                .map(
-                  (task) => `
-                <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors">
-                  <input type="checkbox" class="past-task-checkbox mt-0.5 w-4 h-4 rounded text-primary border-slate-300 focus:ring-primary cursor-pointer" data-task-id="${task.id}" data-title="${task.title.replace(/"/g, "&quot;")}" data-why="${(task.whyText ?? "").replace(/"/g, "&quot;")}" data-url="${(task.youtubeUrl ?? "").replace(/"/g, "&quot;")}" data-category-id="${task.categoryId}" />
-                  <div>
-                    <p class="text-sm font-medium text-slate-800 dark:text-slate-100">${task.title}</p>
-                    ${task.whyText ? `<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">${task.whyText}</p>` : ""}
+            (categoryName) => {
+              const tasks = grouped[categoryName];
+              return `
+                <div class="mb-4">
+                  <span class="inline-block px-2 py-0.5 text-xs font-bold rounded-full mb-2 ${categoryColorClass[categoryName] || "bg-slate-100 text-slate-600"}">${categoryName}</span>
+                  <div class="space-y-1">
+                    ${tasks
+                      .map(
+                        (task) => `
+                          <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors">
+                            <input type="checkbox" class="past-task-checkbox mt-0.5 w-4 h-4 rounded text-primary border-slate-300 focus:ring-primary cursor-pointer" data-task-id="${task.id}" data-title="${task.title.replace(/"/g, "&quot;")}" data-why="${(task.whyText ?? "").replace(/"/g, "&quot;")}" data-url="${(task.youtubeUrl ?? "").replace(/"/g, "&quot;")}" data-category-id="${task.categoryId}" />
+                            <div>
+                              <p class="text-sm font-medium text-slate-800 dark:text-slate-100">${task.title}</p>
+                              ${task.whyText ? `<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">${task.whyText}</p>` : ""}
+                            </div>
+                          </label>
+                        `,
+                      )
+                      .join("")}
                   </div>
-                </label>
-              `,
-                )
-                .join("")}
-            </div>
-          </div>
-        `,
+                </div>
+              `;
+            },
           )
           .join("");
 
@@ -471,6 +452,7 @@ async function showPastTaskModal(client: Client): Promise<void> {
           title: checkbox.dataset.title ?? "",
           reason: checkbox.dataset.why ?? "",
           youtubeUrl: checkbox.dataset.url ?? "",
+          categoryId: checkbox.dataset.categoryId ?? undefined,
           completed: false,
           isNew: true,
         };
@@ -566,7 +548,7 @@ function renderClientDetail(client: Client): void {
       </div>
       <div class="space-y-3">
         <div class="flex items-center gap-2">
-          <span class="text-sm font-bold text-slate-600 dark:text-slate-400">Next Goal</span>
+          <span class="text-sm font-bold text-slate-600 dark:text-slate-400">チャレンジ項目</span>
         </div>
         <div class="relative group">
           <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -614,7 +596,7 @@ function renderClientDetail(client: Client): void {
       <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-2">
           <span class="material-icons-outlined text-primary">history_edu</span>
-          <h3 class="text-lg font-bold">前回のメモ管理</h3>
+          <h3 class="text-lg font-bold">メモ管理</h3>
         </div>
       </div>
       <div class="space-y-6" id="memoHistoryContainer">
@@ -842,7 +824,7 @@ function setupTaskEventListeners(client: Client): void {
     });
   }
 
-  // Next Goal の変更
+  // チャレンジ項目 の変更
   const nextGoalInput = document.getElementById(
     "nextGoalInput",
   ) as HTMLInputElement;
@@ -850,7 +832,7 @@ function setupTaskEventListeners(client: Client): void {
     nextGoalInput.addEventListener("change", (event) => {
       const target = event.target as HTMLInputElement;
       client.nextGoal = target.value;
-      console.log("Next Goal updated:", client.nextGoal);
+      console.log("チャレンジ項目 updated:", client.nextGoal);
       // ここでAPIへの保存処理を追加可能
     });
   }
@@ -1125,10 +1107,10 @@ function setupFormSubmit(client: Client): void {
     }
 
     // ============================================================
-    // 5. Next Goal 更新
+    // 5. チャレンジ項目 更新
     // ============================================================
     const goalOk = await updateNextGoal(client.id, client.nextGoal);
-    if (!goalOk) errors.push("Next Goal 更新エラー");
+    if (!goalOk) errors.push("チャレンジ項目 更新エラー");
 
     // ============================================================
     // 6. 登録結果をトーストで通知
@@ -1293,9 +1275,8 @@ async function init(): Promise<void> {
   _dbLevels = { ...client.levels };
 
   // カテゴリ・トレーナー・最大レベルをプリフェッチ
-  [_categories, _trainers, _maxLevel] = await Promise.all([
+  [_categories, _maxLevel] = await Promise.all([
     fetchCategories(),
-    fetchTrainers(),
     fetchMaxLevel(),
   ]);
 

@@ -39,7 +39,7 @@ export function mapDbClientToDisplay(dbClient: any): Client {
       id: idx + 1,
       dbId: memo.id,
       date: new Date(memo.created_at).toLocaleDateString("ja-JP"),
-      trainer: memo.trainers?.display_name || "トレーナー",
+      trainer: memo.trainers?.display_name || "不明",
       content: memo.content,
     }));
 
@@ -59,6 +59,7 @@ export function mapDbClientToDisplay(dbClient: any): Client {
       reason: ct.tasks.why_text || "",
       youtubeUrl: ct.tasks.youtube_url || "",
       completed: ct.is_completed,
+      categoryId: ct.tasks.category_id || undefined,
     }));
 
   // will_matrix
