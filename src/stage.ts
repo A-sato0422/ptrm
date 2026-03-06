@@ -30,19 +30,6 @@ interface Stage {
   level_to: number;
 }
 
-async function getClientId(): Promise<string | null> {
-  const { data, error } = await supabase
-    .from("clients")
-    .select("id")
-    .eq("line_user_id", DEV_CLIENT_LINE_ID)
-    .single();
-  if (error || !data) {
-    console.error("クライアントID取得エラー:", error?.message);
-    return null;
-  }
-  return data.id;
-}
-
 /** 全カテゴリの current_level の最小値を返す（レコードなしの場合は 1）*/
 async function getMinLevel(clientId: string): Promise<number> {
   const { data, error } = await supabase
