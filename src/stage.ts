@@ -10,9 +10,6 @@ import { initLayout, checkClientAuth } from "./page-init";
 
 initLayout();
 
-// 開発用：後でLIFF認証の line_user_id に差し替える
-const DEV_CLIENT_LINE_ID = "U_client_test_001";
-
 // ステージ番号ごとのアイコン絵文字
 const STAGE_ICONS: Record<number, string> = {
   1: "🏠",
