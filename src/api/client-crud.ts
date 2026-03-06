@@ -450,6 +450,25 @@ export async function fetchMaxLevel(): Promise<number> {
 }
 
 /**
+ * clients テーブルのレコードを物理削除する。
+ * ON DELETE CASCADE により紐づく子テーブル（client_levels, client_tasks,
+ * will_matrix, level_history, trainer_memos, point_history）も自動削除される。
+ * @returns 成功時 true / 失敗時 false
+ */
+export async function deleteClient(clientId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from("clients")
+    .delete()
+    .eq("id", clientId);
+
+  if (error) {
+    console.error("顧客削除エラー:", error.message);
+    return false;
+  }
+  return true;
+}
+
+/**
  * clients の display_name / course_name / line_user_id を UPDATE する。
  * @returns 成功時 true / 失敗時 false
  */

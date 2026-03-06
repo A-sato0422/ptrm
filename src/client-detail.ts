@@ -17,6 +17,7 @@ import {
   checkCompletedClientTask,
   checkTaskDuplicate,
   deleteClientTask,
+  deleteClient,
 } from "./api/client-crud";
 // URLパラメータから顧客UUIDを取得
 function getClientIdFromUrl(): string | null {
@@ -683,8 +684,16 @@ function renderClientDetail(client: Client): void {
     </section>
 
     <!-- Submit Button Section -->
-    <div class="flex justify-center">
-        <button type="submit" class="flex items-center gap-2 mt-10 px-8 py-3 bg-primary text-white rounded-xl hover:bg-blue-700 transition-all font-bold shadow-lg hover:shadow-xl">
+    <div class="flex justify-between items-center mt-10">
+        <button
+          type="button"
+          id="deleteClientBtn"
+          class="flex items-center gap-2 px-6 py-3 border-2 border-red-400 text-red-500 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-600 hover:text-red-600 transition-all font-bold"
+        >
+            <span class="material-icons-outlined">delete_forever</span>
+            このクライアントを削除
+        </button>
+        <button type="submit" class="flex items-center gap-2 px-8 py-3 bg-primary text-white rounded-xl hover:bg-blue-700 transition-all font-bold shadow-lg hover:shadow-xl">
             <span class="material-icons-outlined">save</span>
             登録する
         </button>
@@ -698,6 +707,7 @@ function renderClientDetail(client: Client): void {
   setupMemoCreation(client);
   setupMemoEventListeners(client);
   setupFormSubmit(client);
+  setupDeleteButton(client);
 }
 
 // タスク関連のイベントリスナーを設定
@@ -1137,6 +1147,36 @@ function setupFormSubmit(client: Client): void {
       renderClientDetail(client);
     } else {
       showToast(`一部の登録に失敗しました: ${errors.join(", ")}`, "error");
+    }
+  });
+}
+
+// クライアント削除ボタンのイベントリスナーを設定
+function setupDeleteButton(client: Client): void {
+  const btn = document.getElementById("deleteClientBtn");
+  if (!btn) return;
+
+  btn.addEventListener("click", async () => {
+    const confirmed = confirm(
+      `「${client.name}」を削除します。\n\nこの操作は取り消せません。\n紐づくレベル・課題・メモ・履歴もすべて削除されます。\n\n本当に削除しますか？`,
+    );
+    if (!confirmed) return;
+
+    btn.setAttribute("disabled", "true");
+    (btn as HTMLButtonElement).innerHTML =
+      '<span class="material-icons-outlined animate-spin">sync</span> 削除中...';
+
+    const ok = await deleteClient(client.id);
+    if (ok) {
+      showToast(`「${client.name}」を削除しました`);
+      setTimeout(() => {
+        window.location.href = "clients.html";
+      }, 1500);
+    } else {
+      showToast("削除に失敗しました", "error");
+      btn.removeAttribute("disabled");
+      (btn as HTMLButtonElement).innerHTML =
+        '<span class="material-icons-outlined">delete_forever</span> このクライアントを削除';
     }
   });
 }

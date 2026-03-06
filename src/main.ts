@@ -3,13 +3,10 @@
 
 import { supabase } from "./supabase";
 import { fetchCompletedTasksByCategory, fetchMaxLevel } from "./api/client-crud";
-import { initLayout } from "./page-init";
+import { initLayout, checkClientAuth } from "./page-init";
 
 // 共通ヘッダー・ナビゲーションバーを注入
 initLayout();
-
-// 開発用：後でLIFF認証のline_user_idに差し替える
-const DEV_CLIENT_LINE_ID = "U_client_test_001";
 
 console.log("PTRM System Initialized");
 
@@ -123,23 +120,14 @@ function updateTasksList(
 
 /** ダッシュボード全データを取得して表示 */
 async function loadDashboardData(): Promise<void> {
-  // クライアントIDと next_goal を取得
-  const { data: clientData, error: clientError } = await supabase
-    .from("clients")
-    .select("id, next_goal")
-    .eq("line_user_id", DEV_CLIENT_LINE_ID)
-    .single();
+  // 認証チェック（未登録なら error.html へリダイレクト）
+  const clientId = await checkClientAuth();
+  if (!clientId) return;
 
-  if (clientError || !clientData) {
-    console.error("クライアントデータ取得エラー:", clientError?.message);
-    return;
-  }
-
-  const clientId = clientData.id;
   _dashboardClientId = clientId;
 
-  // ① レベル・② ステージ・④ 宿題 を並列取得
-  const [levelsResult, stagesResult, tasksResult] = await Promise.all([
+  // ① レベル・② ステージ・④ 宿題・next_goal を並列取得
+  const [levelsResult, stagesResult, tasksResult, nextGoalResult] = await Promise.all([
     supabase
       .from("client_levels")
       .select("current_level, category_id, categories(name)")
@@ -154,6 +142,11 @@ async function loadDashboardData(): Promise<void> {
       .eq("client_id", clientId)
       .is("deleted_at", null)
       .order("assigned_at", { ascending: true }),
+    supabase
+      .from("clients")
+      .select("next_goal")
+      .eq("id", clientId)
+      .single(),
   ]);
 
   // ① カテゴリレベルを山のバッジに反映
@@ -181,8 +174,9 @@ async function loadDashboardData(): Promise<void> {
   }
 
   // ③ 次のチャレンジ項目
-  updateNextChallenge(clientData.next_goal ?? null);
-  console.log("次のチャレンジ項目:", clientData.next_goal);
+  const nextGoal = nextGoalResult.data?.next_goal ?? null;
+  updateNextChallenge(nextGoal);
+  console.log("次のチャレンジ項目:", nextGoal);
 
   // ④ 宿題一覧
   if (tasksResult.error) {

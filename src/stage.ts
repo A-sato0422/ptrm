@@ -6,7 +6,7 @@
  */
 
 import { supabase } from "./supabase";
-import { initLayout } from "./page-init";
+import { initLayout, checkClientAuth } from "./page-init";
 
 initLayout();
 
@@ -129,13 +129,13 @@ function renderStages(stages: Stage[], minLevel: number): void {
 }
 
 async function init(): Promise<void> {
-  const [stagesResult, clientId] = await Promise.all([
-    supabase
-      .from("stages")
-      .select("stage_no, name, description, level_to")
-      .order("stage_no", { ascending: true }),
-    getClientId(),
-  ]);
+  const clientId = await checkClientAuth();
+  if (!clientId) return;
+
+  const stagesResult = await supabase
+    .from("stages")
+    .select("stage_no, name, description, level_to")
+    .order("stage_no", { ascending: true });
 
   if (stagesResult.error) {
     console.error("ステージ取得エラー:", stagesResult.error.message);
@@ -144,7 +144,7 @@ async function init(): Promise<void> {
   const stages: Stage[] = (stagesResult.data as Stage[]) ?? [];
   if (stages.length === 0) return;
 
-  const minLevel = clientId ? await getMinLevel(clientId) : 1;
+  const minLevel = await getMinLevel(clientId);
   renderStages(stages, minLevel);
 }
 

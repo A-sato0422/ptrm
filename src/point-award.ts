@@ -24,7 +24,7 @@ async function run(): Promise<void> {
     .single();
 
   if (error || !clientData) {
-    showCard("award-error");
+    window.location.replace("error.html");
     return;
   }
 

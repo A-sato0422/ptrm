@@ -10,10 +10,20 @@
 </head>
 
 <body>
+    <!-- ローディングオーバーレイ（認証チェック完了まで表示） -->
+    <div id="loading-overlay" style="position:fixed;inset:0;z-index:999;background:#E8F6F8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="animation:spin 1s linear infinite">
+            <circle cx="12" cy="12" r="10" stroke="#A8D8EA" stroke-width="4" opacity="0.3"/>
+            <path d="M4 12a8 8 0 018-8" stroke="#A8D8EA" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+        <p style="color:#7F8C8D;font-size:14px;font-family:'Hiragino Kaku Gothic ProN',sans-serif;">読み込み中...</p>
+    </div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
     <!-- #partial:header -->
 
     <!-- メインコンテンツ -->
-    <main class="main-content">
+    <main class="main-content" id="main-content" style="visibility:hidden;">
         <!-- ステータスカード -->
         <div class="status-cards">
             <div class="status-card primary">

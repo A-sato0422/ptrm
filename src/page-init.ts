@@ -21,6 +21,33 @@ export function initLayout(): void {
   _loadPoints();
 }
 
+/**
+ * 認証チェック：DBにクライアントが存在するか確認する。
+ * - 未登録の場合は error.html へリダイレクト
+ * - 認証OK の場合はローディングオーバーレイを非表示、メインコンテンツを表示して clientId を返す
+ * @returns clientId（string）または null（リダイレクト済み）
+ */
+export async function checkClientAuth(): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("clients")
+    .select("id")
+    .eq("line_user_id", DEV_CLIENT_LINE_ID)
+    .single();
+
+  if (error || !data) {
+    if (error) console.error("認証チェックエラー:", error.message);
+    window.location.replace("error.html");
+    return null;
+  }
+
+  const overlay = document.getElementById("loading-overlay");
+  const mainContent = document.getElementById("main-content");
+  if (overlay) overlay.style.display = "none";
+  if (mainContent) mainContent.style.visibility = "visible";
+
+  return data.id as string;
+}
+
 function _setupNavEvents(): void {
   document.querySelectorAll<HTMLButtonElement>(".nav-btn").forEach((btn) => {
     const label = btn.querySelector(".nav-label")?.textContent?.trim();

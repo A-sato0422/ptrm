@@ -7,7 +7,7 @@
 
 import { supabase } from "./supabase";
 import { fetchClientTasks, fetchCategories, fetchWillMatrix, toggleTask, upsertWillMatrix } from "./api/client-crud";
-import { initLayout } from "./page-init";
+import { initLayout, checkClientAuth } from "./page-init";
 
 // 共通ヘッダー・ナビゲーションバーを注入
 initLayout();
@@ -316,4 +316,9 @@ async function loadCategoryNames(): Promise<void> {
 // ============================================================
 
 loadCategoryNames();
-loadActionTasks();
+(async () => {
+  const clientId = await checkClientAuth();
+  if (!clientId) return;
+  _clientId = clientId; // resolveClientId() のキャッシュに事先設定
+  loadActionTasks();
+})();

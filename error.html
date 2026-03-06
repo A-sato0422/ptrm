@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>未登録 - PTRM</title>
+    <link rel="stylesheet" href="./src/styles/main.css">
+    <style>
+        .error-page {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            padding: 32px 16px;
+            text-align: center;
+        }
+
+        .error-icon {
+            font-size: 72px;
+            margin-bottom: 24px;
+            line-height: 1;
+        }
+
+        .error-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--color-text-dark);
+            margin-bottom: 12px;
+        }
+
+        .error-message {
+            font-size: 15px;
+            color: var(--color-text-light);
+            line-height: 1.7;
+            max-width: 320px;
+        }
+
+        .error-divider {
+            width: 48px;
+            height: 3px;
+            background: var(--color-primary);
+            border-radius: 4px;
+            margin: 24px auto;
+        }
+
+        .error-note {
+            font-size: 13px;
+            color: var(--color-text-light);
+            background: var(--color-white);
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            max-width: 320px;
+            line-height: 1.7;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="main-content">
+        <div class="error-page">
+            <div class="error-icon">🔒</div>
+            <p class="error-title">アカウントが未登録です</p>
+            <p class="error-message">
+                アカウントはまだ登録されていません。<br>
+                担当トレーナーにご連絡ください。
+            </p>
+            <div class="error-divider"></div>
+            <p class="error-note">
+                トレーナーが管理画面でご登録を完了すると、<br>
+                このページをご利用いただけるようになります。
+            </p>
+        </div>
+    </main>
+</body>
+
+</html>

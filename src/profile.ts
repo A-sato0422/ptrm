@@ -8,7 +8,7 @@
 import { supabase } from "./supabase";
 import { uploadAvatarToStorage } from "./api/storage";
 import { fetchPointHistory, usePoints, type PointHistoryRow } from "./api/point-crud";
-import { initLayout } from "./page-init";
+import { initLayout, checkClientAuth } from "./page-init";
 import { Html5Qrcode } from "html5-qrcode";
 
 initLayout();
@@ -411,4 +411,9 @@ function setupModal(): void {
 setupModal();
 setupPointUse();
 setupQrScanner();
-loadProfile();
+(async () => {
+  const clientId = await checkClientAuth();
+  if (!clientId) return;
+  _clientId = clientId;
+  await loadProfile();
+})();
