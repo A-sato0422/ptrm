@@ -13,9 +13,6 @@ import { Html5Qrcode } from "html5-qrcode";
 
 initLayout();
 
-// 開発用：後でLIFF認証の line_user_id に差し替える
-const DEV_CLIENT_LINE_ID = "U_client_test_001";
-
 interface LevelRow {
   current_level: number;
 }
@@ -30,10 +27,12 @@ let _currentPoints = 0;
 // ============================================================
 
 async function loadProfile(): Promise<void> {
+  if (!_clientId) return;
+
   const { data: clientData, error: clientError } = await supabase
     .from("clients")
     .select("id, display_name, profile_image_url, course_name, created_at, points")
-    .eq("line_user_id", DEV_CLIENT_LINE_ID)
+    .eq("id", _clientId)
     .single();
 
   if (clientError || !clientData) {
@@ -41,7 +40,6 @@ async function loadProfile(): Promise<void> {
     return;
   }
 
-  _clientId = clientData.id;
   _currentAvatarUrl =
     clientData.profile_image_url ?? "/assets/initial-avater.png";
   _currentPoints = clientData.points ?? 0;

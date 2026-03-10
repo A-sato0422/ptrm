@@ -219,5 +219,27 @@ export async function deactivateTrainer(id: string): Promise<boolean> {
     console.error("トレーナー無効化エラー:", error.message);
     return false;
   }
+
+  // Storage のアバター画像を削除（失敗はメイン処理のエラーとしない）
+  const { data: files, error: listError } = await supabase.storage
+    .from("trainer-avatars")
+    .list("", { search: id });
+
+  if (listError) {
+    console.error("アバター画像一覧取得エラー:", listError.message);
+  } else if (files && files.length > 0) {
+    const paths = files
+      .map((f) => f.name)
+      .filter((name) => name.startsWith(id));
+    if (paths.length > 0) {
+      const { error: removeError } = await supabase.storage
+        .from("trainer-avatars")
+        .remove(paths);
+      if (removeError) {
+        console.error("アバター画像削除エラー:", removeError.message);
+      }
+    }
+  }
+
   return true;
 }
