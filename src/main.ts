@@ -555,11 +555,12 @@ profileActionButtons.forEach((button) => {
   });
 });
 
-// PWA対応の準備
+// PWA: Service Worker の登録
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    // TODO: Service Workerの登録
-    console.log("Service Worker support detected");
+    navigator.serviceWorker.register("/sw.js").catch((err) => {
+      console.error("Service Worker 登録失敗:", err);
+    });
   });
 }
 
