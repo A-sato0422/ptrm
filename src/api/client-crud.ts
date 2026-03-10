@@ -453,6 +453,7 @@ export async function fetchMaxLevel(): Promise<number> {
  * clients テーブルのレコードを物理削除する。
  * ON DELETE CASCADE により紐づく子テーブル（client_levels, client_tasks,
  * will_matrix, level_history, trainer_memos, point_history）も自動削除される。
+ * また、client-avatars バケット内の該当クライアントの画像ファイルも削除する（失敗はソフトエラー扱い）。
  * @returns 成功時 true / 失敗時 false
  */
 export async function deleteClient(clientId: string): Promise<boolean> {
@@ -465,6 +466,28 @@ export async function deleteClient(clientId: string): Promise<boolean> {
     console.error("顧客削除エラー:", error.message);
     return false;
   }
+
+  // Storage のアバター画像を削除（失敗はメイン処理のエラーとしない）
+  const { data: files, error: listError } = await supabase.storage
+    .from("client-avatars")
+    .list("", { search: clientId });
+
+  if (listError) {
+    console.error("アバター画像一覧取得エラー:", listError.message);
+  } else if (files && files.length > 0) {
+    const paths = files
+      .map((f) => f.name)
+      .filter((name) => name.startsWith(clientId));
+    if (paths.length > 0) {
+      const { error: removeError } = await supabase.storage
+        .from("client-avatars")
+        .remove(paths);
+      if (removeError) {
+        console.error("アバター画像削除エラー:", removeError.message);
+      }
+    }
+  }
+
   return true;
 }
 
