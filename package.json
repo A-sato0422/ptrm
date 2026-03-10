@@ -10,7 +10,9 @@
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "db:push:stg": "supabase link --project-ref fewghupwguztpdekdfwn && supabase db push && echo ✅ stgへの反映完了",
+    "db:push:prod": "supabase link --project-ref mjucgzmsykgapkamrvrq && supabase db push && supabase link --project-ref fewghupwguztpdekdfwn && echo ✅ prodへの反映完了完了。反映先をstgに戻しました"
   },
   "dependencies": {
     "@line/liff": "^2.24.0",
