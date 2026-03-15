@@ -1,7 +1,6 @@
 # Environment Variables
 .env
-.env.local
-.env.production
+.env.*
 
 # MCP config (contains secrets)
 .mcp.json

@@ -271,20 +271,20 @@ async function openMountainDetailModal(
   // タイトルを設定
   modalTitle.textContent = category;
 
-  // タスクリストをクリア・ローディング表示
-  modalTasksList.innerHTML = '<p class="modal-loading">読み込み中...</p>';
-
-  // モーダルを先に表示
-  modal.style.display = "flex";
-  modal.classList.remove("closing");
-
-  // DBから完了済みタスクを取得
+  // DBから完了済みタスクと最大レベルを並列取得（モーダル表示前に確定させる）
   let completedByLevel = new Map<number, { taskTitle: string; completedAt: string }[]>();
+  let maxLevel = currentLevel;
+
   if (_dashboardClientId && categoryId) {
-    completedByLevel = await fetchCompletedTasksByCategory(_dashboardClientId, categoryId);
+    [completedByLevel, maxLevel] = await Promise.all([
+      fetchCompletedTasksByCategory(_dashboardClientId, categoryId),
+      fetchMaxLevel(),
+    ]);
+  } else {
+    maxLevel = await fetchMaxLevel();
   }
 
-  // タスクリストをクリアして再描画
+  // コンテンツを事前に構築（高さが確定してからモーダルを開く）
   modalTasksList.innerHTML = "";
 
   for (let level = 1; level <= currentLevel; level++) {
@@ -324,7 +324,6 @@ async function openMountainDetailModal(
   }
 
   // 現在レベルより上は未開放（最大レベルまで全て表示）
-  const maxLevel = await fetchMaxLevel();
   const upperBound = maxLevel > currentLevel ? maxLevel : currentLevel + 1;
   for (let level = currentLevel + 1; level <= upperBound; level++) {
     const lockedSection = document.createElement("div");
@@ -338,6 +337,10 @@ async function openMountainDetailModal(
     `;
     modalTasksList.appendChild(lockedSection);
   }
+
+  // コンテンツが確定してからモーダルを表示（アニメーションは1回だけ）
+  modal.style.display = "flex";
+  modal.classList.remove("closing");
 }
 
 // 山の詳細モーダルを閉じる関数
@@ -552,10 +555,11 @@ profileActionButtons.forEach((button) => {
   });
 });
 
-// PWA対応の準備
+// PWA: Service Worker の登録
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    // TODO: Service Workerの登録
-    console.log("Service Worker support detected");
+    navigator.serviceWorker.register("/sw.js").catch((err) => {
+      console.error("Service Worker 登録失敗:", err);
+    });
   });
 }

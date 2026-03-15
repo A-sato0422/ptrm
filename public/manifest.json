@@ -1,0 +1,24 @@
+{
+  "name": "PTRM - パーソナル・トレーニング・ロードマップ",
+  "short_name": "PTRM",
+  "description": "パーソナルトレーニングの進捗を管理するアプリ",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#E8F6F8",
+  "theme_color": "#A8D8EA",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
