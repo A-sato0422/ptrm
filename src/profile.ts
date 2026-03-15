@@ -7,7 +7,11 @@
 
 import { supabase } from "./supabase";
 import { uploadAvatarToStorage } from "./api/storage";
-import { fetchPointHistory, usePoints, type PointHistoryRow } from "./api/point-crud";
+import {
+  fetchPointHistory,
+  usePoints,
+  type PointHistoryRow,
+} from "./api/point-crud";
 import { initLayout, checkClientAuth } from "./page-init";
 import { Html5Qrcode } from "html5-qrcode";
 
@@ -31,7 +35,9 @@ async function loadProfile(): Promise<void> {
 
   const { data: clientData, error: clientError } = await supabase
     .from("clients")
-    .select("id, display_name, profile_image_url, course_name, created_at, points")
+    .select(
+      "id, display_name, profile_image_url, course_name, created_at, points",
+    )
     .eq("id", _clientId)
     .single();
 
@@ -66,14 +72,10 @@ async function loadProfile(): Promise<void> {
 
   // 計算
   const createdAt = new Date(clientData.created_at);
-  const daysElapsed = Math.floor(
-    (Date.now() - createdAt.getTime()) / 86400000,
-  );
+  const daysElapsed = Math.floor((Date.now() - createdAt.getTime()) / 86400000);
 
   const minLevel =
-    levels.length > 0
-      ? Math.min(...levels.map((l) => l.current_level))
-      : 1;
+    levels.length > 0 ? Math.min(...levels.map((l) => l.current_level)) : 1;
   const currentStage =
     stages.find((s: { level_to: number }) => minLevel < s.level_to) ??
     stages[stages.length - 1];
@@ -153,7 +155,8 @@ async function loadPointHistory(): Promise<void> {
 
 function setupPointUse(): void {
   const modal = () => document.getElementById("point-use-modal");
-  const input = () => document.getElementById("point-use-input") as HTMLInputElement | null;
+  const input = () =>
+    document.getElementById("point-use-input") as HTMLInputElement | null;
   const errorEl = () => document.getElementById("point-use-error");
 
   function openPointUseModal(): void {
@@ -174,44 +177,67 @@ function setupPointUse(): void {
     }, 280);
   }
 
-  document.getElementById("point-use-open-btn")?.addEventListener("click", openPointUseModal);
-  document.getElementById("point-use-cancel-btn")?.addEventListener("click", closePointUseModal);
-  document.getElementById("point-use-close-btn")?.addEventListener("click", closePointUseModal);
+  document
+    .getElementById("point-use-open-btn")
+    ?.addEventListener("click", openPointUseModal);
+  document
+    .getElementById("point-use-cancel-btn")
+    ?.addEventListener("click", closePointUseModal);
+  document
+    .getElementById("point-use-close-btn")
+    ?.addEventListener("click", closePointUseModal);
   modal()?.addEventListener("click", (e) => {
     if (e.target === e.currentTarget) closePointUseModal();
   });
 
-  document.getElementById("point-use-btn")?.addEventListener("click", async () => {
-    const inp = input();
-    const err = errorEl();
-    if (!inp || !_clientId) return;
+  document
+    .getElementById("point-use-btn")
+    ?.addEventListener("click", async () => {
+      const inp = input();
+      const err = errorEl();
+      if (!inp || !_clientId) return;
 
-    const amount = parseInt(inp.value, 10);
-    if (isNaN(amount) || amount <= 0) {
-      if (err) { err.textContent = "1以上のポイント数を入力してください。"; err.style.display = "block"; }
-      return;
-    }
+      const amount = parseInt(inp.value, 10);
+      if (isNaN(amount) || amount <= 0) {
+        if (err) {
+          err.textContent = "1以上のポイント数を入力してください。";
+          err.style.display = "block";
+        }
+        return;
+      }
 
-    const btn = document.getElementById("point-use-btn") as HTMLButtonElement | null;
-    if (btn) { btn.disabled = true; btn.textContent = "処理中..."; }
+      const btn = document.getElementById(
+        "point-use-btn",
+      ) as HTMLButtonElement | null;
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "処理中...";
+      }
 
-    const result = await usePoints(_clientId, amount, _currentPoints);
+      const result = await usePoints(_clientId, amount, _currentPoints);
 
-    if (btn) { btn.disabled = false; btn.textContent = "使用する"; }
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "使用する";
+      }
 
-    if (!result.success) {
-      if (err) { err.textContent = result.error ?? "エラーが発生しました。"; err.style.display = "block"; }
-      return;
-    }
+      if (!result.success) {
+        if (err) {
+          err.textContent = result.error ?? "エラーが発生しました。";
+          err.style.display = "block";
+        }
+        return;
+      }
 
-    closePointUseModal();
-    _currentPoints -= amount;
-    const headerPointsEl = document.getElementById("userPoints");
-    if (headerPointsEl) headerPointsEl.textContent = _currentPoints.toLocaleString();
-    const history = await fetchPointHistory(_clientId);
-    renderPointHistory(history);
-    showSuccessMessage();
-  });
+      closePointUseModal();
+      _currentPoints -= amount;
+      const headerPointsEl = document.getElementById("userPoints");
+      if (headerPointsEl)
+        headerPointsEl.textContent = _currentPoints.toLocaleString();
+      const history = await fetchPointHistory(_clientId);
+      renderPointHistory(history);
+      showSuccessMessage();
+    });
 }
 
 // ============================================================
@@ -222,7 +248,9 @@ function showSuccessMessage(): void {
   const el = document.getElementById("success-message");
   if (!el) return;
   el.style.display = "block";
-  setTimeout(() => { el.style.display = "none"; }, 3000);
+  setTimeout(() => {
+    el.style.display = "none";
+  }, 3000);
 }
 
 function showErrorMessage(msg: string): void {
@@ -230,7 +258,9 @@ function showErrorMessage(msg: string): void {
   if (!el) return;
   el.textContent = msg;
   el.style.display = "block";
-  setTimeout(() => { el.style.display = "none"; }, 4000);
+  setTimeout(() => {
+    el.style.display = "none";
+  }, 4000);
 }
 
 // ============================================================
@@ -256,7 +286,9 @@ async function openQrScanner(): Promise<void> {
     );
   } catch {
     closeQrScanner();
-    showErrorMessage("カメラの起動に失敗しました。カメラへのアクセスを許可してください。");
+    showErrorMessage(
+      "カメラの起動に失敗しました。カメラへのアクセスを許可してください。",
+    );
   }
 }
 
@@ -268,8 +300,12 @@ function closeQrScanner(): void {
 }
 
 function setupQrScanner(): void {
-  document.getElementById("qr-scan-btn")?.addEventListener("click", openQrScanner);
-  document.getElementById("qr-close-btn")?.addEventListener("click", closeQrScanner);
+  document
+    .getElementById("qr-scan-btn")
+    ?.addEventListener("click", openQrScanner);
+  document
+    .getElementById("qr-close-btn")
+    ?.addEventListener("click", closeQrScanner);
   document.getElementById("qr-modal")?.addEventListener("click", (e) => {
     if (e.target === e.currentTarget) closeQrScanner();
   });
@@ -358,7 +394,9 @@ async function saveProfile(): Promise<void> {
     showSuccessMessage();
   } else {
     closeModal();
-    showErrorMessage("保存に失敗しました。しばらくたってから再度お試しください。");
+    showErrorMessage(
+      "保存に失敗しました。しばらくたってから再度お試しください。",
+    );
   }
 
   if (saveBtn) {

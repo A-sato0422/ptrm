@@ -5,15 +5,11 @@
  * - 完了ボタン押下で toggleTask（level_at_completion 付き）+ upsertWillMatrix を呼び出す
  */
 
-import { supabase } from "./supabase";
 import { fetchClientTasks, fetchCategories, fetchWillMatrix, toggleTask, upsertWillMatrix } from "./api/client-crud";
 import { initLayout, checkClientAuth } from "./page-init";
 
 // 共通ヘッダー・ナビゲーションバーを注入
 initLayout();
-
-// 開発用：後でLIFF認証の line_user_id に差し替える
-const DEV_CLIENT_LINE_ID = "U_client_test_001";
 
 // ============================================================
 // 初期化
@@ -21,21 +17,6 @@ const DEV_CLIENT_LINE_ID = "U_client_test_001";
 
 let _clientId: string | null = null;
 let _willMatrix = new Map<string, number>();
-
-async function resolveClientId(): Promise<string | null> {
-  if (_clientId) return _clientId;
-  const { data, error } = await supabase
-    .from("clients")
-    .select("id")
-    .eq("line_user_id", DEV_CLIENT_LINE_ID)
-    .single();
-  if (error || !data) {
-    console.error("クライアントID取得エラー:", error?.message);
-    return null;
-  }
-  _clientId = data.id;
-  return _clientId;
-}
 
 // ============================================================
 // カテゴリ色キー（main.ts と同じロジックをここでも使う）
@@ -128,7 +109,7 @@ function renderTasks(tasks: TaskRow[]): void {
 }
 
 async function loadActionTasks(): Promise<void> {
-  const clientId = await resolveClientId();
+  const clientId = _clientId;
   if (!clientId) return;
 
   const [tasks, willMatrix] = await Promise.all([
@@ -202,7 +183,7 @@ preferenceForm?.addEventListener("submit", async (e) => {
     return;
   }
 
-  const clientId = await resolveClientId();
+  const clientId = _clientId;
   if (!clientId || !clientTaskId) return;
 
   // 好み評価を数値に変換

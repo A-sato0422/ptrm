@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 import { Client, Task, MemoHistory } from "./shared";
 import { mapDbClientToDisplay } from "./lib/mapper";
+import { initTrainerAuth } from "./liff-auth";
 import {
   fetchCategories,
   fetchAllTasks,
@@ -1222,6 +1223,9 @@ function setupMobileSidebar(): void {
 
 // 初期化処理
 async function init(): Promise<void> {
+  const trainerId = await initTrainerAuth();
+  if (!trainerId) return; // 未認証（本番: error.html にリダイレクト済み）
+
   console.log("Initializing client detail page...");
   setupDarkMode();
   setupMobileSidebar();

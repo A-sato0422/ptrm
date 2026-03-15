@@ -563,36 +563,3 @@ if ("serviceWorker" in navigator) {
     });
   });
 }
-
-// LIFF初期化の準備
-declare const liff: any;
-
-async function initializeLIFF() {
-  try {
-    // TODO: LIFF IDを環境変数から取得
-    const liffId = import.meta.env.VITE_LIFF_ID;
-
-    if (typeof liff !== "undefined" && liffId) {
-      await liff.init({ liffId });
-
-      if (!liff.isLoggedIn()) {
-        liff.login();
-      } else {
-        // ユーザー情報の取得
-        const profile = await liff.getProfile();
-        console.log("User profile:", profile);
-        // TODO: Supabaseにユーザー情報を保存
-      }
-    }
-  } catch (error) {
-    console.error("LIFF initialization failed:", error);
-  }
-}
-
-// LIFF初期化（本番環境のみ）
-if (import.meta.env.PROD) {
-  initializeLIFF();
-}
-
-// エクスポート
-export { initializeLIFF };

@@ -7,45 +7,35 @@
  */
 
 import { supabase } from "./supabase";
-
-// 開発用：後でLIFF認証の line_user_id に差し替える
-const DEV_CLIENT_LINE_ID = "U_client_test_001";
+import { initClientAuth } from "./liff-auth";
 
 const BOOKING_URL = "https://azzist.jp/schedule/60";
 
 /**
- * ナビゲーションボタンのクリックイベントを設定し、ポイントを取得する
+ * ナビゲーションボタンのクリックイベントを設定する
  */
 export function initLayout(): void {
   _setupNavEvents();
-  _loadPoints();
 }
 
 /**
- * 認証チェック：DBにクライアントが存在するか確認する。
- * - 未登録の場合は error.html へリダイレクト
- * - 認証OK の場合はローディングオーバーレイを非表示、メインコンテンツを表示して clientId を返す
+ * 認証チェック：LIFF 認証 → Edge Function 検証 → Supabase セッション確立。
+ * - 未登録の場合は id-confirm.html へリダイレクト（initClientAuth 内で処理）
+ * - 認証 OK の場合はポイント取得 → ローディングオーバーレイを非表示にして clientId を返す
  * @returns clientId（string）または null（リダイレクト済み）
  */
 export async function checkClientAuth(): Promise<string | null> {
-  const { data, error } = await supabase
-    .from("clients")
-    .select("id")
-    .eq("line_user_id", DEV_CLIENT_LINE_ID)
-    .single();
+  const clientId = await initClientAuth();
+  if (!clientId) return null;
 
-  if (error || !data) {
-    if (error) console.error("認証チェックエラー:", error.message);
-    window.location.replace("error.html");
-    return null;
-  }
+  await _loadPoints(clientId);
 
   const overlay = document.getElementById("loading-overlay");
   const mainContent = document.getElementById("main-content");
   if (overlay) overlay.style.display = "none";
   if (mainContent) mainContent.style.visibility = "visible";
 
-  return data.id as string;
+  return clientId;
 }
 
 function _setupNavEvents(): void {
@@ -67,11 +57,11 @@ function _setupNavEvents(): void {
   });
 }
 
-async function _loadPoints(): Promise<void> {
+async function _loadPoints(clientId: string): Promise<void> {
   const { data, error } = await supabase
     .from("clients")
     .select("points")
-    .eq("line_user_id", DEV_CLIENT_LINE_ID)
+    .eq("id", clientId)
     .single();
   if (error || !data) return;
   const el = document.getElementById("userPoints");

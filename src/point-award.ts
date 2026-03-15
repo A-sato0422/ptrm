@@ -7,9 +7,7 @@
 
 import { supabase } from "./supabase";
 import { addPoints } from "./api/point-crud";
-
-// 開発用：後でLIFF認証の line_user_id に差し替える
-const DEV_CLIENT_LINE_ID = "U_client_test_001";
+import { initClientAuth } from "./liff-auth";
 
 function showCard(id: "award-success" | "award-already" | "award-error"): void {
   document.getElementById("award-loading")?.classList.add("hidden");
@@ -17,10 +15,13 @@ function showCard(id: "award-success" | "award-already" | "award-error"): void {
 }
 
 async function run(): Promise<void> {
+  const clientId = await initClientAuth();
+  if (!clientId) return; // リダイレクト済み（未登録 or LIFF ログイン中）
+
   const { data: clientData, error } = await supabase
     .from("clients")
-    .select("id, points")
-    .eq("line_user_id", DEV_CLIENT_LINE_ID)
+    .select("points")
+    .eq("id", clientId)
     .single();
 
   if (error || !clientData) {
@@ -28,7 +29,7 @@ async function run(): Promise<void> {
     return;
   }
 
-  const result = await addPoints(clientData.id, clientData.points ?? 0);
+  const result = await addPoints(clientId, clientData.points ?? 0);
 
   if (result.alreadyAwarded) {
     showCard("award-already");
