@@ -47,9 +47,8 @@ export async function initClientAuth(): Promise<string | null> {
 
   if (!liff.isLoggedIn()) {
     // FLOW A では LINE アプリ経由でアクセスするため、通常は必ずログイン済み
-    // redirectUri を明示しないと LIFF エンドポイント URL へリダイレクトされるため、
-    // 現在のページ URL を指定してログイン後に同じページへ戻す
-    liff.login({ redirectUri: window.location.href });
+    // 未ログイン時はLINEログイン画面へ（リダイレクト先はLIFFエンドポイントURLで決まる）
+    liff.login();
     return null; // リダイレクト後はここに戻らない
   }
 
@@ -126,7 +125,7 @@ export async function initTrainerAuth(): Promise<string | null> {
 
   if (!liff.isLoggedIn()) {
     // FLOW B: URL 直打ちでは未ログインのケースがある → LINE ログイン画面へ
-    liff.login({ redirectUri: window.location.href });
+    liff.login();
     return null; // リダイレクト後はここに戻らない
   }
 
