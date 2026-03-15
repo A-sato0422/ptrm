@@ -12,6 +12,7 @@ import {
   uploadTrainerAvatar,
 } from "./api/settings-crud";
 import { fetchCategories } from "./api/client-crud";
+import { initTrainerAuth } from "./liff-auth";
 
 // ============================================================
 // 型定義
@@ -1143,6 +1144,9 @@ function setupMobileSidebar(): void {
 // 初期化（Step 3 : DB から全データを一括取得）
 // ============================================================
 async function init(): Promise<void> {
+  const trainerId = await initTrainerAuth();
+  if (!trainerId) return; // 未認証（本番: error.html にリダイレクト済み）
+
   setupDarkMode();
   setupMobileSidebar();
 

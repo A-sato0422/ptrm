@@ -71,6 +71,7 @@ export default defineConfig({
         clientDetail: './client-detail.html',
         settings: './settings.html',
         error: './error.html',
+        idConfirm: './id-confirm.html',
       },
     },
   },

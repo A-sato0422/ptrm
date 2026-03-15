@@ -5,4 +5,10 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 
 // Supabase クライアントを作成
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// persistSession: false → LocalStorage にセッションを保存しない（LIFF がセッション管理を担う）
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+  },
+})

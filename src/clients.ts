@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import { CATEGORY_COLOR_MAP, DEFAULT_AVATAR_URL, Client } from "./shared";
+import { initTrainerAuth } from "./liff-auth";
 
 // Supabaseから取得したデータを表示用Clientに変換する
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -649,6 +650,9 @@ function setupAddClientModal(): void {
 
 // 初期化処理
 async function init(): Promise<void> {
+  const trainerId = await initTrainerAuth();
+  if (!trainerId) return; // 未認証（本番: error.html にリダイレクト済み）
+
   console.log("Initializing clients page...");
   setupSearch();
   setupFilters();
