@@ -46,7 +46,6 @@ export async function initClientAuth(): Promise<string | null> {
   // タイムアウト付きで init を実行。ハングまたはエラー時は LINE 再認証へフォールバック
   try {
     console.log('[liff-auth] liff.init() start')
-    console.log('マージ済みブランチテストコード')
     await Promise.race([
       liff.init({ liffId: LIFF_ID }),
       new Promise<never>((_, reject) =>
