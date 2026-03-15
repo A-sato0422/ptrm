@@ -10,13 +10,13 @@
  * LIFF SDK 自身がセッションを管理するため、ページ遷移のたびに liff.init() を呼ぶ。
  */
 
-import liff from '@line/liff'
-import { supabase } from './supabase'
+import liff from "@line/liff";
+import { supabase } from "./supabase";
 
-const LIFF_ID = import.meta.env.VITE_LIFF_ID as string
+const LIFF_ID = import.meta.env.VITE_LIFF_ID as string;
 
 // 開発環境用の固定ユーザー
-const DEV_CLIENT_LINE_ID = 'U_client_test_001'
+const DEV_CLIENT_LINE_ID = "U_client_test_001";
 
 // ============================================================
 // クライアント認証（FLOW A: ケース①②③④）
@@ -31,64 +31,73 @@ const DEV_CLIENT_LINE_ID = 'U_client_test_001'
 export async function initClientAuth(): Promise<string | null> {
   if (import.meta.env.DEV) {
     const { data, error } = await supabase
-      .from('clients')
-      .select('id')
-      .eq('line_user_id', DEV_CLIENT_LINE_ID)
-      .single()
+      .from("clients")
+      .select("id")
+      .eq("line_user_id", DEV_CLIENT_LINE_ID)
+      .single();
     if (error || !data) {
-      console.error('Dev auth: client not found', error?.message)
-      return null
+      console.error("Dev auth: client not found", error?.message);
+      return null;
     }
-    return data.id as string
+    return data.id as string;
   }
 
   // --- 本番: LIFF 初期化 ---
-  await liff.init({ liffId: LIFF_ID })
+  await liff.init({ liffId: LIFF_ID });
 
   if (!liff.isLoggedIn()) {
     // FLOW A では LINE アプリ経由でアクセスするため、通常は必ずログイン済み
-    liff.login()
-    return null // リダイレクト後はここに戻らない
+    // redirectUri を明示しないと LIFF エンドポイント URL へリダイレクトされるため、
+    // 現在のページ URL を指定してログイン後に同じページへ戻す
+    liff.login({ redirectUri: window.location.href });
+    return null; // リダイレクト後はここに戻らない
   }
 
-  const idToken = liff.getIDToken()
+  const idToken = liff.getIDToken();
   if (!idToken) {
-    console.error('LIFF: IDToken unavailable')
-    return null
+    console.error("LIFF: IDToken unavailable");
+    return null;
   }
+
+  // LINE ユーザー ID をログ出力
+  const decodedToken = liff.getDecodedIDToken();
+  console.log("LIFF: LINE User ID =", decodedToken?.sub);
 
   // Edge Function でトークン検証 & セッション発行
-  const { data: result, error: fnError } = await supabase.functions.invoke('line-auth', {
-    body: { id_token: idToken, mode: 'client' },
-  })
+  const { data: result, error: fnError } = await supabase.functions.invoke(
+    "line-auth",
+    {
+      body: { id_token: idToken, mode: "client" },
+    },
+  );
 
   if (fnError) {
-    console.error('line-auth function error:', fnError.message)
-    return null
+    console.error("line-auth function error:", fnError.message);
+    return null;
   }
 
-  if (result.status === 'unregistered') {
+  if (result.status === "unregistered") {
     // ケース①③: clients 未登録 → ID 確認画面
-    window.location.replace('id-confirm.html')
-    return null
+    window.location.replace("id-confirm.html");
+    return null;
   }
 
-  if (result.status !== 'ok') {
-    console.error('Auth failed:', result.status)
-    return null
+  if (result.status !== "ok") {
+    console.error("Auth failed:", result.status);
+    return null;
   }
 
   // Supabase Auth セッション確立（LocalStorage には保存しない）
   const { error: sessionError } = await supabase.auth.verifyOtp({
-    type: 'magiclink',
+    type: "magiclink",
     token_hash: result.hashed_token,
-  })
+  });
   if (sessionError) {
-    console.error('Session setup failed:', sessionError.message)
-    return null
+    console.error("Session setup failed:", sessionError.message);
+    return null;
   }
 
-  return result.client_id as string
+  return result.client_id as string;
 }
 
 // ============================================================
@@ -104,59 +113,62 @@ export async function initClientAuth(): Promise<string | null> {
 export async function initTrainerAuth(): Promise<string | null> {
   if (import.meta.env.DEV) {
     const { data } = await supabase
-      .from('trainers')
-      .select('id')
-      .eq('delete_flg', false)
+      .from("trainers")
+      .select("id")
+      .eq("delete_flg", false)
       .limit(1)
-      .single()
-    return data?.id ?? null
+      .single();
+    return data?.id ?? null;
   }
 
   // --- 本番: LIFF 初期化 ---
-  await liff.init({ liffId: LIFF_ID })
+  await liff.init({ liffId: LIFF_ID });
 
   if (!liff.isLoggedIn()) {
     // FLOW B: URL 直打ちでは未ログインのケースがある → LINE ログイン画面へ
-    liff.login()
-    return null // リダイレクト後はここに戻らない
+    liff.login({ redirectUri: window.location.href });
+    return null; // リダイレクト後はここに戻らない
   }
 
-  const idToken = liff.getIDToken()
+  const idToken = liff.getIDToken();
   if (!idToken) {
-    console.error('LIFF: IDToken unavailable')
-    return null
+    console.error("LIFF: IDToken unavailable");
+    return null;
   }
 
-  const { data: result, error: fnError } = await supabase.functions.invoke('line-auth', {
-    body: { id_token: idToken, mode: 'trainer' },
-  })
+  const { data: result, error: fnError } = await supabase.functions.invoke(
+    "line-auth",
+    {
+      body: { id_token: idToken, mode: "trainer" },
+    },
+  );
 
   if (fnError) {
-    console.error('line-auth function error:', fnError.message)
-    return null
+    console.error("line-auth function error:", fnError.message);
+    return null;
   }
 
-  if (result.status === 'forbidden') {
+  if (result.status === "forbidden") {
     // ケース⑤: trainers 未登録 → アクセス拒否画面
-    window.location.replace('error.html')
-    return null
+    window.location.replace("error.html");
+    return null;
   }
 
-  if (result.status !== 'ok') {
-    console.error('Auth failed:', result.status)
-    return null
+  if (result.status !== "ok") {
+    console.error("Auth failed:", result.status);
+    return null;
   }
 
   const { error: sessionError } = await supabase.auth.verifyOtp({
-    type: 'magiclink',
+    type: "magiclink",
     token_hash: result.hashed_token,
-  })
+  });
   if (sessionError) {
-    console.error('Session setup failed:', sessionError.message)
-    return null
+    console.error("Session setup failed:", sessionError.message);
+    return null;
   }
 
-  return result.trainer_id as string
+  return result.trainer_id as string;
 }
 
 // ============================================================
@@ -169,6 +181,6 @@ export async function initTrainerAuth(): Promise<string | null> {
  * 開発環境では固定の開発用 LINE ID を返す。
  */
 export function getLineUserId(): string | null {
-  if (import.meta.env.DEV) return DEV_CLIENT_LINE_ID
-  return liff.getDecodedIDToken()?.sub ?? null
+  if (import.meta.env.DEV) return DEV_CLIENT_LINE_ID;
+  return liff.getDecodedIDToken()?.sub ?? null;
 }
