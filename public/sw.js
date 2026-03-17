@@ -1,7 +1,6 @@
-const CACHE_NAME = "ptrm-v1";
+// デプロイのたびにバージョンを上げることで古いキャッシュを確実に破棄する
+const CACHE_NAME = "ptrm-v2";
 const STATIC_ASSETS = [
-  "/",
-  "/index.html",
   "/assets/icon-192.png",
   "/assets/icon-512.png",
   "/assets/yama01.png",
@@ -30,9 +29,18 @@ self.addEventListener("fetch", (event) => {
   // Supabase API はキャッシュしない
   if (event.request.url.includes("supabase.co")) return;
 
+  // HTML（ナビゲーションリクエスト）はネットワークファースト
+  // → 常に最新の index.html を取得し、新しい JS バンドルを正しく参照させる
+  // → オフライン時のみキャッシュにフォールバック
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(event.request)),
+    );
+    return;
+  }
+
+  // 画像等の静的アセットはキャッシュファースト
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      return cached ?? fetch(event.request);
-    }),
+    caches.match(event.request).then((cached) => cached ?? fetch(event.request)),
   );
 });

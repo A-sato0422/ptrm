@@ -35,7 +35,11 @@ async function verifyLineIdToken(idToken: string): Promise<string | null> {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ id_token: idToken, client_id: LINE_CHANNEL_ID }),
   })
-  if (!res.ok) return null
+  if (!res.ok) {
+    const errorBody = await res.text()
+    console.error('LINE verify failed:', res.status, errorBody)
+    return null
+  }
   const payload = await res.json()
   // payload.sub が LINE ユーザー ID
   return typeof payload.sub === 'string' ? payload.sub : null
