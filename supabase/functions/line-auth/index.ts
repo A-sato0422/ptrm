@@ -21,7 +21,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const SUPABASE_SECRET_KEY = Deno.env.get('DB_SECRET_KEY')!
 const LINE_CHANNEL_ID = Deno.env.get('LINE_CHANNEL_ID')!
 
 // ============================================================
@@ -35,13 +35,18 @@ async function verifyLineIdToken(idToken: string): Promise<string | null> {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ id_token: idToken, client_id: LINE_CHANNEL_ID }),
   })
-  if (!res.ok) {
-    const errorBody = await res.text()
-    console.error('LINE verify failed:', res.status, errorBody)
+  const responseText = await res.text()
+  console.log('LINE verify status:', res.status, 'body:', responseText)
+  if (!res.ok) return null
+  let payload: Record<string, unknown>
+  try {
+    payload = JSON.parse(responseText)
+  } catch {
+    console.error('LINE verify: JSON parse failed')
     return null
   }
-  const payload = await res.json()
   // payload.sub が LINE ユーザー ID
+  console.log('LINE verify sub:', payload.sub, 'type:', typeof payload.sub)
   return typeof payload.sub === 'string' ? payload.sub : null
 }
 
@@ -72,7 +77,38 @@ async function ensureAuthUserAndGenerateToken(
       email_confirm: true,
       user_metadata: { line_user_id: lineUserId },
     })
-    if (createError) {
+
+    if (createError?.message?.includes('already been registered')) {
+      // メール重複: クライアント削除→再登録でUUIDが変わったケース
+      // 古い auth ユーザーを探して削除してから正しい UUID で作り直す
+      console.log('Email conflict detected, searching for stale auth user...')
+      const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 })
+      if (listError) {
+        console.error('listUsers error:', listError.message)
+        return null
+      }
+      const oldUser = listData?.users?.find((u) => u.email?.toLowerCase() === syntheticEmail.toLowerCase())
+      if (!oldUser) {
+        console.error('Stale auth user not found for email:', syntheticEmail)
+        return null
+      }
+      console.log('Deleting stale auth user:', oldUser.id)
+      const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(oldUser.id)
+      if (deleteError) {
+        console.error('deleteUser error:', deleteError.message)
+        return null
+      }
+      const { error: retryError } = await supabaseAdmin.auth.admin.createUser({
+        id: userId,
+        email: syntheticEmail,
+        email_confirm: true,
+        user_metadata: { line_user_id: lineUserId },
+      })
+      if (retryError) {
+        console.error('createUser retry error:', retryError.message)
+        return null
+      }
+    } else if (createError) {
       console.error('createUser error:', createError.message)
       return null
     }
@@ -96,6 +132,7 @@ async function ensureAuthUserAndGenerateToken(
 // ============================================================
 
 Deno.serve(async (req: Request) => {
+  console.log('line-auth called:', req.method)
   // CORS プリフライト
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -124,7 +161,7 @@ Deno.serve(async (req: Request) => {
     return json({ status: 'invalid_token' }, 401)
   }
 
-  const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY, {
     auth: { persistSession: false },
   })
 
@@ -140,8 +177,8 @@ Deno.serve(async (req: Request) => {
       .single()
 
     if (dbError || !trainer) {
-      // ケース⑤: trainers 未登録 → アクセス拒否
-      return json({ status: 'forbidden' }, 403)
+      // ケース⑤: trainers 未登録 → アクセス拒否（200で返しフロント側でリダイレクト）
+      return json({ status: 'forbidden' })
     }
 
     const syntheticEmail = `${lineUserId}@line.ptrm`

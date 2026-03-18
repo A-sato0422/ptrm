@@ -652,6 +652,7 @@ function setupAddClientModal(): void {
 async function init(): Promise<void> {
   const trainerId = await initTrainerAuth();
   if (!trainerId) return; // 未認証（本番: error.html にリダイレクト済み）
+  document.getElementById("loading-overlay")?.remove();
 
   console.log("Initializing clients page...");
   setupSearch();
