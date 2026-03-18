@@ -42,6 +42,12 @@ export async function initClientAuth(): Promise<string | null> {
     return data.id as string;
   }
 
+  // sessionStorage にキャッシュがあれば liff.init() ごとスキップ
+  const cachedClientId = sessionStorage.getItem("client_id");
+  if (cachedClientId) {
+    return cachedClientId;
+  }
+
   // --- 本番: LIFF 初期化 ---
   // タイムアウト付きで init を実行。ハングまたはエラー時は LINE 再認証へフォールバック
   try {
@@ -110,6 +116,8 @@ export async function initClientAuth(): Promise<string | null> {
     return null;
   }
 
+  // 認証成功: 次回ページ遷移で Edge Function をスキップするためキャッシュ
+  sessionStorage.setItem("client_id", result.client_id as string);
   return result.client_id as string;
 }
 
