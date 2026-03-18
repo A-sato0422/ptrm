@@ -134,6 +134,12 @@ export async function initTrainerAuth(): Promise<string | null> {
     return data?.id ?? null;
   }
 
+  // sessionStorage にキャッシュがあれば liff.init() ごとスキップ
+  const cachedTrainerId = sessionStorage.getItem("trainer_id");
+  if (cachedTrainerId) {
+    return cachedTrainerId;
+  }
+
   // --- 本番: LIFF 初期化 ---
   await liff.init({ liffId: LIFF_ID });
 
@@ -181,6 +187,8 @@ export async function initTrainerAuth(): Promise<string | null> {
     return null;
   }
 
+  // 認証成功: 次回ページ遷移で Edge Function をスキップするためキャッシュ
+  sessionStorage.setItem("trainer_id", result.trainer_id as string);
   return result.trainer_id as string;
 }
 
