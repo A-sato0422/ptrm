@@ -55,14 +55,14 @@ export async function initClientAuth(): Promise<string | null> {
     console.log('[liff-auth] liff.init() done, isLoggedIn:', liff.isLoggedIn())
   } catch (e) {
     console.warn('[liff-auth] liff.init() failed, redirect to login:', e)
-    liff.login()
+    liff.login({ redirectUri: window.location.href })
     return null
   }
 
   if (!liff.isLoggedIn()) {
     // FLOW A では LINE アプリ経由でアクセスするため、通常は必ずログイン済み
     // 未ログイン時はLINEログイン画面へ（リダイレクト先はLIFFエンドポイントURLで決まる）
-    liff.login();
+    liff.login({ redirectUri: window.location.href });
     return null; // リダイレクト後はここに戻らない
   }
 
@@ -145,7 +145,7 @@ export async function initTrainerAuth(): Promise<string | null> {
 
   if (!liff.isLoggedIn()) {
     // FLOW B: URL 直打ちでは未ログインのケースがある → LINE ログイン画面へ
-    liff.login();
+    liff.login({ redirectUri: window.location.href });
     return null; // リダイレクト後はここに戻らない
   }
 
