@@ -17,6 +17,7 @@ const LIFF_ID = import.meta.env.VITE_LIFF_ID as string;
 
 // 開発環境用の固定ユーザー
 const DEV_CLIENT_LINE_ID = "U_client_test_001";
+const DEV_TRAINER_LINE_ID = "U_trainer_test_001";
 
 // ============================================================
 // クライアント認証（FLOW A: ケース①②③④）
@@ -51,18 +52,18 @@ export async function initClientAuth(): Promise<string | null> {
   // --- 本番: LIFF 初期化 ---
   // タイムアウト付きで init を実行。ハングまたはエラー時は LINE 再認証へフォールバック
   try {
-    console.log('[liff-auth] liff.init() start')
+    console.log("[liff-auth] liff.init() start");
     await Promise.race([
       liff.init({ liffId: LIFF_ID }),
       new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('liff.init timeout')), 10000),
+        setTimeout(() => reject(new Error("liff.init timeout")), 10000),
       ),
-    ])
-    console.log('[liff-auth] liff.init() done, isLoggedIn:', liff.isLoggedIn())
+    ]);
+    console.log("[liff-auth] liff.init() done, isLoggedIn:", liff.isLoggedIn());
   } catch (e) {
-    console.warn('[liff-auth] liff.init() failed, redirect to login:', e)
-    liff.login({ redirectUri: window.location.href })
-    return null
+    console.warn("[liff-auth] liff.init() failed, redirect to login:", e);
+    liff.login({ redirectUri: window.location.href });
+    return null;
   }
 
   if (!liff.isLoggedIn()) {
@@ -133,13 +134,17 @@ export async function initClientAuth(): Promise<string | null> {
  */
 export async function initTrainerAuth(): Promise<string | null> {
   if (import.meta.env.DEV) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("trainers")
       .select("id")
+      .eq("line_user_id", DEV_TRAINER_LINE_ID)
       .eq("delete_flg", false)
-      .limit(1)
       .single();
-    return data?.id ?? null;
+    if (error || !data) {
+      window.location.replace("error.html");
+      return null;
+    }
+    return data.id as string;
   }
 
   // sessionStorage にキャッシュがあれば liff.init() ごとスキップ

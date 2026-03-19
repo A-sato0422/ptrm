@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 import { CATEGORY_COLOR_MAP, DEFAULT_AVATAR_URL, Client } from "./shared";
 import { initTrainerAuth } from "./liff-auth";
+import { initAdminSidebar, populateTrainerProfile } from "./partials/admin-sidebar";
 
 // Supabaseから取得したデータを表示用Clientに変換する
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -655,6 +656,8 @@ async function init(): Promise<void> {
   document.getElementById("loading-overlay")?.remove();
 
   console.log("Initializing clients page...");
+  initAdminSidebar("clients");
+  populateTrainerProfile(trainerId);
   setupSearch();
   setupFilters();
   setupDarkMode();

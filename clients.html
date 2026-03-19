@@ -64,58 +64,11 @@
     <div id="loading-overlay" style="position:fixed;inset:0;z-index:9999;background:#fff;display:flex;align-items:center;justify-content:center;">
       <span style="color:#64748b;font-size:0.875rem;">読み込み中...</span>
     </div>
-    <!-- Sidebar -->
+    <!-- Sidebar (内容はadmin-sidebar.tsが注入) -->
     <aside
       id="mobileSidebar"
       class="w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col h-screen fixed inset-y-0 left-0 z-40 -translate-x-full transition-transform duration-300 lg:static lg:translate-x-0 lg:shrink-0"
-    >
-      <div class="p-4 flex justify-end lg:hidden">
-        <button
-          id="mobileSidebarClose"
-          class="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
-          aria-label="サイドバーを閉じる"
-        >
-          <span class="material-icons-outlined">close</span>
-        </button>
-      </div>
-      <div class="p-6 flex items-center gap-3">
-        <div
-          class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-xl"
-        >
-          S
-        </div>
-        <span class="font-bold text-lg tracking-tight">PTRM 管理画面</span>
-      </div>
-      <nav class="flex-1 px-4 space-y-1">
-        <a
-          class="flex items-center gap-3 px-3 py-2 text-primary bg-blue-50 dark:bg-blue-900/20 rounded-md transition-colors"
-          href="clients.html"
-        >
-          <span class="material-icons-outlined text-xl">people_alt</span>
-          <span class="font-medium">顧客一覧</span>
-        </a>
-        <a
-          class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md transition-colors"
-          href="settings.html"
-        >
-          <span class="material-icons-outlined text-xl">settings</span>
-          <span class="font-medium">設定</span>
-        </a>
-      </nav>
-      <div class="p-4 mt-auto border-t border-slate-200 dark:border-slate-800">
-        <div class="flex items-center gap-3 p-2">
-          <img
-            alt="Admin Profile"
-            class="w-10 h-10 rounded-full object-cover"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXEOg_iYS6LRYZdmYsddpvMq1b1NLpiwiBqsWwnq6fjeMuXE3I65zj6J8vL1QveMdUvcox_fMUJpAK45iRJoWmlGEt4EMAy98rqLJNY6jcytcf9FnzNVMgrVbPYcEW4PRYa31ShXRUcNw8U9OUSK9z243YfaZeoLn3NmDBWU25J9LM5H659zpPHMF0gnRgvcoo1RiOpqh7VmorM2A-kuO_Zek0Sd4zJpqZ4wMmH949oAiukXk-07aAf1tv20p4iY0D8gpkh6cI8Hk"
-          />
-          <div class="overflow-hidden">
-            <p class="text-sm font-semibold truncate">田中 管理者</p>
-            <p class="text-xs text-slate-500 truncate">admin@ecosystem.jp</p>
-          </div>
-        </div>
-      </div>
-    </aside>
+    ></aside>
     <div
       id="mobileSidebarOverlay"
       class="fixed inset-0 bg-slate-900/50 z-30 hidden lg:hidden"

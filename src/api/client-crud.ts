@@ -144,10 +144,11 @@ export async function updateLevel(
 export async function createMemo(
   clientId: string,
   content: string,
+  trainerId?: string,
 ): Promise<string | null> {
   const { data, error } = await supabase
     .from("trainer_memos")
-    .insert({ client_id: clientId, content })
+    .insert({ client_id: clientId, content, ...(trainerId ? { trainer_id: trainerId } : {}) })
     .select("id")
     .single();
 

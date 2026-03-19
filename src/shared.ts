@@ -31,6 +31,7 @@ export interface MemoHistory {
   dbId?: string; // trainer_memos.id (UUID) ← DB操作に使用
   date: string;
   trainer: string;
+  trainerId?: string; // trainer_memos.trainer_id (UUID)
   content: string;
   isNew?: boolean; // 新規追加フラグ
   isDeleted?: boolean; // 削除フラグ

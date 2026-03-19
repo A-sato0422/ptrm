@@ -40,6 +40,7 @@ export function mapDbClientToDisplay(dbClient: any): Client {
       dbId: memo.id,
       date: new Date(memo.created_at).toLocaleDateString("ja-JP"),
       trainer: memo.trainers?.display_name || "不明",
+      trainerId: memo.trainer_id || null,
       content: memo.content,
     }));
 

@@ -30,8 +30,8 @@ export async function usePoints(
   amount: number,
   currentPoints: number,
 ): Promise<{ success: boolean; error?: string }> {
-  if (amount <= 0) {
-    return { success: false, error: "1以上の値を入力してください。" };
+  if (amount <= 0 || amount % 100 !== 0) {
+    return { success: false, error: "100ポイント単位で入力してください。" };
   }
   if (amount > currentPoints) {
     return {
