@@ -95,8 +95,12 @@
             </div>
             <div class="profile-modal-body">
                 <div class="modal-field">
-                    <label class="modal-field-label">使用するポイント数</label>
-                    <input type="number" id="point-use-input" class="modal-field-input" min="1" placeholder="例: 100">
+                    <label class="modal-field-label">使用するポイント（100pt単位）</label>
+                    <div class="point-stepper">
+                        <button type="button" id="point-use-minus" class="point-stepper-btn">−</button>
+                        <input type="number" id="point-use-input" class="modal-field-input point-stepper-input" min="100" step="100" placeholder="例: 100">
+                        <button type="button" id="point-use-plus" class="point-stepper-btn">＋</button>
+                    </div>
                 </div>
                 <p id="point-use-error" class="point-use-modal-error" style="display:none;"></p>
             </div>

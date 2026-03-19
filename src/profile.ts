@@ -177,6 +177,20 @@ function setupPointUse(): void {
     }, 280);
   }
 
+  document.getElementById("point-use-minus")?.addEventListener("click", () => {
+    const inp = input();
+    if (!inp) return;
+    const current = parseInt(inp.value, 10) || 0;
+    if (current > 100) inp.value = String(current - 100);
+  });
+
+  document.getElementById("point-use-plus")?.addEventListener("click", () => {
+    const inp = input();
+    if (!inp) return;
+    const current = parseInt(inp.value, 10) || 0;
+    inp.value = String(current + 100);
+  });
+
   document
     .getElementById("point-use-open-btn")
     ?.addEventListener("click", openPointUseModal);
@@ -198,9 +212,9 @@ function setupPointUse(): void {
       if (!inp || !_clientId) return;
 
       const amount = parseInt(inp.value, 10);
-      if (isNaN(amount) || amount <= 0) {
+      if (isNaN(amount) || amount <= 0 || amount % 100 !== 0) {
         if (err) {
-          err.textContent = "1以上のポイント数を入力してください。";
+          err.textContent = "100ポイント単位で入力してください。";
           err.style.display = "block";
         }
         return;
