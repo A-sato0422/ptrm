@@ -13,6 +13,7 @@ import {
 } from "./api/settings-crud";
 import { fetchCategories } from "./api/client-crud";
 import { initTrainerAuth } from "./liff-auth";
+import { initAdminSidebar, populateTrainerProfile } from "./partials/admin-sidebar";
 
 // ============================================================
 // 型定義
@@ -46,7 +47,6 @@ interface Trainer {
   name: string;
   lineUserId: string;
   avatarUrl: string;
-  role: "Head" | "Staff";
   isOnline: boolean;
 }
 
@@ -57,6 +57,7 @@ interface Trainer {
 let stagesData: Stage[] = [];
 let tasksData: Task[] = [];
 let trainersData: Trainer[] = [];
+let currentTrainerId: string = "";
 
 // カテゴリー色キー → categories.id (UUID) のマッピング
 const categoryColorMap: Record<"blue" | "red" | "green" | "yellow", string> = {
@@ -152,7 +153,6 @@ function dbTrainerToTrainer(db: {
     name: db.display_name ?? "",
     lineUserId: db.line_user_id,
     avatarUrl: db.profile_image_url || "/assets/initial-avater.png",
-    role: "Staff",
     isOnline: false,
   };
 }
@@ -301,20 +301,14 @@ function createCategoryTabs(): string {
 
 // トレーナーカードの生成
 function createTrainerCard(trainer: Trainer): string {
-  const roleBadgeClass =
-    trainer.role === "Head"
-      ? "text-primary bg-primary/10"
-      : "text-slate-500 bg-slate-100 dark:bg-slate-800";
-
   return `
         <div class="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex items-center gap-4">
             <div class="relative">
                 <img alt="${trainer.name}" class="w-12 h-12 rounded-full object-cover border border-slate-100 dark:border-slate-700" src="${trainer.avatarUrl}" onerror="this.onerror=null; this.src='/assets/initial-avater.png'" />
             </div>
             <div class="flex-1 min-w-0">
-                <div class="flex items-center justify-between">
+                <div>
                     <h4 class="font-bold truncate text-sm">${trainer.name}</h4>
-                    <span class="text-[10px] font-bold ${roleBadgeClass} px-1.5 py-0.5 rounded uppercase">${trainer.role}</span>
                 </div>
                 <p class="text-xs text-slate-500 truncate">LINE: ${trainer.lineUserId}</p>
             </div>
@@ -897,6 +891,11 @@ function setupTrainerEventListeners(): void {
     if (trainer.dbId) {
       try {
         await deactivateTrainer(trainer.dbId);
+        // ログイン中のトレーナー自身を削除した場合はエラー画面へ
+        if (trainer.dbId === currentTrainerId) {
+          window.location.replace("error.html");
+          return;
+        }
         trainersData = trainersData.filter((t) => t.tempId !== trainer.tempId);
         renderSettings();
         showToast(`${trainer.name} を削除しました`);
@@ -1043,6 +1042,10 @@ function setupTrainerEventListeners(): void {
           trainer.name = name;
           trainer.lineUserId = lineUserId;
           trainer.avatarUrl = newAvatarUrl;
+          // ログイン中のトレーナー自身を更新した場合はサイドバーを再描画
+          if (trainer.dbId === currentTrainerId) {
+            populateTrainerProfile(currentTrainerId);
+          }
         }
         showToast("トレーナー情報を更新しました");
       } else {
@@ -1065,7 +1068,6 @@ function setupTrainerEventListeners(): void {
           name,
           lineUserId,
           avatarUrl,
-          role: "Staff",
           isOnline: false,
         };
         trainersData.unshift(newTrainer);
@@ -1146,8 +1148,11 @@ function setupMobileSidebar(): void {
 async function init(): Promise<void> {
   const trainerId = await initTrainerAuth();
   if (!trainerId) return; // 未認証（本番: error.html にリダイレクト済み）
+  currentTrainerId = trainerId;
   document.getElementById("loading-overlay")?.remove();
 
+  initAdminSidebar("settings");
+  populateTrainerProfile(trainerId);
   setupDarkMode();
   setupMobileSidebar();
 

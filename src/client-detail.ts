@@ -2,6 +2,7 @@ import { supabase } from "./supabase";
 import { Client, Task, MemoHistory } from "./shared";
 import { mapDbClientToDisplay } from "./lib/mapper";
 import { initTrainerAuth } from "./liff-auth";
+import { initAdminSidebar, populateTrainerProfile } from "./partials/admin-sidebar";
 import {
   fetchCategories,
   fetchAllTasks,
@@ -87,6 +88,9 @@ let _categories: { id: string; name: string }[] = [];
 
 /** レベルセレクトの最大値（stages.stage_no=6 の level_to） */
 let _maxLevel: number = 30;
+
+/** ログイン中トレーナーの表示名 */
+let _trainerName: string = "";
 
 // ============================================================
 // トースト通知
@@ -878,7 +882,7 @@ function setupMemoCreation(client: Client): void {
           day: "2-digit",
         })
         .replace(/\//g, "/"),
-      trainer: "",
+      trainer: _trainerName,
       content: "",
       isNew: true, // DB未登録フラグ
     };
@@ -1228,6 +1232,8 @@ async function init(): Promise<void> {
   document.getElementById("loading-overlay")?.remove();
 
   console.log("Initializing client detail page...");
+  initAdminSidebar("clients");
+  populateTrainerProfile(trainerId);
   setupDarkMode();
   setupMobileSidebar();
 
@@ -1280,10 +1286,13 @@ async function init(): Promise<void> {
   _dbLevels = { ...client.levels };
 
   // カテゴリ・トレーナー・最大レベルをプリフェッチ
-  [_categories, _maxLevel] = await Promise.all([
+  const [categories, maxLevel, trainerData] = await Promise.all([
     fetchCategories(),
     fetchMaxLevel(),
+    supabase.from("trainers").select("display_name").eq("id", trainerId).single(),
   ]);
+  [_categories, _maxLevel] = [categories, maxLevel];
+  _trainerName = trainerData.data?.display_name ?? "";
 
   renderClientDetail(client);
 }
