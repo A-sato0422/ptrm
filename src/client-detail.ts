@@ -92,6 +92,9 @@ let _maxLevel: number = 30;
 /** ログイン中トレーナーの表示名 */
 let _trainerName: string = "";
 
+/** ログイン中トレーナーのID */
+let _trainerId: string = "";
+
 // ============================================================
 // トースト通知
 // ============================================================
@@ -1093,7 +1096,7 @@ function setupFormSubmit(client: Client): void {
       if (memo.isNew && !memo.isDeleted) {
         // 新規作成
         if (!memo.content.trim()) continue; // 空メモはスキップ
-        const dbId = await createMemo(client.id, memo.content);
+        const dbId = await createMemo(client.id, memo.content, _trainerId);
         if (dbId) {
           memo.dbId = dbId;
           memo.isNew = false;
@@ -1229,6 +1232,7 @@ function setupMobileSidebar(): void {
 async function init(): Promise<void> {
   const trainerId = await initTrainerAuth();
   if (!trainerId) return; // 未認証（本番: error.html にリダイレクト済み）
+  _trainerId = trainerId;
   document.getElementById("loading-overlay")?.remove();
 
   console.log("Initializing client detail page...");
