@@ -52,18 +52,18 @@ export async function initClientAuth(): Promise<string | null> {
   // --- 本番: LIFF 初期化 ---
   // タイムアウト付きで init を実行。ハングまたはエラー時は LINE 再認証へフォールバック
   try {
-    console.log('[liff-auth] liff.init() start')
+    console.log("[liff-auth] liff.init() start");
     await Promise.race([
       liff.init({ liffId: LIFF_ID }),
       new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('liff.init timeout')), 10000),
+        setTimeout(() => reject(new Error("liff.init timeout")), 10000),
       ),
-    ])
-    console.log('[liff-auth] liff.init() done, isLoggedIn:', liff.isLoggedIn())
+    ]);
+    console.log("[liff-auth] liff.init() done, isLoggedIn:", liff.isLoggedIn());
   } catch (e) {
-    console.warn('[liff-auth] liff.init() failed, redirect to login:', e)
-    liff.login({ redirectUri: window.location.href })
-    return null
+    console.warn("[liff-auth] liff.init() failed, redirect to login:", e);
+    liff.login({ redirectUri: window.location.href });
+    return null;
   }
 
   if (!liff.isLoggedIn()) {

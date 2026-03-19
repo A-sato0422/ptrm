@@ -49,6 +49,7 @@ async function getClientFromSupabase(id: string): Promise<Client | null> {
                 id,
                 content,
                 created_at,
+                trainer_id,
                 trainers ( display_name )
             ),
             client_tasks (
@@ -285,6 +286,8 @@ function createMemoHistoryItem(memo: MemoHistory, isLatest: boolean): string {
   const dotColor = isLatest ? "bg-primary" : "bg-slate-300 dark:bg-slate-700";
   const opacityClass = isLatest ? "" : "opacity-70";
   const isNewMemo = !memo.date || !memo.content;
+  // 自分が作成したメモ（新規 or trainer_id が一致）のみ編集・削除可能
+  const canEdit = memo.isNew || memo.trainerId === _trainerId;
 
   return `
     <div class="relative pl-8 border-l-2 border-slate-100 dark:border-slate-800 ml-2" data-memo-id="${memo.id}">
@@ -301,22 +304,25 @@ function createMemoHistoryItem(memo: MemoHistory, isLatest: boolean): string {
               <p class="px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400">${memo.trainer || "不明"}</p>
             </div>
           </div>
-          <button 
+          ${canEdit ? `
+          <button
             type="button"
-            class="p-2 text-slate-300 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-all memo-delete" 
+            class="p-2 text-slate-300 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-all memo-delete"
             title="削除"
             data-memo-id="${memo.id}"
           >
             <span class="material-icons-outlined text-lg">delete</span>
-          </button>
+          </button>` : `
+          <div class="p-2 w-9 h-9"></div>`}
         </div>
         <div class="space-y-1">
           <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">メモ内容</label>
-          <textarea 
-            class="w-full bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-600 dark:text-slate-400 placeholder-slate-300 focus:ring-2 focus:ring-primary focus:border-primary resize-none memo-content" 
-            placeholder="メモ内容を入力してください..." 
+          <textarea
+            class="w-full bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-600 dark:text-slate-400 placeholder-slate-300 focus:ring-2 focus:ring-primary focus:border-primary resize-none memo-content${canEdit ? "" : " cursor-not-allowed opacity-60"}"
+            placeholder="メモ内容を入力してください..."
             rows="3"
             data-memo-id="${memo.id}"
+            ${canEdit ? "" : "readonly"}
           >${memo.content || ""}</textarea>
         </div>
       </div>
@@ -1093,6 +1099,8 @@ function setupFormSubmit(client: Client): void {
     // 4. メモ CRUD
     // ============================================================
     for (const memo of client.history ?? []) {
+      const canEdit = memo.isNew || memo.trainerId === _trainerId;
+      if (!canEdit) continue; // 他トレーナーのメモは操作しない
       if (memo.isNew && !memo.isDeleted) {
         // 新規作成
         if (!memo.content.trim()) continue; // 空メモはスキップ
