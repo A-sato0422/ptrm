@@ -301,6 +301,8 @@ function createCategoryTabs(): string {
 
 // トレーナーカードの生成
 function createTrainerCard(trainer: Trainer): string {
+  // 自分自身（または未保存の新規）のみ編集・削除メニューを表示
+  const canManage = trainer.dbId === null || trainer.dbId === currentTrainerId;
   return `
         <div class="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex items-center gap-4">
             <div class="relative">
@@ -312,9 +314,10 @@ function createTrainerCard(trainer: Trainer): string {
                 </div>
                 <p class="text-xs text-slate-500 truncate">LINE: ${trainer.lineUserId}</p>
             </div>
+            ${canManage ? `
             <button class="text-slate-400 hover:text-slate-600 p-1 trainer-menu" data-trainer-id="${trainer.tempId}">
                 <span class="material-icons-outlined text-lg">more_vert</span>
-            </button>
+            </button>` : `<div class="w-8 h-8"></div>`}
         </div>
     `;
 }
@@ -854,6 +857,7 @@ function setupTrainerEventListeners(): void {
     if (dropdownTargetTempId === null) return;
     const trainer = trainersData.find((t) => t.tempId === dropdownTargetTempId);
     if (!trainer) return;
+    if (trainer.dbId && trainer.dbId !== currentTrainerId) return;
 
     trainerModalMode = "edit";
     trainerEditTargetId = trainer.tempId;
@@ -878,6 +882,7 @@ function setupTrainerEventListeners(): void {
     if (dropdownTargetTempId === null) return;
     const trainer = trainersData.find((t) => t.tempId === dropdownTargetTempId);
     if (!trainer) return;
+    if (trainer.dbId && trainer.dbId !== currentTrainerId) return;
 
     closeDropdown();
 

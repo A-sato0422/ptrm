@@ -17,7 +17,7 @@ const LIFF_ID = import.meta.env.VITE_LIFF_ID as string;
 
 // 開発環境用の固定ユーザー
 const DEV_CLIENT_LINE_ID = "U_client_test_001";
-const DEV_TRAINER_LINE_ID = "U_trainer_test_001";
+const DEV_TRAINER_LINE_ID = "U_trainer_test_002";
 
 // ============================================================
 // クライアント認証（FLOW A: ケース①②③④）
