@@ -244,7 +244,7 @@ function createTaskCard(task: Task): string {
       ${categorySelectHTML}
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="space-y-1">
-          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">課題名</label>
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">課題名${isEditable ? ' <span class="text-red-500">*</span>' : ""}</label>
           ${
             isEditable
               ? `<input class="${titleInputClass}" placeholder="課題名を入力" type="text" value="${task.title}" data-task-id="${task.id}" />`
@@ -1074,8 +1074,13 @@ function setupFormSubmit(client: Client): void {
     // ============================================================
     for (const task of client.currentTasks) {
       if (task.isNew && !task.isDeleted) {
-        // 空の課題はスキップ
-        if (!task.title.trim()) continue;
+        // カテゴリが選択されているのに課題名が空の場合はエラー、両方空なら無入力としてスキップ
+        if (!task.title.trim()) {
+          if (task.categoryId) {
+            errors.push(`課題名を入力してください（カテゴリ: ${_categories.find((c) => c.id === task.categoryId)?.name ?? task.categoryId}）`);
+          }
+          continue;
+        }
         if (task.dbTaskId) {
           // 完了済み確認（一意制約違反を事前に防ぐ）
           const isCompleted = await checkCompletedClientTask(
