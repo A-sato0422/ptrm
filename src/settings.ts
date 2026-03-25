@@ -246,7 +246,7 @@ function createTaskCard(task: Task): string {
         <div class="task-row group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm relative hover:border-primary/50 transition-colors">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 ml-1">課題名</label>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 ml-1">課題名 <span class="text-red-500">*</span></label>
                     <input 
                         class="w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium focus:bg-white dark:focus:bg-slate-900 transition-colors task-name" 
                         type="text" 
@@ -535,6 +535,17 @@ function setupSaveButton(): void {
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
       </svg>
       保存中...`;
+
+    // 課題名バリデーション（新規・更新対象で課題名が空のものはエラー）
+    const emptyNameTasks = tasksData.filter(
+      (t) => !t.isDeleted && (t.isNew || t.isDirty) && !t.name.trim(),
+    );
+    if (emptyNameTasks.length > 0) {
+      saveAllBtn.removeAttribute("disabled");
+      saveAllBtn.innerHTML = originalHTML;
+      showToast("課題名は必須です。課題名を入力してください。", "error");
+      return;
+    }
 
     try {
       // --- ステージ保存（isDirty のもの） ---
