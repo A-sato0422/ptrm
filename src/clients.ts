@@ -1,7 +1,10 @@
 import { supabase } from "./supabase";
 import { CATEGORY_COLOR_MAP, DEFAULT_AVATAR_URL, Client } from "./shared";
 import { initTrainerAuth } from "./liff-auth";
-import { initAdminSidebar, populateTrainerProfile } from "./partials/admin-sidebar";
+import {
+  initAdminSidebar,
+  populateTrainerProfile,
+} from "./partials/admin-sidebar";
 
 // Supabaseから取得したデータを表示用Clientに変換する
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -229,15 +232,21 @@ function createClientCard(client: Client): string {
               <div class="flex items-start gap-3">
                 <span class="material-icons-outlined text-green-500 text-lg">thumb_up</span>
                 <div>
-                  <p class="text-xs font-bold text-slate-500">やりたい</p>
-                  <p class="text-xs font-medium">${(() => { const t = client.preferences.likes.join("、"); return t.length > 90 ? t.slice(0, 90) + "..." : t; })()}</p>
+                  <p class="text-xs font-bold text-slate-500">好き</p>
+                  <p class="text-xs font-medium">${(() => {
+                    const t = client.preferences.likes.join("、");
+                    return t.length > 90 ? t.slice(0, 90) + "..." : t;
+                  })()}</p>
                 </div>
               </div>
               <div class="flex items-start gap-3">
                 <span class="material-icons-outlined text-red-400 text-lg">thumb_down</span>
                 <div>
-                  <p class="text-xs font-bold text-slate-500">やりたくない</p>
-                  <p class="text-xs font-medium">${(() => { const t = client.preferences.dislikes.join("、"); return t.length > 90 ? t.slice(0, 90) + "..." : t; })()}</p>
+                  <p class="text-xs font-bold text-slate-500">嫌い</p>
+                  <p class="text-xs font-medium">${(() => {
+                    const t = client.preferences.dislikes.join("、");
+                    return t.length > 90 ? t.slice(0, 90) + "..." : t;
+                  })()}</p>
                 </div>
               </div>
             </div>

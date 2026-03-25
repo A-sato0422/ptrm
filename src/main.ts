@@ -271,7 +271,18 @@ async function openMountainDetailModal(
   // タイトルを設定
   modalTitle.textContent = category;
 
-  // DBから完了済みタスクと最大レベルを並列取得（モーダル表示前に確定させる）
+  // ローディングスピナーを表示してモーダルを即座に開く
+  modalTasksList.innerHTML = `
+    <div style="display:flex;justify-content:center;align-items:center;padding:48px 0;">
+      <svg style="width:32px;height:32px;animation:spin 1s linear infinite;color:#94a3b8;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle style="opacity:0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path style="opacity:0.75;" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+      </svg>
+    </div>`;
+  modal.style.display = "flex";
+  modal.classList.remove("closing");
+
+  // DBから完了済みタスクと最大レベルを並列取得
   let completedByLevel = new Map<number, { taskTitle: string; completedAt: string }[]>();
   let maxLevel = currentLevel;
 
@@ -284,7 +295,7 @@ async function openMountainDetailModal(
     maxLevel = await fetchMaxLevel();
   }
 
-  // コンテンツを事前に構築（高さが確定してからモーダルを開く）
+  // データ取得完了後にコンテンツを構築
   modalTasksList.innerHTML = "";
 
   for (let level = 1; level <= currentLevel; level++) {
@@ -292,7 +303,6 @@ async function openMountainDetailModal(
     const levelSection = document.createElement("div");
 
     if (tasks.length === 0) {
-      // 完了記録がないレベルは未開放として表示
       levelSection.className = "modal-level-section locked";
       levelSection.innerHTML = `
         <div class="modal-level-header">
@@ -337,10 +347,6 @@ async function openMountainDetailModal(
     `;
     modalTasksList.appendChild(lockedSection);
   }
-
-  // コンテンツが確定してからモーダルを表示（アニメーションは1回だけ）
-  modal.style.display = "flex";
-  modal.classList.remove("closing");
 }
 
 // 山の詳細モーダルを閉じる関数
