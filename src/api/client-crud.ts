@@ -311,6 +311,29 @@ export async function assignExistingTask(
 }
 
 /**
+ * 論理削除済み（deleted_at あり）かつ未完了の client_tasks を復元する。
+ * deleted_at を null に戻し、client_tasks.id を返す。
+ * 対象レコードが存在しない場合は null を返す。
+ */
+export async function restoreSoftDeletedTask(
+  clientId: string,
+  taskId: string,
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("client_tasks")
+    .update({ deleted_at: null })
+    .eq("client_id", clientId)
+    .eq("task_id", taskId)
+    .not("deleted_at", "is", null)
+    .eq("is_completed", false)
+    .select("id")
+    .single();
+
+  if (error || !data) return null;
+  return data.id;
+}
+
+/**
  * tasks テーブルのタイトル・理由・URL を UPDATE する。
  * @returns 成功時 true / 失敗時 false
  */

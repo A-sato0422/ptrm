@@ -2,7 +2,10 @@ import { supabase } from "./supabase";
 import { Client, Task, MemoHistory } from "./shared";
 import { mapDbClientToDisplay } from "./lib/mapper";
 import { initTrainerAuth } from "./liff-auth";
-import { initAdminSidebar, populateTrainerProfile } from "./partials/admin-sidebar";
+import {
+  initAdminSidebar,
+  populateTrainerProfile,
+} from "./partials/admin-sidebar";
 import {
   fetchCategories,
   fetchAllTasks,
@@ -15,6 +18,7 @@ import {
   deleteMemo,
   createTask,
   assignExistingTask,
+  restoreSoftDeletedTask,
   checkCompletedClientTask,
   checkTaskDuplicate,
   deleteClientTask,
@@ -192,9 +196,10 @@ function createTaskCard(task: Task): string {
     : `w-full bg-transparent border-none p-0 text-sm text-blue-500 dark:text-blue-400 underline ${readonlyFieldClass}`;
 
   // カテゴリ名表示（編集不可のカードのみ）
-  const taskCatName = !isEditable && task.categoryId
-    ? _categories.find((c) => c.id === task.categoryId)?.name ?? ""
-    : "";
+  const taskCatName =
+    !isEditable && task.categoryId
+      ? (_categories.find((c) => c.id === task.categoryId)?.name ?? "")
+      : "";
   const categoryNameBadge = taskCatName
     ? `<p class="text-[11px] mt-0.5 text-slate-500 dark:text-slate-400">${taskCatName}</p>`
     : "";
@@ -240,15 +245,19 @@ function createTaskCard(task: Task): string {
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="space-y-1">
           <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">課題名</label>
-          ${isEditable
-            ? `<input class="${titleInputClass}" placeholder="課題名を入力" type="text" value="${task.title}" data-task-id="${task.id}" />`
-            : `<p class="font-bold text-slate-800 dark:text-slate-100 break-words whitespace-pre-wrap ${lineThrough}">${task.title}</p>${categoryNameBadge}`}
+          ${
+            isEditable
+              ? `<input class="${titleInputClass}" placeholder="課題名を入力" type="text" value="${task.title}" data-task-id="${task.id}" />`
+              : `<p class="font-bold text-slate-800 dark:text-slate-100 break-words whitespace-pre-wrap ${lineThrough}">${task.title}</p>${categoryNameBadge}`
+          }
         </div>
         <div class="space-y-1">
           <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">意義・理由</label>
-          ${isEditable
-            ? `<input class="${reasonInputClass}" placeholder="なぜこの課題が必要か" type="text" value="${task.reason || ""}" data-task-id="${task.id}" />`
-            : `<p class="text-sm text-slate-600 dark:text-slate-400 break-words whitespace-pre-wrap ${lineThrough}">${task.reason || ""}</p>`}
+          ${
+            isEditable
+              ? `<input class="${reasonInputClass}" placeholder="なぜこの課題が必要か" type="text" value="${task.reason || ""}" data-task-id="${task.id}" />`
+              : `<p class="text-sm text-slate-600 dark:text-slate-400 break-words whitespace-pre-wrap ${lineThrough}">${task.reason || ""}</p>`
+          }
         </div>
         <div class="space-y-1">
           <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">YouTube URL</label>
@@ -304,7 +313,9 @@ function createMemoHistoryItem(memo: MemoHistory, isLatest: boolean): string {
               <p class="px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400">${memo.trainer || "不明"}</p>
             </div>
           </div>
-          ${canEdit ? `
+          ${
+            canEdit
+              ? `
           <button
             type="button"
             class="p-2 text-slate-300 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-all memo-delete"
@@ -312,8 +323,10 @@ function createMemoHistoryItem(memo: MemoHistory, isLatest: boolean): string {
             data-memo-id="${memo.id}"
           >
             <span class="material-icons-outlined text-lg">delete</span>
-          </button>` : `
-          <div class="p-2 w-9 h-9"></div>`}
+          </button>`
+              : `
+          <div class="p-2 w-9 h-9"></div>`
+          }
         </div>
         <div class="space-y-1">
           <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">メモ内容</label>
@@ -367,12 +380,18 @@ async function showPastTaskModal(client: Client): Promise<void> {
   const tasksHTML =
     availableTasks.length === 0
       ? `<p class="text-center text-slate-400 py-8">追加できる課題がありません</p>`
-      : (["マットピラティス", "ウェイトトレーニング", "スポーツトレーニング", "ムーブメントトレーニング"] as const)
+      : (
+          [
+            "マットピラティス",
+            "ウェイトトレーニング",
+            "スポーツトレーニング",
+            "ムーブメントトレーニング",
+          ] as const
+        )
           .filter((name) => grouped[name]?.length)
-          .map(
-            (categoryName) => {
-              const tasks = grouped[categoryName];
-              return `
+          .map((categoryName) => {
+            const tasks = grouped[categoryName];
+            return `
                 <div class="mb-4">
                   <span class="inline-block px-2 py-0.5 text-xs font-bold rounded-full mb-2 ${categoryColorClass[categoryName] || "bg-slate-100 text-slate-600"}">${categoryName}</span>
                   <div class="space-y-1">
@@ -392,8 +411,7 @@ async function showPastTaskModal(client: Client): Promise<void> {
                   </div>
                 </div>
               `;
-            },
-          )
+          })
           .join("");
 
   // モーダルを挿入
@@ -575,9 +593,6 @@ function renderClientDetail(client: Client): void {
             type="text" 
             value="${client.nextGoal}"
           />
-          <div class="absolute inset-y-0 right-0 pr-4 flex items-center">
-            <span class="material-icons-outlined text-slate-400 group-hover:text-primary transition-colors cursor-pointer">edit</span>
-          </div>
         </div>
       </div>
     </section>
@@ -625,7 +640,7 @@ function renderClientDetail(client: Client): void {
     <!-- Preferences Section -->
     <section class="bg-surface-light dark:bg-surface-dark rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
       <div class="flex items-center justify-between mb-6">
-        <h3 class="text-lg font-bold">やりたい・やりたくない確認</h3>
+        <h3 class="text-lg font-bold">嗜好確認</h3>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div class="flex flex-col gap-3">
@@ -634,14 +649,21 @@ function renderClientDetail(client: Client): void {
               <span class="material-icons-outlined text-xl">thumb_up</span>
             </div>
             <h4 class="font-bold text-sm text-green-700 dark:text-green-400 flex items-center gap-1">
-              <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span> やりたい
+              <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span> 好き
               <span class="ml-1 text-xs font-normal text-slate-400">(${client.preferences.likes.length})</span>
             </h4>
           </div>
           <ul class="overflow-y-auto max-h-48 space-y-1 pr-1">
-            ${client.preferences.likes.length === 0
-              ? `<li class="text-sm text-slate-400 italic">なし</li>`
-              : client.preferences.likes.map((item) => `<li class="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200"><span class="mt-1.5 w-1.5 h-1.5 bg-green-500 rounded-full shrink-0"></span>${item}</li>`).join("")}
+            ${
+              client.preferences.likes.length === 0
+                ? `<li class="text-sm text-slate-400 italic">なし</li>`
+                : client.preferences.likes
+                    .map(
+                      (item) =>
+                        `<li class="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200"><span class="mt-1.5 w-1.5 h-1.5 bg-green-500 rounded-full shrink-0"></span>${item}</li>`,
+                    )
+                    .join("")
+            }
           </ul>
         </div>
         <div class="flex flex-col gap-3">
@@ -650,14 +672,21 @@ function renderClientDetail(client: Client): void {
               <span class="material-icons-outlined text-xl">thumb_down</span>
             </div>
             <h4 class="font-bold text-sm text-red-700 dark:text-red-400 flex items-center gap-1">
-              <span class="w-1.5 h-1.5 bg-red-500 rounded-full"></span> やりたくない
+              <span class="w-1.5 h-1.5 bg-red-500 rounded-full"></span> 嫌い
               <span class="ml-1 text-xs font-normal text-slate-400">(${client.preferences.dislikes.length})</span>
             </h4>
           </div>
           <ul class="overflow-y-auto max-h-48 space-y-1 pr-1">
-            ${client.preferences.dislikes.length === 0
-              ? `<li class="text-sm text-slate-400 italic">なし</li>`
-              : client.preferences.dislikes.map((item) => `<li class="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200"><span class="mt-1.5 w-1.5 h-1.5 bg-red-500 rounded-full shrink-0"></span>${item}</li>`).join("")}
+            ${
+              client.preferences.dislikes.length === 0
+                ? `<li class="text-sm text-slate-400 italic">なし</li>`
+                : client.preferences.dislikes
+                    .map(
+                      (item) =>
+                        `<li class="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200"><span class="mt-1.5 w-1.5 h-1.5 bg-red-500 rounded-full shrink-0"></span>${item}</li>`,
+                    )
+                    .join("")
+            }
           </ul>
         </div>
         <div class="flex flex-col gap-3">
@@ -671,9 +700,16 @@ function renderClientDetail(client: Client): void {
             </h4>
           </div>
           <ul class="overflow-y-auto max-h-48 space-y-1 pr-1">
-            ${client.preferences.neutral.length === 0
-              ? `<li class="text-sm text-slate-400 italic">なし</li>`
-              : client.preferences.neutral.map((item) => `<li class="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200"><span class="mt-1.5 w-1.5 h-1.5 bg-slate-400 rounded-full shrink-0"></span>${item}</li>`).join("")}
+            ${
+              client.preferences.neutral.length === 0
+                ? `<li class="text-sm text-slate-400 italic">なし</li>`
+                : client.preferences.neutral
+                    .map(
+                      (item) =>
+                        `<li class="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200"><span class="mt-1.5 w-1.5 h-1.5 bg-slate-400 rounded-full shrink-0"></span>${item}</li>`,
+                    )
+                    .join("")
+            }
           </ul>
         </div>
       </div>
@@ -712,7 +748,7 @@ function setupTaskEventListeners(client: Client): void {
   document.querySelectorAll(".task-checkbox").forEach((checkbox) => {
     checkbox.addEventListener("change", (event) => {
       const target = event.target as HTMLInputElement;
-      const taskId = parseInt(target.getAttribute("data-task-id") || "0");
+      const taskId = Number(target.getAttribute("data-task-id") || "0");
       const task = client.currentTasks.find((t) => t.id === taskId);
       if (task) {
         task.completed = target.checked;
@@ -728,7 +764,7 @@ function setupTaskEventListeners(client: Client): void {
   document.querySelectorAll(".task-delete").forEach((button) => {
     button.addEventListener("click", (event) => {
       const target = event.target as HTMLElement;
-      const taskId = parseInt(
+      const taskId = Number(
         target.closest("button")?.getAttribute("data-task-id") || "0",
       );
       if (confirm("この課題を削除しますか?")) {
@@ -782,7 +818,7 @@ function setupTaskEventListeners(client: Client): void {
   document.querySelectorAll(".task-category").forEach((select) => {
     select.addEventListener("change", (event) => {
       const target = event.target as HTMLSelectElement;
-      const taskId = parseInt(target.getAttribute("data-task-id") || "0");
+      const taskId = Number(target.getAttribute("data-task-id") || "0");
       const task = client.currentTasks.find((t) => t.id === taskId);
       if (task) {
         task.categoryId = target.value || undefined;
@@ -796,7 +832,7 @@ function setupTaskEventListeners(client: Client): void {
     .forEach((input) => {
       input.addEventListener("change", (event) => {
         const target = event.target as HTMLInputElement;
-        const taskId = parseInt(target.getAttribute("data-task-id") || "0");
+        const taskId = Number(target.getAttribute("data-task-id") || "0");
         const task = client.currentTasks.find((t) => t.id === taskId);
         if (task) {
           if (target.classList.contains("task-title")) {
@@ -1042,21 +1078,33 @@ function setupFormSubmit(client: Client): void {
         if (!task.title.trim()) continue;
         if (task.dbTaskId) {
           // 完了済み確認（一意制約違反を事前に防ぐ）
-          const isCompleted = await checkCompletedClientTask(client.id, task.dbTaskId);
+          const isCompleted = await checkCompletedClientTask(
+            client.id,
+            task.dbTaskId,
+          );
           if (isCompleted) {
             errors.push(`過去に完了済みのタスクです：${task.title}`);
             continue;
           }
-          // 過去の課題から選択：tasksマスターは既存 → client_tasksにのみ INSERT
-          const clientTaskId = await assignExistingTask(
+          // 過去の課題から選択：論理削除済み（未完了）なら復元、なければ新規 INSERT
+          const restoredId = await restoreSoftDeletedTask(
             client.id,
             task.dbTaskId,
           );
-          if (clientTaskId) {
-            task.clientTaskId = clientTaskId;
+          if (restoredId) {
+            task.clientTaskId = restoredId;
             task.isNew = false;
           } else {
-            errors.push(`タスク割り当てエラー：${task.title}`);
+            const clientTaskId = await assignExistingTask(
+              client.id,
+              task.dbTaskId,
+            );
+            if (clientTaskId) {
+              task.clientTaskId = clientTaskId;
+              task.isNew = false;
+            } else {
+              errors.push(`タスク割り当てエラー：${task.title}`);
+            }
           }
         } else {
           // 新規作成：カテゴリ未選択はバリデーションエラー
@@ -1065,10 +1113,17 @@ function setupFormSubmit(client: Client): void {
             continue;
           }
           // 同カテゴリ・同タイトルの重複チェック
-          const isDuplicate = await checkTaskDuplicate(task.categoryId, task.title);
+          const isDuplicate = await checkTaskDuplicate(
+            task.categoryId,
+            task.title,
+          );
           if (isDuplicate) {
-            const catName = _categories.find((c) => c.id === task.categoryId)?.name ?? task.categoryId;
-            errors.push(`同じカテゴリに同名の課題が既に存在します: 「${task.title}」(${catName})`);
+            const catName =
+              _categories.find((c) => c.id === task.categoryId)?.name ??
+              task.categoryId;
+            errors.push(
+              `同じカテゴリに同名の課題が既に存在します: 「${task.title}」(${catName})`,
+            );
             continue;
           }
           // tasks + client_tasks の両方 INSERT
@@ -1301,7 +1356,11 @@ async function init(): Promise<void> {
   const [categories, maxLevel, trainerData] = await Promise.all([
     fetchCategories(),
     fetchMaxLevel(),
-    supabase.from("trainers").select("display_name").eq("id", trainerId).single(),
+    supabase
+      .from("trainers")
+      .select("display_name")
+      .eq("id", trainerId)
+      .single(),
   ]);
   [_categories, _maxLevel] = [categories, maxLevel];
   _trainerName = trainerData.data?.display_name ?? "";
