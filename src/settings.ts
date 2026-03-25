@@ -239,14 +239,14 @@ function createStageCard(stage: Stage): string {
     `;
 }
 
-// タスクカードの生成
+// 課題カードの生成
 function createTaskCard(task: Task): string {
   const youtubeIconColor = task.youtubeUrl ? "text-youtube" : "text-slate-300";
   return `
         <div class="task-row group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm relative hover:border-primary/50 transition-colors">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 ml-1">タスク名</label>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 ml-1">課題名</label>
                     <input 
                         class="w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium focus:bg-white dark:focus:bg-slate-900 transition-colors task-name" 
                         type="text" 
@@ -366,7 +366,7 @@ function renderSettings(): void {
                         <div>
                             <h2 class="text-2xl font-bold flex items-center gap-2">
                                 <span class="material-icons-outlined text-primary">assignment_turned_in</span>
-                                タスク管理
+                                課題管理
                             </h2>
                             <p class="text-slate-500 text-sm mt-1">4つのカテゴリーごとにスキル習得基準とYouTube動画を設定できます。</p>
                         </div>
@@ -383,14 +383,14 @@ function renderSettings(): void {
                             <div class="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                                 <button id="addTaskBtn" class="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-lg font-bold transition-all shadow-sm flex items-center justify-center gap-2">
                                     <span class="material-icons-outlined text-lg">add_circle</span>
-                                    タスクを新規追加
+                                    課題を新規追加
                                 </button>
                                 <div class="relative w-full sm:w-72">
                                     <span class="material-icons-outlined absolute left-3 top-2.5 text-slate-400 text-sm">search</span>
                                     <input 
                                         id="taskSearchInput"
                                         class="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm" 
-                                        placeholder="タスク名を検索..." 
+                                        placeholder="課題名を検索..." 
                                         type="text"
                                     />
                                 </div>
@@ -519,7 +519,7 @@ function showToast(
 }
 
 // ============================================================
-// 統合保存ボタン（Step 4 + 5 : ステージ・タスク一括保存）
+// 統合保存ボタン（Step 4 + 5 : ステージ・課題一括保存）
 // ============================================================
 function setupSaveButton(): void {
   const saveAllBtn = document.getElementById("saveAllBtn");
@@ -550,7 +550,7 @@ function setupSaveButton(): void {
           }),
         );
 
-      // --- タスク保存（カテゴリーIDを取得） ---
+      // --- 課題保存（カテゴリーIDを取得） ---
       const catColorToId: Record<"blue" | "red" | "green" | "yellow", string> =
         {
           blue: categoryColorMap.blue,
@@ -573,7 +573,7 @@ function setupSaveButton(): void {
           );
         });
 
-      // 既存タスク更新（isDirty & !isNew & !isDeleted）
+      // 既存課題更新（isDirty & !isNew & !isDeleted）
       const updateTaskPromises = tasksData
         .filter((t) => t.isDirty && !t.isNew && !t.isDeleted && t.dbId)
         .map((t) =>
@@ -647,10 +647,10 @@ function setupStageEventListeners(): void {
 }
 
 // ============================================================
-// タスクイベントリスナー（Step 5 : isDirty / isDeleted / isNew フラグ）
+// 課題イベントリスナー（Step 5 : isDirty / isDeleted / isNew フラグ）
 // ============================================================
 function setupTaskEventListeners(): void {
-  // タスク名の変更
+  // 課題名の変更
   document.querySelectorAll(".task-name").forEach((input) => {
     input.addEventListener("change", (event) => {
       const target = event.target as HTMLInputElement;
@@ -663,7 +663,7 @@ function setupTaskEventListeners(): void {
     });
   });
 
-  // タスクURLの変更
+  // 課題URLの変更
   document.querySelectorAll(".task-url").forEach((input) => {
     input.addEventListener("change", (event) => {
       const target = event.target as HTMLInputElement;
@@ -676,7 +676,7 @@ function setupTaskEventListeners(): void {
     });
   });
 
-  // タスク理由の変更
+  // 課題理由の変更
   document.querySelectorAll(".task-reason").forEach((textarea) => {
     textarea.addEventListener("change", (event) => {
       const target = event.target as HTMLTextAreaElement;
@@ -689,7 +689,7 @@ function setupTaskEventListeners(): void {
     });
   });
 
-  // タスク削除（確認後 即DB反映）
+  // 課題削除（確認後 即DB反映）
   document.querySelectorAll(".task-delete").forEach((button) => {
     button.addEventListener("click", async (event) => {
       const btn = (event.target as HTMLElement).closest("button");
@@ -706,17 +706,17 @@ function setupTaskEventListeners(): void {
       if (card) card.remove();
 
       if (task.isNew) {
-        // 未保存タスクはメモリから即削除（DBには存在しない）
+        // 未保存課題はメモリから即削除（DBには存在しない）
         tasksData.splice(idx, 1);
         showToast(`「${taskName}」を削除しました`);
       } else {
-        // 保存済みタスクは DB に即論理削除
+        // 保存済み課題は DB に即論理削除
         tasksData.splice(idx, 1);
         try {
           await deleteTaskMaster(task.dbId!);
           showToast(`「${taskName}」を削除しました`);
         } catch (err) {
-          console.error("タスク削除失敗:", err);
+          console.error("課題削除失敗:", err);
           showToast(
             "削除に失敗しました。ページを再読み込みしてください。",
             "error",
@@ -726,7 +726,7 @@ function setupTaskEventListeners(): void {
     });
   });
 
-  // タスク追加
+  // 課題追加
   const addTaskBtn = document.getElementById("addTaskBtn");
   if (addTaskBtn) {
     addTaskBtn.addEventListener("click", () => {
@@ -746,7 +746,7 @@ function setupTaskEventListeners(): void {
     });
   }
 
-  // タスク検索
+  // 課題検索
   const searchInput = document.getElementById(
     "taskSearchInput",
   ) as HTMLInputElement;
@@ -763,7 +763,7 @@ function setupTaskEventListeners(): void {
 }
 
 // ============================================================
-// カテゴリータブ（Step 3 : 切り替え時に DB からタスク再取得）
+// カテゴリータブ（Step 3 : 切り替え時に DB から課題再取得）
 // ============================================================
 function setupCategoryTabs(): void {
   document.querySelectorAll(".category-tab").forEach((tab) => {
@@ -791,7 +791,7 @@ function setupCategoryTabs(): void {
             ...dbTasks.map((db) => dbTaskToTask(db, category)),
           ];
         } catch (err) {
-          console.error("タスク取得失敗:", err);
+          console.error("課題取得失敗:", err);
         }
       }
       renderSettings();
@@ -1190,7 +1190,7 @@ async function init(): Promise<void> {
       }
     }
 
-    // 初期カテゴリー（blue = マットピラティス）のタスクと、ステージ・トレーナーを並行取得
+    // 初期カテゴリー（blue = マットピラティス）の課題と、ステージ・トレーナーを並行取得
     const initialCatId = categoryColorMap[currentCategory];
     const [dbStages, dbTasks, dbTrainers] = await Promise.all([
       fetchStages(),
@@ -1216,7 +1216,7 @@ async function init(): Promise<void> {
 
   renderSettings();
 
-  // ハッシュ指定時にタスク管理セクションへスクロール
+  // ハッシュ指定時に課題管理セクションへスクロール
   if (location.hash === "#task-management") {
     const section = document.getElementById("taskManagementSection");
     if (section) {
