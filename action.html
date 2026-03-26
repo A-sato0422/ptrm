@@ -1,144 +1,202 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>アクションリスト - PTRM</title>
-    <link rel="icon" type="image/png" href="/assets/icon-192.png">
-    <link rel="stylesheet" href="./src/styles/main.css">
-    <link rel="stylesheet" href="./src/styles/action.css">
-</head>
+    <link rel="icon" type="image/png" href="/assets/icon-192.png" />
+    <link rel="stylesheet" href="./src/styles/main.css" />
+    <link rel="stylesheet" href="./src/styles/action.css" />
+  </head>
 
-<body>
+  <body>
     <!-- ローディングオーバーレイ（認証チェック完了まで表示） -->
-    <div id="loading-overlay" style="position:fixed;inset:0;z-index:999;background:#E8F6F8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="animation:spin 1s linear infinite">
-            <circle cx="12" cy="12" r="10" stroke="#A8D8EA" stroke-width="4" opacity="0.3"/>
-            <path d="M4 12a8 8 0 018-8" stroke="#A8D8EA" stroke-width="4" stroke-linecap="round"/>
-        </svg>
-        <p style="color:#7F8C8D;font-size:14px;font-family:'Hiragino Kaku Gothic ProN',sans-serif;">読み込み中...</p>
+    <div
+      id="loading-overlay"
+      style="
+        position: fixed;
+        inset: 0;
+        z-index: 999;
+        background: #e8f6f8;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+      "
+    >
+      <svg
+        width="48"
+        height="48"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        style="animation: spin 1s linear infinite"
+      >
+        <circle
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="#A8D8EA"
+          stroke-width="4"
+          opacity="0.3"
+        />
+        <path
+          d="M4 12a8 8 0 018-8"
+          stroke="#A8D8EA"
+          stroke-width="4"
+          stroke-linecap="round"
+        />
+      </svg>
+      <p
+        style="
+          color: #7f8c8d;
+          font-size: 14px;
+          font-family: &quot;Hiragino Kaku Gothic ProN&quot;, sans-serif;
+        "
+      >
+        読み込み中...
+      </p>
     </div>
-    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+    <style>
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
 
     <!-- #partial:header -->
 
     <!-- メインコンテンツ -->
-    <main class="main-content" id="main-content" style="visibility:hidden;">
-        <div id="action-view" class="view active">
-            <!-- 成功メッセージ -->
-            <div id="success-message" class="success-message" style="display: none;">
-                課題を提出しました
-            </div>
-            <!-- エラーメッセージ -->
-            <div id="error-message" class="error-message" style="display: none;"></div>
-
-            <h2 class="section-title">現在の課題 (Action List)</h2>
-
-            <!-- カテゴリーカード -->
-            <div class="category-cards">
-                <!-- Blue Pilates -->
-                <div class="category-card blue">
-                    <div class="category-header">
-                        <div class="category-info">
-                            <div>
-                                <h3 class="category-title">Blue Pilates</h3>
-                            </div>
-                        </div>
-                    </div>
-
-                    <ul class="task-list">
-                    </ul>
-                </div>
-
-                <!-- Red Weight -->
-                <div class="category-card red">
-                    <div class="category-header">
-                        <div class="category-info">
-                            <div>
-                                <h3 class="category-title">Red Weight</h3>
-                            </div>
-                        </div>
-                    </div>
-
-                    <ul class="task-list">
-                    </ul>
-                </div>
-
-                <!-- Green Sports -->
-                <div class="category-card green">
-                    <div class="category-header">
-                        <div class="category-info">
-                            <div>
-                                <h3 class="category-title">Green Sports</h3>
-                            </div>
-                        </div>
-                    </div>
-
-                    <ul class="task-list">
-                    </ul>
-                </div>
-
-                <!-- Yellow Movement -->
-                <div class="category-card yellow">
-                    <div class="category-header">
-                        <div class="category-info">
-                            <div>
-                                <h3 class="category-title">Yellow Movement</h3>
-                            </div>
-                        </div>
-                    </div>
-
-                    <ul class="task-list">
-                    </ul>
-                </div>
-            </div>
-
-            <!-- 予約セクション -->
-            <div class="reservation-section">
-                <button class="reservation-btn">
-                    <span>現在の予約状況はこちら</span>
-                </button>
-            </div>
+    <main class="main-content" id="main-content" style="visibility: hidden">
+      <div id="action-view" class="view active">
+        <!-- 成功メッセージ -->
+        <div id="success-message" class="success-message" style="display: none">
+          課題を提出しました
         </div>
+        <!-- エラーメッセージ -->
+        <div
+          id="error-message"
+          class="error-message"
+          style="display: none"
+        ></div>
+
+        <h2 class="section-title">現在の宿題 (Action List)</h2>
+
+        <!-- カテゴリーカード -->
+        <div class="category-cards">
+          <!-- Blue Pilates -->
+          <div class="category-card blue">
+            <div class="category-header">
+              <div class="category-info">
+                <div>
+                  <h3 class="category-title">Blue Pilates</h3>
+                </div>
+              </div>
+            </div>
+
+            <ul class="task-list"></ul>
+          </div>
+
+          <!-- Red Weight -->
+          <div class="category-card red">
+            <div class="category-header">
+              <div class="category-info">
+                <div>
+                  <h3 class="category-title">Red Weight</h3>
+                </div>
+              </div>
+            </div>
+
+            <ul class="task-list"></ul>
+          </div>
+
+          <!-- Green Sports -->
+          <div class="category-card green">
+            <div class="category-header">
+              <div class="category-info">
+                <div>
+                  <h3 class="category-title">Green Sports</h3>
+                </div>
+              </div>
+            </div>
+
+            <ul class="task-list"></ul>
+          </div>
+
+          <!-- Yellow Movement -->
+          <div class="category-card yellow">
+            <div class="category-header">
+              <div class="category-info">
+                <div>
+                  <h3 class="category-title">Yellow Movement</h3>
+                </div>
+              </div>
+            </div>
+
+            <ul class="task-list"></ul>
+          </div>
+        </div>
+
+        <!-- 予約セクション -->
+        <div class="reservation-section">
+          <button class="reservation-btn">
+            <span>現在の予約状況はこちら</span>
+          </button>
+        </div>
+      </div>
     </main>
 
     <!-- 好み評価モーダル -->
-    <div id="preference-modal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <button class="modal-close" aria-label="閉じる">&times;</button>
-            <h3 class="modal-title">課題完了</h3>
-            <p class="modal-description">このトレーニングに対するあなたの意見を教えてください。今後の提案の参考にさせていただきます。</p>
+    <div id="preference-modal" class="modal" style="display: none">
+      <div class="modal-content">
+        <button class="modal-close" aria-label="閉じる">&times;</button>
+        <h3 class="modal-title">課題完了</h3>
+        <p class="modal-description">
+          このトレーニングに対するあなたの意見を教えてください。今後の提案の参考にさせていただきます。
+        </p>
 
-            <form id="preference-form" class="preference-form">
-                <input type="hidden" id="form-task-id" name="taskId">
+        <form id="preference-form" class="preference-form">
+          <input type="hidden" id="form-task-id" name="taskId" />
 
-                <div class="preference-section">
-                    <p class="preference-label">好み評価:</p>
-                    <div class="preference-buttons">
-                        <button type="button" class="preference-btn like" data-value="like">
-                            <span class="preference-icon">❤️</span>
-                            <span>好き</span>
-                        </button>
-                        <button type="button" class="preference-btn dislike" data-value="dislike">
-                            <span class="preference-icon">✗</span>
-                            <span>嫌い</span>
-                        </button>
-                        <button type="button" class="preference-btn neutral" data-value="neutral">
-                            <span class="preference-icon">—</span>
-                            <span>どちらでもない</span>
-                        </button>
-                    </div>
-                </div>
+          <div class="preference-section">
+            <p class="preference-label">好み評価:</p>
+            <div class="preference-buttons">
+              <button
+                type="button"
+                class="preference-btn like"
+                data-value="like"
+              >
+                <span class="preference-icon">❤️</span>
+                <span>好き</span>
+              </button>
+              <button
+                type="button"
+                class="preference-btn dislike"
+                data-value="dislike"
+              >
+                <span class="preference-icon">✗</span>
+                <span>嫌い</span>
+              </button>
+              <button
+                type="button"
+                class="preference-btn neutral"
+                data-value="neutral"
+              >
+                <span class="preference-icon">—</span>
+                <span>どちらでもない</span>
+              </button>
+            </div>
+          </div>
 
-                <button type="submit" class="submit-btn">提出</button>
-            </form>
-        </div>
+          <button type="submit" class="submit-btn">提出</button>
+        </form>
+      </div>
     </div>
 
     <!-- #partial:nav:action -->
 
     <script type="module" src="./src/action.ts"></script>
-</body>
-
+  </body>
 </html>
