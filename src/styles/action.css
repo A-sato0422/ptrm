@@ -246,12 +246,12 @@
 
 .reservation-btn {
     width: 100%;
-    background-color: var(--color-text-dark);
+    background: linear-gradient(135deg, var(--color-primary) 0%, #7CB9D1 100%);
     color: var(--color-white);
     border: none;
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md);
     border-radius: var(--radius-md);
-    font-size: 16px;
+    font-size: 14px;
     font-weight: bold;
     cursor: pointer;
     display: flex;
@@ -263,7 +263,7 @@
 }
 
 .reservation-btn:hover {
-    background-color: #1a252f;
+    background: linear-gradient(135deg, #7CB9D1 0%, #6aaec4 100%);
     transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
 }
