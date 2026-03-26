@@ -54,15 +54,15 @@ function htmlPartialsPlugin(): Plugin {
   };
 }
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   root: '.',
   base: '/',
   plugins: [htmlPartialsPlugin()],
+  esbuild: {
+    drop: command === 'build' ? ['console', 'debugger'] : [],
+  },
   build: {
     outDir: 'dist',
-    esbuildOptions: {
-      drop: ['console', 'debugger'],
-    },
     rollupOptions: {
       input: {
         main: './index.html',  // mainは慣習的にトップページを指す
@@ -83,5 +83,5 @@ export default defineConfig({
     port: 3000,
     open: true,
   },
-});
+}));
 
