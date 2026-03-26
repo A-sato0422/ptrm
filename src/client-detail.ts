@@ -523,13 +523,13 @@ function renderClientDetail(client: Client): void {
     <form id="clientDetailForm" class="space-y-3">
     <!-- Client Profile Section -->
     <section class="bg-surface-light dark:bg-surface-dark rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
-      <div class="flex items-center gap-6">
-        <img alt="${client.name}" class="w-24 h-24 rounded-2xl object-cover ring-4 ring-blue-50 dark:ring-blue-900/20" src="${client.avatarUrl}" onerror="this.onerror=null; this.src=window.DEFAULT_AVATAR_URL" />
-        <div>
+      <div class="flex items-center gap-6 min-w-0 w-full">
+        <img alt="${client.name}" class="w-24 h-24 rounded-2xl object-cover ring-4 ring-blue-50 dark:ring-blue-900/20 shrink-0" src="${client.avatarUrl}" onerror="this.onerror=null; this.src=window.DEFAULT_AVATAR_URL" />
+        <div class="min-w-0 flex-1">
           <div class="flex items-center gap-3">
             <input
               id="profileNameInput"
-              class="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-1 text-2xl font-bold text-slate-800 dark:text-slate-100 placeholder-slate-300 focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+              class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-1 text-2xl font-bold text-slate-800 dark:text-slate-100 placeholder-slate-300 focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
               placeholder="名前を入力"
               type="text"
               value="${client.name}"
@@ -541,7 +541,7 @@ function renderClientDetail(client: Client): void {
               <span class="text-slate-400 shrink-0">コース:</span>
               <input
                 id="profileCourseInput"
-                class="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-2 py-1 text-sm text-slate-600 dark:text-slate-300 placeholder-slate-300 focus:ring-2 focus:ring-primary focus:border-primary transition-colors flex-1"
+                class="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-2 py-1 text-sm text-slate-600 dark:text-slate-300 placeholder-slate-300 focus:ring-2 focus:ring-primary focus:border-primary transition-colors flex-1 min-w-0"
                 placeholder="未設定"
                 type="text"
                 value="${client.course || ""}"
@@ -553,7 +553,7 @@ function renderClientDetail(client: Client): void {
 
               <input
                 id="profileLineIdInput"
-                class="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-2 py-1 text-sm text-slate-600 dark:text-slate-300 placeholder-slate-300 focus:ring-2 focus:ring-primary focus:border-primary transition-colors flex-1"
+                class="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-2 py-1 text-sm text-slate-600 dark:text-slate-300 placeholder-slate-300 focus:ring-2 focus:ring-primary focus:border-primary transition-colors flex-1 min-w-0"
                 placeholder="LINEユーザーID"
                 type="text"
                 value="${client.lineUserId || ""}"

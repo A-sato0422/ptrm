@@ -116,22 +116,24 @@
               type="text"
             />
           </div>
-          <div class="flex gap-3">
-            <select
-              id="trainerFilter"
-              class="pl-4 pr-8 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="">担当者: 全員</option>
-            </select>
-            <select
-              id="courseFilter"
-              class="pl-4 pr-8 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="">コース: 全て</option>
-            </select>
+          <div class="flex flex-col gap-3">
+            <div class="flex gap-3">
+              <select
+                id="trainerFilter"
+                class="flex-1 pl-4 pr-8 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="">担当者: 全員</option>
+              </select>
+              <select
+                id="courseFilter"
+                class="flex-1 pl-4 pr-8 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="">コース: 全て</option>
+              </select>
+            </div>
             <button
               id="openAddClientModal"
-              class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+              class="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
             >
               <span class="material-icons-outlined text-sm">add</span>
               <span>新規登録</span>
