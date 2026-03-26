@@ -128,19 +128,21 @@
 .challenge-title {
     font-size: 16px;
     font-weight: bold;
-    color: var(--color-text-dark);
+    color: var(--color-white);
     text-align: center;
-    background: linear-gradient(135deg, var(--color-yellow) 0%, #F4D03F 100%);
+    background: linear-gradient(135deg, var(--color-primary) 0%, #7CB9D1 100%);
     padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--radius-md) var(--radius-md) 0 0;
 }
 
 .challenge-box {
-    background-color: var(--color-text-dark);
-    color: var(--color-white);
+    background-color: var(--color-white);
+    color: var(--color-text-dark);
     padding: var(--spacing-lg);
     border-radius: 0 0 var(--radius-md) var(--radius-md);
     box-shadow: var(--shadow-md);
+    border: 1px solid rgba(168, 216, 234, 0.4);
+    border-top: none;
 }
 
 .challenge-text {
@@ -161,9 +163,9 @@
 .action-title {
     font-size: 16px;
     font-weight: bold;
-    color: var(--color-text-dark);
+    color: var(--color-white);
     text-align: center;
-    background: linear-gradient(135deg, var(--color-yellow) 0%, #F9E79F 100%);
+    background: linear-gradient(135deg, var(--color-primary) 0%, #7CB9D1 100%);
     padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--radius-md) var(--radius-md) 0 0;
     margin-bottom: 0;
@@ -174,6 +176,8 @@
     padding: var(--spacing-lg);
     border-radius: 0 0 var(--radius-md) var(--radius-md);
     box-shadow: var(--shadow-md);
+    border: 1px solid rgba(168, 216, 234, 0.4);
+    border-top: none;
 }
 
 .action-list-preview {
@@ -247,8 +251,8 @@
 
 .view-detail-btn {
     width: 100%;
-    margin-top: var(--spacing-md);
-    background-color: var(--color-text-dark);
+    margin-top: var(--spacing-xl);
+    background: linear-gradient(135deg, var(--color-primary) 0%, #7CB9D1 100%);
     color: var(--color-white);
     border: none;
     padding: var(--spacing-md);
@@ -257,11 +261,13 @@
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
+    box-shadow: var(--shadow-md);
 }
 
 .view-detail-btn:hover {
-    background-color: #1a252f;
+    background: linear-gradient(135deg, #7CB9D1 0%, #6aaec4 100%);
     transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
 }
 
 .view-detail-btn:active {
