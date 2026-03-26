@@ -1,6 +1,6 @@
 -- ============================================================
 -- PTRM ダミーデータ投入 SQL
--- トレーナー3名 / クライアント30名 / タスク20件（4カテゴリ×5）
+-- トレーナー3名 / クライアント200名 / タスク20件（4カテゴリ×5）/ クライアントタスク100名×4件
 -- ※ UUID は全て gen_random_uuid() で自動生成
 -- ============================================================
 
@@ -50,39 +50,46 @@ INSERT INTO trainers (line_user_id, display_name, delete_flg) VALUES
 
 
 -- ============================================================
--- 4. クライアント（30名）
+-- 4. クライアント（200名）
 -- ============================================================
-INSERT INTO clients (line_user_id, display_name, course_name, points, next_goal) VALUES
-  ('U_client_001', '佐藤 美咲',   'スタンダード', 120, '全項目Lv.6達成で2合目クリア'),
-  ('U_client_002', '高橋 裕子',   'プレミアム',   80,  'ウェイトトレーニングLv.3達成'),
-  ('U_client_003', '渡辺 恵子',   'スタンダード', 45,  'マットピラティスLv.2達成'),
-  ('U_client_004', '伊藤 真由美', 'プレミアム',   200, '全項目Lv.11達成で3合目クリア'),
-  ('U_client_005', '山本 智子',   'スタンダード', 30,  'スポーツトレーニングLv.2達成'),
-  ('U_client_006', '中村 洋子',   'プレミアム',   150, '全項目Lv.16達成で4合目クリア'),
-  ('U_client_007', '小林 和子',   'スタンダード', 60,  'ムーブメントトレーニングLv.4達成'),
-  ('U_client_008', '加藤 節子',   'スタンダード', 10,  'マットピラティスLv.2達成'),
-  ('U_client_009', '吉田 幸子',   'プレミアム',   90,  '全項目Lv.6達成で2合目クリア'),
-  ('U_client_010', '山田 久美子', 'スタンダード', 35,  'ウェイトトレーニングLv.3達成'),
-  ('U_client_011', '松本 理恵',   'プレミアム',   170, '全項目Lv.21達成で5合目クリア'),
-  ('U_client_012', '井上 雅子',   'スタンダード', 55,  'スポーツトレーニングLv.5達成'),
-  ('U_client_013', '木村 京子',   'スタンダード', 20,  'マットピラティスLv.2達成'),
-  ('U_client_014', '林 由美',     'プレミアム',   110, '全項目Lv.11達成で3合目クリア'),
-  ('U_client_015', '斎藤 直美',   'スタンダード', 40,  'ウェイトトレーニングLv.4達成'),
-  ('U_client_016', '清水 敏子',   'プレミアム',   95,  '全項目Lv.6達成で2合目クリア'),
-  ('U_client_017', '山口 千代',   'スタンダード', 15,  'マットピラティスLv.2達成'),
-  ('U_client_018', '森 知恵子',   'スタンダード', 70,  'ムーブメントトレーニングLv.6達成'),
-  ('U_client_019', '池田 恵美',   'プレミアム',   130, '全項目Lv.11達成で3合目クリア'),
-  ('U_client_020', '橋本 良子',   'スタンダード', 25,  'スポーツトレーニングLv.3達成'),
-  ('U_client_021', '阿部 典子',   'プレミアム',   180, '全項目Lv.21達成で5合目クリア'),
-  ('U_client_022', '石川 美代子', 'スタンダード', 50,  'ウェイトトレーニングLv.5達成'),
-  ('U_client_023', '前田 文子',   'スタンダード', 5,   'マットピラティスLv.1達成'),
-  ('U_client_024', '藤田 光代',   'プレミアム',   140, '全項目Lv.16達成で4合目クリア'),
-  ('U_client_025', '後藤 春子',   'スタンダード', 65,  'ムーブメントトレーニングLv.7達成'),
-  ('U_client_026', '岡田 弘子',   'プレミアム',   100, '全項目Lv.6達成で2合目クリア'),
-  ('U_client_027', '村上 淑子',   'スタンダード', 75,  'スポーツトレーニングLv.6達成'),
-  ('U_client_028', '近藤 美智子', 'スタンダード', 0,   'マットピラティスLv.1達成'),
-  ('U_client_029', '石田 登美子', 'プレミアム',   160, '全項目Lv.16達成で4合目クリア'),
-  ('U_client_030', '坂本 千鶴',   'スタンダード', 85,  '全項目Lv.11達成で3合目クリア');
+DO $$
+DECLARE
+  i INT;
+  surnames TEXT[] := ARRAY[
+    '田中','鈴木','高橋','伊藤','渡辺','山本','中村','小林','加藤','吉田',
+    '山田','松本','井上','木村','林','斎藤','清水','山口','森','池田',
+    '橋本','阿部','石川','前田','藤田','後藤','岡田','村上','近藤','石田',
+    '坂本','遠藤','青木','藤井','西村','福田','岡本','三浦','松田','中島'
+  ];
+  given_names TEXT[] := ARRAY[
+    '美咲','裕子','恵子','真由美','智子','洋子','和子','節子','幸子','久美子',
+    '理恵','雅子','京子','由美','直美','敏子','千代','知恵子','恵美','良子',
+    '典子','美代子','文子','光代','春子','弘子','淑子','美智子','登美子','千鶴',
+    '愛子','佳子','明美','朋子','順子','道子','麻衣','絵里','奈美','真紀'
+  ];
+  goals TEXT[] := ARRAY[
+    '全項目Lv.6達成で2合目クリア',
+    'マットピラティスLv.3達成',
+    'ウェイトトレーニングLv.4達成',
+    'スポーツトレーニングLv.2達成',
+    'ムーブメントトレーニングLv.5達成',
+    '全項目Lv.11達成で3合目クリア',
+    'マットピラティスLv.7達成',
+    'ウェイトトレーニングLv.8達成',
+    'スポーツトレーニングLv.6達成',
+    'ムーブメントトレーニングLv.9達成'
+  ];
+BEGIN
+  FOR i IN 1..200 LOOP
+    INSERT INTO clients (line_user_id, display_name, course_name, points, next_goal) VALUES (
+      'U_client_' || LPAD(i::TEXT, 3, '0'),
+      surnames[((i - 1) % 40) + 1] || ' ' || given_names[((i * 7 - 1) % 40) + 1],
+      CASE WHEN i % 3 = 0 THEN 'プレミアム' ELSE 'スタンダード' END,
+      (i * 13 + 7) % 201,
+      goals[(i % 10) + 1]
+    );
+  END LOOP;
+END $$;
 
 
 -- ============================================================
@@ -99,7 +106,7 @@ INSERT INTO tasks (category_id, title, why_text, youtube_url) VALUES
 
 -- ウェイトトレーニング（5件）
 INSERT INTO tasks (category_id, title, why_text, youtube_url) VALUES
-  ((SELECT id FROM categories WHERE name = 'ウェイトトレーニング'), 'スクワット（自体重）', '下半身の基礎筋力と骨密度向上のための基本種目です。',                           'https://www.youtube.com/watch?v=example06'),
+  ((SELECT id FROM categories WHERE name = 'ウェイトトレーニング'), 'スクワット（自体重）',   '下半身の基礎筋力と骨密度向上のための基本種目です。',                           'https://www.youtube.com/watch?v=example06'),
   ((SELECT id FROM categories WHERE name = 'ウェイトトレーニング'), 'デッドリフト（軽負荷）', '背面の筋力強化と正しいヒンジ動作の習得に不可欠です。',                         'https://www.youtube.com/watch?v=example07'),
   ((SELECT id FROM categories WHERE name = 'ウェイトトレーニング'), 'ベンチプレス（軽負荷）', '上半身の押す動作を強化し、日常生活のパフォーマンスを向上させます。',           'https://www.youtube.com/watch?v=example08'),
   ((SELECT id FROM categories WHERE name = 'ウェイトトレーニング'), 'ダンベルロウ',           '背中の筋力と姿勢改善に直結する重要な種目です。',                               'https://www.youtube.com/watch?v=example09'),
@@ -107,11 +114,11 @@ INSERT INTO tasks (category_id, title, why_text, youtube_url) VALUES
 
 -- スポーツトレーニング（5件）
 INSERT INTO tasks (category_id, title, why_text, youtube_url) VALUES
-  ((SELECT id FROM categories WHERE name = 'スポーツトレーニング'), 'ラダードリル（基本）',     '足の運びとアジリティを向上させ、転倒予防にもつながります。',                   'https://www.youtube.com/watch?v=example11'),
-  ((SELECT id FROM categories WHERE name = 'スポーツトレーニング'), 'ミニハードルジャンプ',     '下半身のパワー発揮と着地時の衝撃吸収能力を鍛えます。',                         'https://www.youtube.com/watch?v=example12'),
-  ((SELECT id FROM categories WHERE name = 'スポーツトレーニング'), 'メディシンボールスロー',   '全身の連動性とパワー発揮のタイミングを習得します。',                           'https://www.youtube.com/watch?v=example13'),
-  ((SELECT id FROM categories WHERE name = 'スポーツトレーニング'), 'アジリティTドリル',        '方向転換の素早さと体幹安定性を同時に高めます。',                               'https://www.youtube.com/watch?v=example14'),
-  ((SELECT id FROM categories WHERE name = 'スポーツトレーニング'), 'バランスボールキャッチ',   '動的バランスと反応速度の向上を目指すエクササイズです。',                       'https://www.youtube.com/watch?v=example15');
+  ((SELECT id FROM categories WHERE name = 'スポーツトレーニング'), 'ラダードリル（基本）',   '足の運びとアジリティを向上させ、転倒予防にもつながります。',                   'https://www.youtube.com/watch?v=example11'),
+  ((SELECT id FROM categories WHERE name = 'スポーツトレーニング'), 'ミニハードルジャンプ',   '下半身のパワー発揮と着地時の衝撃吸収能力を鍛えます。',                         'https://www.youtube.com/watch?v=example12'),
+  ((SELECT id FROM categories WHERE name = 'スポーツトレーニング'), 'メディシンボールスロー', '全身の連動性とパワー発揮のタイミングを習得します。',                           'https://www.youtube.com/watch?v=example13'),
+  ((SELECT id FROM categories WHERE name = 'スポーツトレーニング'), 'アジリティTドリル',      '方向転換の素早さと体幹安定性を同時に高めます。',                               'https://www.youtube.com/watch?v=example14'),
+  ((SELECT id FROM categories WHERE name = 'スポーツトレーニング'), 'バランスボールキャッチ', '動的バランスと反応速度の向上を目指すエクササイズです。',                       'https://www.youtube.com/watch?v=example15');
 
 -- ムーブメントトレーニング（5件）
 INSERT INTO tasks (category_id, title, why_text, youtube_url) VALUES
@@ -123,213 +130,94 @@ INSERT INTO tasks (category_id, title, why_text, youtube_url) VALUES
 
 
 -- ============================================================
--- 6. クライアントレベル（30名 × 4カテゴリ = 120行）
+-- 6. クライアントレベル（200名 × 4カテゴリ = 800行）
 -- ============================================================
-INSERT INTO client_levels (client_id, category_id, current_level, updated_by) VALUES
-  -- 001 佐藤 美咲 (Lv5-7: Stage2前半)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_001'), (SELECT id FROM categories WHERE name='マットピラティス'),         6, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_001'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     5, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_001'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     7, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_001'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 5, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  -- 002 高橋 裕子 (Lv2-4: Stage1中盤)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_002'), (SELECT id FROM categories WHERE name='マットピラティス'),         3, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_002'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     2, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_002'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     4, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_002'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 3, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  -- 003 渡辺 恵子 (Lv1-2: Stage1序盤)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_003'), (SELECT id FROM categories WHERE name='マットピラティス'),         1, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_003'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     2, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_003'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     1, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_003'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 2, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  -- 004 伊藤 真由美 (Lv9-12: Stage2~3)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_004'), (SELECT id FROM categories WHERE name='マットピラティス'),         11, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_004'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     10, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_004'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     12, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_004'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 9,  (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  -- 005 山本 智子 (Lv1-3: Stage1)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_005'), (SELECT id FROM categories WHERE name='マットピラティス'),         2, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_005'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     3, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_005'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     1, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_005'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 2, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  -- 006 中村 洋子 (Lv14-17: Stage3~4)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_006'), (SELECT id FROM categories WHERE name='マットピラティス'),         16, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_006'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     15, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_006'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     17, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_006'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 14, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  -- 007 小林 和子 (Lv3-5: Stage1終盤)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_007'), (SELECT id FROM categories WHERE name='マットピラティス'),         4, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_007'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     5, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_007'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     5, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_007'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 3, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  -- 008 加藤 節子 (Lv1: Stage1開始)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_008'), (SELECT id FROM categories WHERE name='マットピラティス'),         1, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_008'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     1, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_008'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     1, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_008'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 2, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  -- 009 吉田 幸子 (Lv5-8: Stage1~2)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_009'), (SELECT id FROM categories WHERE name='マットピラティス'),         7, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_009'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     6, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_009'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     5, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_009'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 8, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  -- 010 山田 久美子 (Lv2-4: Stage1)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_010'), (SELECT id FROM categories WHERE name='マットピラティス'),         3, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_010'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     2, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_010'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     4, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_010'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 3, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  -- 011 松本 理恵 (Lv19-22: Stage4~5)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_011'), (SELECT id FROM categories WHERE name='マットピラティス'),         21, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_011'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     20, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_011'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     22, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_011'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 19, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  -- 012 井上 雅子 (Lv4-6: Stage1~2)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_012'), (SELECT id FROM categories WHERE name='マットピラティス'),         5, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_012'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     6, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_012'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     4, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_012'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 5, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  -- 013 木村 京子 (Lv1-2: Stage1)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_013'), (SELECT id FROM categories WHERE name='マットピラティス'),         1, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_013'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     2, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_013'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     1, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_013'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 2, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  -- 014 林 由美 (Lv8-11: Stage2~3)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_014'), (SELECT id FROM categories WHERE name='マットピラティス'),         10, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_014'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     9,  (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_014'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     11, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_014'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 8,  (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  -- 015 斎藤 直美 (Lv3-5: Stage1)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_015'), (SELECT id FROM categories WHERE name='マットピラティス'),         4, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_015'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     3, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_015'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     5, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_015'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 4, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  -- 016 清水 敏子 (Lv5-8: Stage1~2)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_016'), (SELECT id FROM categories WHERE name='マットピラティス'),         7, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_016'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     5, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_016'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     8, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_016'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 6, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  -- 017 山口 千代 (Lv1: Stage1開始)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_017'), (SELECT id FROM categories WHERE name='マットピラティス'),         1, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_017'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     1, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_017'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     2, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_017'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 1, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  -- 018 森 知恵子 (Lv5-7: Stage2前半)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_018'), (SELECT id FROM categories WHERE name='マットピラティス'),         6, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_018'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     7, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_018'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     5, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_018'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 5, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  -- 019 池田 恵美 (Lv9-12: Stage2~3)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_019'), (SELECT id FROM categories WHERE name='マットピラティス'),         10, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_019'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     12, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_019'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     9,  (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_019'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 11, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  -- 020 橋本 良子 (Lv2-3: Stage1)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_020'), (SELECT id FROM categories WHERE name='マットピラティス'),         2, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_020'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     3, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_020'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     2, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_020'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 3, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  -- 021 阿部 典子 (Lv20-23: Stage4~5)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_021'), (SELECT id FROM categories WHERE name='マットピラティス'),         22, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_021'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     21, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_021'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     20, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_021'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 23, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  -- 022 石川 美代子 (Lv4-6: Stage1~2)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_022'), (SELECT id FROM categories WHERE name='マットピラティス'),         5, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_022'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     4, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_022'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     6, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_022'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 5, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  -- 023 前田 文子 (Lv1: Stage1開始)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_023'), (SELECT id FROM categories WHERE name='マットピラティス'),         1, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_023'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     1, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_023'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     1, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_023'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 1, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  -- 024 藤田 光代 (Lv13-16: Stage3~4)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_024'), (SELECT id FROM categories WHERE name='マットピラティス'),         15, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_024'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     14, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_024'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     16, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_024'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 13, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  -- 025 後藤 春子 (Lv5-8: Stage2前半)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_025'), (SELECT id FROM categories WHERE name='マットピラティス'),         6, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_025'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     8, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_025'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     7, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_025'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 5, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  -- 026 岡田 弘子 (Lv5-7: Stage2前半)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_026'), (SELECT id FROM categories WHERE name='マットピラティス'),         7, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_026'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     6, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_026'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     5, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_026'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 6, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  -- 027 村上 淑子 (Lv5-7: Stage2前半)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_027'), (SELECT id FROM categories WHERE name='マットピラティス'),         6, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_027'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     5, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_027'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     5, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_027'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 7, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  -- 028 近藤 美智子 (Lv1: Stage1開始)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_028'), (SELECT id FROM categories WHERE name='マットピラティス'),         1, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_028'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     1, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_028'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     1, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_028'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 1, (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  -- 029 石田 登美子 (Lv14-17: Stage3~4)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_029'), (SELECT id FROM categories WHERE name='マットピラティス'),         16, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_029'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     14, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_029'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     15, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_029'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 17, (SELECT id FROM trainers WHERE line_user_id='U_trainer_yamashita')),
-  -- 030 坂本 千鶴 (Lv9-11: Stage2~3)
-  ((SELECT id FROM clients WHERE line_user_id='U_client_030'), (SELECT id FROM categories WHERE name='マットピラティス'),         10, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_030'), (SELECT id FROM categories WHERE name='ウェイトトレーニング'),     11, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_030'), (SELECT id FROM categories WHERE name='スポーツトレーニング'),     9,  (SELECT id FROM trainers WHERE line_user_id='U_trainer_tanaka')),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_030'), (SELECT id FROM categories WHERE name='ムーブメントトレーニング'), 10, (SELECT id FROM trainers WHERE line_user_id='U_trainer_suzuki'));
+DO $$
+DECLARE
+  i INT;
+  client_id UUID;
+  cat_mat UUID;
+  cat_wt  UUID;
+  cat_st  UUID;
+  cat_mt  UUID;
+BEGIN
+  SELECT id INTO cat_mat FROM categories WHERE name = 'マットピラティス';
+  SELECT id INTO cat_wt  FROM categories WHERE name = 'ウェイトトレーニング';
+  SELECT id INTO cat_st  FROM categories WHERE name = 'スポーツトレーニング';
+  SELECT id INTO cat_mt  FROM categories WHERE name = 'ムーブメントトレーニング';
+
+  FOR i IN 1..200 LOOP
+    SELECT id INTO client_id FROM clients WHERE line_user_id = 'U_client_' || LPAD(i::TEXT, 3, '0');
+    INSERT INTO client_levels (client_id, category_id, current_level) VALUES
+      (client_id, cat_mat, (i % 10) + 1),
+      (client_id, cat_wt,  ((i + 2) % 10) + 1),
+      (client_id, cat_st,  ((i + 4) % 10) + 1),
+      (client_id, cat_mt,  ((i + 6) % 10) + 1);
+  END LOOP;
+END $$;
 
 
 -- ============================================================
--- 7. クライアントタスク（一部のクライアントに宿題を割り当て）
+-- 7. クライアントタスク（100名 × 4件 = 400行）
 -- ============================================================
-INSERT INTO client_tasks (client_id, task_id, is_completed, completed_at) VALUES
-  -- 佐藤 美咲: マットピラティス2件（1件完了）+ ウェイト1件
-  ((SELECT id FROM clients WHERE line_user_id='U_client_001'), (SELECT id FROM tasks WHERE title='ハンドレッド'),             true,  '2026-03-01 10:00:00+09'),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_001'), (SELECT id FROM tasks WHERE title='ロールアップ'),             false, NULL),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_001'), (SELECT id FROM tasks WHERE title='スクワット（自体重）'),     false, NULL),
-  -- 高橋 裕子: ウェイト1件 + スポーツ1件
-  ((SELECT id FROM clients WHERE line_user_id='U_client_002'), (SELECT id FROM tasks WHERE title='デッドリフト（軽負荷）'),   false, NULL),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_002'), (SELECT id FROM tasks WHERE title='ラダードリル（基本）'),     false, NULL),
-  -- 伊藤 真由美: 各カテゴリ1件ずつ（2件完了）
-  ((SELECT id FROM clients WHERE line_user_id='U_client_004'), (SELECT id FROM tasks WHERE title='シングルレッグストレッチ'), true,  '2026-02-28 14:00:00+09'),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_004'), (SELECT id FROM tasks WHERE title='ベンチプレス（軽負荷）'),   true,  '2026-03-02 16:00:00+09'),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_004'), (SELECT id FROM tasks WHERE title='メディシンボールスロー'),   false, NULL),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_004'), (SELECT id FROM tasks WHERE title='キャットカウストレッチ'),   false, NULL),
-  -- 中村 洋子: ムーブメント2件 + スポーツ1件（全完了）
-  ((SELECT id FROM clients WHERE line_user_id='U_client_006'), (SELECT id FROM tasks WHERE title='ヒップサークル'),           true,  '2026-03-03 11:00:00+09'),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_006'), (SELECT id FROM tasks WHERE title='ソラシックローテーション'), true,  '2026-03-04 09:30:00+09'),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_006'), (SELECT id FROM tasks WHERE title='アジリティTドリル'),        true,  '2026-03-05 15:00:00+09'),
-  -- 松本 理恵: スポーツ2件 + ウェイト2件
-  ((SELECT id FROM clients WHERE line_user_id='U_client_011'), (SELECT id FROM tasks WHERE title='バランスボールキャッチ'),   false, NULL),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_011'), (SELECT id FROM tasks WHERE title='ミニハードルジャンプ'),     true,  '2026-03-06 10:00:00+09'),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_011'), (SELECT id FROM tasks WHERE title='ダンベルロウ'),             false, NULL),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_011'), (SELECT id FROM tasks WHERE title='ショルダープレス'),         false, NULL),
-  -- 林 由美: マットピラティス1件（完了）+ ムーブメント1件
-  ((SELECT id FROM clients WHERE line_user_id='U_client_014'), (SELECT id FROM tasks WHERE title='ダブルレッグストレッチ'),   true,  '2026-03-01 17:00:00+09'),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_014'), (SELECT id FROM tasks WHERE title='ベアクロール'),             false, NULL),
-  -- 阿部 典子: 全カテゴリ1件ずつ
-  ((SELECT id FROM clients WHERE line_user_id='U_client_021'), (SELECT id FROM tasks WHERE title='スパインストレッチフォワード'), false, NULL),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_021'), (SELECT id FROM tasks WHERE title='スクワット（自体重）'),         false, NULL),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_021'), (SELECT id FROM tasks WHERE title='ラダードリル（基本）'),         false, NULL),
-  ((SELECT id FROM clients WHERE line_user_id='U_client_021'), (SELECT id FROM tasks WHERE title='ワールドグレイテストストレッチ'), false, NULL);
+-- クライアント001-100 に各4件ずつ割り当て（20タスクをローテーション）
+DO $$
+DECLARE
+  i INT;
+  client_id UUID;
+  task_ids  UUID[];
+BEGIN
+  -- タスクIDを title 順で取得（20件固定）
+  SELECT ARRAY_AGG(id ORDER BY title) INTO task_ids FROM tasks;
+
+  FOR i IN 1..100 LOOP
+    SELECT id INTO client_id FROM clients WHERE line_user_id = 'U_client_' || LPAD(i::TEXT, 3, '0');
+    INSERT INTO client_tasks (client_id, task_id, is_completed, completed_at) VALUES
+      (
+        client_id,
+        task_ids[((i - 1) * 4 % 20) + 1],
+        (i % 3 = 0),
+        CASE WHEN i % 3 = 0 THEN ('2026-03-01 10:00:00+09')::TIMESTAMPTZ ELSE NULL END
+      ),
+      (
+        client_id,
+        task_ids[((i - 1) * 4 + 1) % 20 + 1],
+        (i % 5 = 0),
+        CASE WHEN i % 5 = 0 THEN ('2026-03-02 14:00:00+09')::TIMESTAMPTZ ELSE NULL END
+      ),
+      (
+        client_id,
+        task_ids[((i - 1) * 4 + 2) % 20 + 1],
+        false,
+        NULL
+      ),
+      (
+        client_id,
+        task_ids[((i - 1) * 4 + 3) % 20 + 1],
+        false,
+        NULL
+      );
+  END LOOP;
+END $$;
 
 
 -- ============================================================
 -- 8. Will Matrix（好み評価サンプル）
 -- ============================================================
 INSERT INTO will_matrix (client_id, task_id, like_status) VALUES
-  -- 佐藤 美咲
+  -- U_client_001
   ((SELECT id FROM clients WHERE line_user_id='U_client_001'), (SELECT id FROM tasks WHERE title='ハンドレッド'),            1),
   ((SELECT id FROM clients WHERE line_user_id='U_client_001'), (SELECT id FROM tasks WHERE title='スクワット（自体重）'),   -1),
   ((SELECT id FROM clients WHERE line_user_id='U_client_001'), (SELECT id FROM tasks WHERE title='キャットカウストレッチ'),  1),
-  -- 伊藤 真由美
+  -- U_client_004
   ((SELECT id FROM clients WHERE line_user_id='U_client_004'), (SELECT id FROM tasks WHERE title='シングルレッグストレッチ'), 1),
   ((SELECT id FROM clients WHERE line_user_id='U_client_004'), (SELECT id FROM tasks WHERE title='メディシンボールスロー'),  -1),
   ((SELECT id FROM clients WHERE line_user_id='U_client_004'), (SELECT id FROM tasks WHERE title='ベンチプレス（軽負荷）'),   0),
-  -- 中村 洋子
+  -- U_client_006
   ((SELECT id FROM clients WHERE line_user_id='U_client_006'), (SELECT id FROM tasks WHERE title='ヒップサークル'),            1),
   ((SELECT id FROM clients WHERE line_user_id='U_client_006'), (SELECT id FROM tasks WHERE title='ソラシックローテーション'),  1),
   ((SELECT id FROM clients WHERE line_user_id='U_client_006'), (SELECT id FROM tasks WHERE title='アジリティTドリル'),        -1),
-  -- 松本 理恵
+  -- U_client_011
   ((SELECT id FROM clients WHERE line_user_id='U_client_011'), (SELECT id FROM tasks WHERE title='バランスボールキャッチ'),    1),
   ((SELECT id FROM clients WHERE line_user_id='U_client_011'), (SELECT id FROM tasks WHERE title='ダンベルロウ'),             -1),
   ((SELECT id FROM clients WHERE line_user_id='U_client_011'), (SELECT id FROM tasks WHERE title='ショルダープレス'),          0);
