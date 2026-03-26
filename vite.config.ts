@@ -60,6 +60,9 @@ export default defineConfig({
   plugins: [htmlPartialsPlugin()],
   build: {
     outDir: 'dist',
+    esbuildOptions: {
+      drop: ['console', 'debugger'],
+    },
     rollupOptions: {
       input: {
         main: './index.html',  // mainは慣習的にトップページを指す
