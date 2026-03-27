@@ -13,7 +13,10 @@ import {
 } from "./api/settings-crud";
 import { fetchCategories } from "./api/client-crud";
 import { initTrainerAuth } from "./liff-auth";
-import { initAdminSidebar, populateTrainerProfile } from "./partials/admin-sidebar";
+import {
+  initAdminSidebar,
+  populateTrainerProfile,
+} from "./partials/admin-sidebar";
 
 // ============================================================
 // 型定義
@@ -63,6 +66,7 @@ let currentTrainerLineId: string = "";
 // 全トレーナーを編集・削除できる特権トレーナーの LINE ID 一覧
 const SUPER_TRAINER_LINE_IDS: string[] = [
   "U09678cdc46ee66e75204c76d57491b93",
+  "Udbb5375f958fa0ba9b7617db05a5e90b",
 ];
 
 // カテゴリー色キー → categories.id (UUID) のマッピング
@@ -308,7 +312,10 @@ function createCategoryTabs(): string {
 // トレーナーカードの生成
 function createTrainerCard(trainer: Trainer): string {
   // 自分自身・未保存の新規、または特権トレーナーは全員を編集・削除可能
-  const canManage = trainer.dbId === null || trainer.dbId === currentTrainerId || SUPER_TRAINER_LINE_IDS.includes(currentTrainerLineId);
+  const canManage =
+    trainer.dbId === null ||
+    trainer.dbId === currentTrainerId ||
+    SUPER_TRAINER_LINE_IDS.includes(currentTrainerLineId);
   return `
         <div class="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex items-center gap-4">
             <div class="relative">
@@ -320,10 +327,14 @@ function createTrainerCard(trainer: Trainer): string {
                 </div>
                 <p class="text-xs text-slate-500 truncate">LINE: ${trainer.lineUserId}</p>
             </div>
-            ${canManage ? `
+            ${
+              canManage
+                ? `
             <button class="text-slate-400 hover:text-slate-600 p-1 trainer-menu" data-trainer-id="${trainer.tempId}">
                 <span class="material-icons-outlined text-lg">more_vert</span>
-            </button>` : `<div class="w-8 h-8"></div>`}
+            </button>`
+                : `<div class="w-8 h-8"></div>`
+            }
         </div>
     `;
 }
@@ -874,7 +885,12 @@ function setupTrainerEventListeners(): void {
     if (dropdownTargetTempId === null) return;
     const trainer = trainersData.find((t) => t.tempId === dropdownTargetTempId);
     if (!trainer) return;
-    if (trainer.dbId && trainer.dbId !== currentTrainerId && !SUPER_TRAINER_LINE_IDS.includes(currentTrainerLineId)) return;
+    if (
+      trainer.dbId &&
+      trainer.dbId !== currentTrainerId &&
+      !SUPER_TRAINER_LINE_IDS.includes(currentTrainerLineId)
+    )
+      return;
 
     trainerModalMode = "edit";
     trainerEditTargetId = trainer.tempId;
@@ -899,7 +915,12 @@ function setupTrainerEventListeners(): void {
     if (dropdownTargetTempId === null) return;
     const trainer = trainersData.find((t) => t.tempId === dropdownTargetTempId);
     if (!trainer) return;
-    if (trainer.dbId && trainer.dbId !== currentTrainerId && !SUPER_TRAINER_LINE_IDS.includes(currentTrainerLineId)) return;
+    if (
+      trainer.dbId &&
+      trainer.dbId !== currentTrainerId &&
+      !SUPER_TRAINER_LINE_IDS.includes(currentTrainerLineId)
+    )
+      return;
 
     closeDropdown();
 
@@ -1212,7 +1233,8 @@ async function init(): Promise<void> {
     stagesData = dbStages.map(dbStageToStage);
     tasksData = dbTasks.map((db) => dbTaskToTask(db, currentCategory));
     trainersData = dbTrainers.map(dbTrainerToTrainer);
-    currentTrainerLineId = trainersData.find((t) => t.dbId === currentTrainerId)?.lineUserId ?? "";
+    currentTrainerLineId =
+      trainersData.find((t) => t.dbId === currentTrainerId)?.lineUserId ?? "";
   } catch (err) {
     console.error("初期データ取得失敗:", err);
     if (container) {
