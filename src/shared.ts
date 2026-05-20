@@ -63,6 +63,8 @@ export interface Client {
   categoryIdMap?: Record<string, string>;
   /** 色キー → client_levels.id のマッピング（レベル更新に使用） */
   levelIdMap?: Record<string, string>;
+  /** 保有ポイント数 */
+  points: number;
 }
 
 // カテゴリ名 → 表示色キー のマッピング

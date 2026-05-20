@@ -102,5 +102,6 @@ export function mapDbClientToDisplay(dbClient: any): Client {
     history,
     categoryIdMap,
     levelIdMap,
+    points: dbClient.points ?? 0,
   };
 }

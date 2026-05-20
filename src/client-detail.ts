@@ -24,6 +24,7 @@ import {
   deleteClientTask,
   deleteClient,
 } from "./api/client-crud";
+import { addPoints } from "./api/point-crud";
 // URLパラメータから顧客UUIDを取得
 function getClientIdFromUrl(): string | null {
   const params = new URLSearchParams(window.location.search);
@@ -43,6 +44,7 @@ async function getClientFromSupabase(id: string): Promise<Client | null> {
             line_user_id,
             next_goal,
             updated_at,
+            points,
             client_levels (
                 id,
                 category_id,
@@ -99,6 +101,9 @@ let _trainerName: string = "";
 
 /** ログイン中トレーナーのID */
 let _trainerId: string = "";
+
+/** ポイント付与セレクトで選択中の加算ポイント数 */
+let _pointsToAdd: number = 0;
 
 // ============================================================
 // トースト通知
@@ -564,6 +569,47 @@ function renderClientDetail(client: Client): void {
       </div>
     </section>
 
+    <!-- Points Section -->
+    <section class="bg-surface-light dark:bg-surface-dark rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
+      <div class="flex items-center gap-2 mb-4">
+        <span class="material-icons-outlined text-amber-500">stars</span>
+        <h3 class="text-lg font-bold">ポイント管理</h3>
+      </div>
+      <div class="flex flex-wrap items-center gap-6">
+        <div class="flex items-center gap-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-700 rounded-xl px-5 py-3">
+          <span class="material-icons-outlined text-amber-500">toll</span>
+          <span class="text-sm text-slate-500 dark:text-slate-400">現在のポイント</span>
+          <span id="currentPointsDisplay" class="text-2xl font-bold text-amber-600 dark:text-amber-400">${client.points} pt</span>
+        </div>
+        <div class="flex flex-col gap-1 md:flex-row md:items-center md:gap-4">
+          <label class="text-sm font-medium text-slate-600 dark:text-slate-300">付与ポイント</label>
+          <div class="flex items-center gap-2">
+            <button
+              id="pointsMinusBtn"
+              type="button"
+              class="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-bold text-lg disabled:opacity-40 disabled:cursor-not-allowed"
+            >−</button>
+            <input
+              id="pointsToAddInput"
+              type="number"
+              min="0"
+              step="100"
+              value="0"
+              readonly
+              class="w-24 text-center bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-700 dark:text-slate-100 font-bold focus:ring-2 focus:ring-primary"
+            />
+            <span class="text-sm text-slate-500 dark:text-slate-400 font-medium">pt</span>
+            <button
+              id="pointsPlusBtn"
+              type="button"
+              class="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-bold text-lg"
+            >＋</button>
+          </div>
+          <span class="text-xs text-slate-400">（100pt単位 / 1日1回制限あり）</span>
+        </div>
+      </div>
+    </section>
+
     <!-- Progress Section -->
     <section class="bg-surface-light dark:bg-surface-dark rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
       <div class="flex items-center justify-between mb-6">
@@ -886,6 +932,39 @@ function setupTaskEventListeners(client: Client): void {
       // ここでAPIへの保存処理を追加可能
     });
   }
+
+  // 付与ポイント ±ボタン
+  const pointsInput = document.getElementById(
+    "pointsToAddInput",
+  ) as HTMLInputElement | null;
+  const pointsMinusBtn = document.getElementById(
+    "pointsMinusBtn",
+  ) as HTMLButtonElement | null;
+  const pointsPlusBtn = document.getElementById(
+    "pointsPlusBtn",
+  ) as HTMLButtonElement | null;
+
+  const syncPointsMinus = (): void => {
+    if (pointsMinusBtn) pointsMinusBtn.disabled = _pointsToAdd <= 0;
+  };
+
+  if (pointsMinusBtn) {
+    pointsMinusBtn.disabled = true;
+    pointsMinusBtn.addEventListener("click", () => {
+      if (_pointsToAdd >= 100) {
+        _pointsToAdd -= 100;
+        if (pointsInput) pointsInput.value = String(_pointsToAdd);
+        syncPointsMinus();
+      }
+    });
+  }
+  if (pointsPlusBtn) {
+    pointsPlusBtn.addEventListener("click", () => {
+      _pointsToAdd += 100;
+      if (pointsInput) pointsInput.value = String(_pointsToAdd);
+      syncPointsMinus();
+    });
+  }
 }
 
 // レベルセレクトボックスのイベントリスナーを設定
@@ -1077,7 +1156,9 @@ function setupFormSubmit(client: Client): void {
         // カテゴリが選択されているのに課題名が空の場合はエラー、両方空なら無入力としてスキップ
         if (!task.title.trim()) {
           if (task.categoryId) {
-            errors.push(`課題名を入力してください（カテゴリ: ${_categories.find((c) => c.id === task.categoryId)?.name ?? task.categoryId}）`);
+            errors.push(
+              `課題名を入力してください（カテゴリ: ${_categories.find((c) => c.id === task.categoryId)?.name ?? task.categoryId}）`,
+            );
           }
           continue;
         }
@@ -1189,7 +1270,26 @@ function setupFormSubmit(client: Client): void {
     if (!goalOk) errors.push("チャレンジ項目 更新エラー");
 
     // ============================================================
-    // 6. 登録結果をトーストで通知
+    // 6. ポイント付与（選択された場合のみ）
+    // ============================================================
+    if (_pointsToAdd > 0) {
+      const pointResult = await addPoints(
+        client.id,
+        client.points,
+        _pointsToAdd,
+      );
+      if (pointResult.alreadyAwarded) {
+        errors.push("本日はすでにポイントが付与されています（1日1回制限）");
+      } else if (!pointResult.success) {
+        errors.push("ポイント付与エラー");
+      } else {
+        client.points += _pointsToAdd;
+        _pointsToAdd = 0;
+      }
+    }
+
+    // ============================================================
+    // 7. 登録結果をトーストで通知
     // ============================================================
     if (submitBtn) {
       submitBtn.disabled = false;
