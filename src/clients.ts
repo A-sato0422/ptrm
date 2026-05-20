@@ -59,6 +59,7 @@ function mapDbClientToDisplay(dbClient: any): Client {
     previousNote: sortedMemos[0]?.content || "",
     currentTasks,
     preferences: { likes, dislikes, neutral },
+    points: dbClient.points ?? 0,
   };
 }
 
