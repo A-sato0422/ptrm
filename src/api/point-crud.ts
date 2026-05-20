@@ -63,6 +63,7 @@ export async function usePoints(
 export async function addPoints(
   clientId: string,
   currentPoints: number,
+  amount: number = AWARD_POINTS,
 ): Promise<{ success: boolean; alreadyAwarded?: boolean; error?: string }> {
   // 本日（ローカル時刻の 00:00:00 以降）の付与レコードをチェック
   const todayStart = new Date();
@@ -82,7 +83,7 @@ export async function addPoints(
 
   const { error: insertError } = await supabase
     .from("point_history")
-    .insert({ client_id: clientId, point: AWARD_POINTS });
+    .insert({ client_id: clientId, point: amount });
 
   if (insertError) {
     return { success: false, error: "ポイント付与に失敗しました。" };
@@ -90,7 +91,7 @@ export async function addPoints(
 
   const { error: updateError } = await supabase
     .from("clients")
-    .update({ points: currentPoints + AWARD_POINTS })
+    .update({ points: currentPoints + amount })
     .eq("id", clientId);
 
   if (updateError) {
