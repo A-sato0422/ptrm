@@ -15,7 +15,7 @@
     "db:push:prod": "supabase link --project-ref mjucgzmsykgapkamrvrq && supabase db push && supabase link --project-ref fewghupwguztpdekdfwn && echo ✅ prodへの反映完了完了。反映先をstgに戻しました"
   },
   "dependencies": {
-    "@line/liff": "^2.24.0",
+    "@line/liff": "^2.31.2",
     "@supabase/supabase-js": "^2.94.0",
     "html5-qrcode": "^2.3.8"
   },
